@@ -1,0 +1,25 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["node", "astro/client", "vitest/globals"]
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  /**
+   * `.astro` must NOT be excluded: `.astro/types.d.ts` is the entry point for the
+   * generated content-collection types, and it reaches `.astro/content.d.ts` by
+   * triple-slash reference. Excluding the directory silently degraded every
+   * `CollectionEntry<'products'>['data']` to `any` — the exact type safety the
+   * schemas exist to provide.
+   */
+  "exclude": ["dist", "node_modules", "playwright-report", "test-results", "coverage"]
+}

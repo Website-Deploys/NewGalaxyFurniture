@@ -1,0 +1,42 @@
+---
+/**
+ * Per-line text reveal.
+ *
+ * The design is specific about the mechanism: "text reveal (per-line clip-path wipe using CSS
+ * `@property`, not per-character JS)". Two things follow, and both are the point:
+ *
+ * - **Lines are authored, not computed.** The caller passes the lines it wants; this component wraps
+ *   each in a `<span class="ngf-line">` and the stylesheet wipes each one with a staggered
+ *   `clip-path` transition. Splitting text into lines at runtime means measuring the rendered box,
+ *   which means reading layout after every resize and re-splitting — and splitting into *characters*,
+ *   the usual implementation, destroys the text for a screen reader and for text selection.
+ * - **`@property --ngf-reveal-progress` is registered in `motion.css`.** Without registration a
+ *   custom property is not interpolatable and any animation through one jumps rather than eases.
+ *
+ * The element keeps its text content in document order, so it reads correctly to assistive
+ * technology and copies correctly, whether or not the wipe ever runs. Under reduced motion the lines
+ * render unclipped from the first paint.
+ *
+ * Requirements: 21.6, 21.8, 21.11, 24.10.
+ */
+interface Props {
+  /** One entry per rendered line. The caller decides where the lines break. */
+  lines: readonly string[];
+  /** The element to render. A heading passes `h1`/`h2`; prose passes `p`. */
+  as?: 'h1' | 'h2' | 'h3' | 'p' | 'div';
+  class?: string;
+}
+
+const { lines, as: Tag = 'p', class: className } = Astro.props;
+---
+
+<Tag class={className} data-reveal="lines">
+  {
+    lines.map((line: string) => (
+      <span class="ngf-line">
+        {line}
+        {/* A trailing space keeps a copied selection readable across the line spans. */}{' '}
+      </span>
+    ))
+  }
+</Tag>

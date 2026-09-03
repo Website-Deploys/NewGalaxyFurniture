@@ -1,0 +1,62 @@
+---
+/**
+ * `/warranty`.
+ *
+ * No warranty term. Requirement 8.4 names it explicitly, and a warranty length is the single most
+ * commonly invented number on a furniture site — "10 year warranty" costs nothing to type and
+ * everything to honour. None has been supplied, so none is stated.
+ *
+ * Requirements: 8.2, 8.3, 8.4, 8.8.
+ */
+import PolicyPage from '@/components/ui/PolicyPage.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const meta = pageMeta(Astro, {
+  title: 'Warranty',
+  description:
+    'The warranty New Galaxy Furniture provides on its furniture. This policy is being finalised — contact us for current warranty terms.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <PolicyPage
+    title="Warranty"
+    lead="What is covered, for how long, and how to make a claim."
+    contentKey="page.warranty.body"
+    sections={[
+      {
+        heading: 'What the warranty covers',
+        prompt:
+          'This section will state precisely which parts of a piece are covered — frame, joinery, finish, upholstery, and mechanisms are usually treated differently.',
+      },
+      {
+        heading: 'How long it lasts',
+        prompt:
+          'This section will state the warranty period for each covered part once it has been agreed. No period is stated here yet — ask us about the piece you are considering and we will tell you what we stand behind.',
+      },
+      {
+        heading: 'What is not covered',
+        prompt:
+          'This section will state the exclusions plainly, including normal wear, timber movement with humidity, and damage from misuse.',
+      },
+      {
+        heading: 'Caring for your furniture',
+        prompt:
+          'This section will describe the care that keeps a warranty valid, once the finishing process it depends on has been documented.',
+      },
+      {
+        heading: 'Making a claim',
+        prompt:
+          'This section will state how to raise a claim and what we need from you. Until then, contact us on either number and we will take it from there.',
+      },
+      {
+        heading: 'What we do about a valid claim',
+        prompt:
+          'This section will state whether a covered fault is repaired, replaced, or refunded, and who decides.',
+      },
+    ]}
+  />
+</BaseLayout>

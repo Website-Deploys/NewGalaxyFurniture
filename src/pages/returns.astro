@@ -1,0 +1,61 @@
+---
+/**
+ * `/returns`.
+ *
+ * No return window, no cancellation term, no restocking figure. Requirement 8.4 names the return
+ * window and the cancellation term explicitly, and neither has been supplied — so the page carries
+ * the questions and none of the answers.
+ *
+ * Requirements: 8.2, 8.3, 8.4, 8.8.
+ */
+import PolicyPage from '@/components/ui/PolicyPage.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const meta = pageMeta(Astro, {
+  title: 'Returns & Cancellation',
+  description:
+    'How returns and cancellations work with New Galaxy Furniture. This policy is being finalised — contact us for current terms.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <PolicyPage
+    title="Returns & Cancellation"
+    lead="What can be returned, what can be cancelled, and how to raise either with us."
+    contentKey="page.returns.body"
+    sections={[
+      {
+        heading: 'Cancelling before delivery',
+        prompt:
+          'This section will state when an order can be cancelled and what happens to any amount already paid. No period and no figure are stated here yet.',
+      },
+      {
+        heading: 'Returning a delivered piece',
+        prompt:
+          'This section will state the return window and the condition a piece must be in. No window is stated here yet — ask us before you buy and we will tell you exactly what applies.',
+      },
+      {
+        heading: 'Made-to-order and customised pieces',
+        prompt:
+          'This section will state how cancellation and return work for a piece built to your specification, which is necessarily different from a stocked piece.',
+      },
+      {
+        heading: 'Faulty or incorrect pieces',
+        prompt:
+          'This section will state what we do when a piece is not what was ordered or is not sound. Raise it with us on either number and we will deal with it.',
+      },
+      {
+        heading: 'How a refund is made',
+        prompt:
+          'This section will state the refund method and the time it takes. No period is stated here yet.',
+      },
+      {
+        heading: 'Collection of a returned piece',
+        prompt: 'This section will state who collects a returned piece and who bears the cost.',
+      },
+    ]}
+  />
+</BaseLayout>

@@ -1,0 +1,42 @@
+---
+/**
+ * The price block: the amount or the "Price on enquiry" label, plus a genuine discount.
+ *
+ * `formatPriceOrLabel` decides between the two, so no surface can invent its own wording for a
+ * price-on-enquiry product (Requirement 4.2's "price or the 'Price on enquiry' label").
+ *
+ * The strike-through and the percentage are rendered **only** when both `originalPrice` and
+ * `discount` are present. The schema's cross-field invariants already guarantee that a discount
+ * cannot be fabricated by inflating the original price and that the percentage is the computed
+ * value (Properties 15 and 16), so this component does no arithmetic of its own — doing any here
+ * would be a second, unverified calculation.
+ *
+ * Requirements: 4.2, 4.3, 13.10.
+ */
+import { formatINR, formatPriceOrLabel } from '@/lib/money';
+
+interface Props {
+  price: number | null;
+  priceOnEnquiry: boolean;
+  originalPrice: number | null;
+  discount: number | null;
+  class?: string;
+}
+
+const { price, priceOnEnquiry, originalPrice, discount, class: className } = Astro.props;
+
+const label = formatPriceOrLabel(price, priceOnEnquiry);
+const showsDiscount = originalPrice !== null && discount !== null;
+---
+
+<div class:list={['flex flex-wrap items-baseline gap-3', className]} data-ngf-price>
+  <p class="font-display text-h2 text-obsidian">{label}</p>
+  {
+    showsDiscount && (
+      <p class="text-small text-walnut">
+        <s>{formatINR(originalPrice)}</s>
+        <span class="ml-2">{discount}% off</span>
+      </p>
+    )
+  }
+</div>

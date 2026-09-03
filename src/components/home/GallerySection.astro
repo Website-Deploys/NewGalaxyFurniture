@@ -1,0 +1,109 @@
+---
+/**
+ * The homepage gallery band.
+ *
+ * The gallery draws on published product photography — there is no separate gallery collection, and
+ * inventing one would give the operator a second place to upload the same photographs to. So this
+ * band shows the primary image of the most recently added Catalogue products, each linking to the
+ * piece it shows, which is the only gallery that cannot go stale.
+ *
+ * With no photography at all (Open Items item 5) it renders the designed "no images" empty state
+ * required by Requirement 26.14 rather than an empty band or a grid of grey boxes.
+ *
+ * Requirements: 7.1, 15.17, 26.14.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import type { HomepageSection } from '@/schemas/homepage';
+import { primaryImageOf, type Product } from '@/schemas/product';
+
+interface Props {
+  section: HomepageSection;
+  products: readonly Product[];
+  limit?: number;
+}
+
+const { section, products, limit = 8 } = Astro.props;
+
+const tiles = products
+  .map((product) => ({ product, image: primaryImageOf(product) }))
+  .filter(
+    (entry): entry is { product: Product; image: NonNullable<typeof entry.image> } =>
+      entry.image !== null,
+  )
+  .slice(0, limit);
+---
+
+<section
+  class="ngf-home-section ngf-home-gallery"
+  aria-labelledby="ngf-gallery-heading"
+  data-ngf-section="gallery"
+>
+  <SectionHeader
+    eyebrow={section.eyebrow}
+    heading={section.heading ?? 'Gallery'}
+    subheading={section.subheading}
+    headingId="ngf-gallery-heading"
+  />
+
+  {
+    tiles.length === 0 ? (
+      <EmptyState
+        heading="Photography is in progress"
+        message="Our pieces are being photographed. Tell us what you are looking for and we will send photographs of comparable work straight away."
+      >
+        <WhatsAppLink
+          slot="action"
+          context={{ kind: 'general' }}
+          variant="outline"
+          label="Ask for photographs"
+        />
+      </EmptyState>
+    ) : (
+      <ul class="ngf-gallery-band">
+        {tiles.map((tile) => (
+          <li>
+            <a href={`/product/${tile.product.slug}`} class="ngf-gallery-tile">
+              <ResponsiveImage
+                productId={tile.product.id}
+                image={tile.image}
+                context="card"
+                widths={[320, 480, 640]}
+              />
+              <span class="sr-only">{tile.product.name}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</section>
+
+<style>
+  .ngf-gallery-band {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 768px) {
+    .ngf-gallery-band {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-gallery-tile {
+    display: block;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+
+  .ngf-gallery-tile > :global(.ngf-image) {
+    height: 100%;
+  }
+</style>

@@ -1,0 +1,47 @@
+---
+/**
+ * `AnimatedSofa` — a three-seater outline.
+ *
+ * Signature motion (design's component table): "frame draws, cushions fade+scale in sequence". The
+ * frame is `.ngf-draw` (a dashoffset draw); the three cushions are `.ngf-part`, which the
+ * stylesheet fades and translates — so the two halves of the motion are two different mechanisms
+ * on one illustration, which is what makes it read as upholstery arriving into a frame rather than
+ * as one outline appearing.
+ *
+ * `--ngf-part-y` per cushion sets where each one comes from; the delays are multiples of
+ * `--stagger-tight`, so all three are one staggered group.
+ *
+ * Requirements: 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs(Astro.props, 'sofa', 900);
+---
+
+<svg {...svg} viewBox="0 0 240 128" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+  {/* The frame: base, arms, back. */}
+  <path class="ngf-draw" d="M12 104h216M12 104V64M228 104V64"></path>
+  <path class="ngf-draw" style="--ngf-draw-delay:160ms" d="M12 64h32v40M196 64h32v40"></path>
+  <path class="ngf-draw" style="--ngf-draw-delay:320ms" d="M44 64V28h152v36"></path>
+  {/* The legs. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:400ms" d="M28 104v14M212 104v14"></path>
+
+  {/* Three seat cushions, entering in sequence. */}
+  <g>
+    <path class="ngf-part" style="--ngf-part-y:10px" d="M46 64h48v20H46z"></path>
+    <path class="ngf-part" style="--ngf-part-y:10px;--ngf-part-delay:45ms" d="M96 64h48v20H96z"
+    ></path>
+    <path class="ngf-part" style="--ngf-part-y:10px;--ngf-part-delay:90ms" d="M146 64h48v20h-48z"
+    ></path>
+  </g>
+  {/* Two back cushions, offset from the seats so the stack reads. */}
+  <g>
+    <path class="ngf-part" style="--ngf-part-y:-8px;--ngf-part-delay:135ms" d="M52 34h56v28H52z"
+    ></path>
+    <path class="ngf-part" style="--ngf-part-y:-8px;--ngf-part-delay:180ms" d="M132 34h56v28h-56z"
+    ></path>
+  </g>
+</svg>

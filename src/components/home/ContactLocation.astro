@@ -1,0 +1,137 @@
+---
+/**
+ * Contact and location — the fourteenth homepage section.
+ *
+ * Requirement 8.5 governs what appears here, and it is a rule about *absence*: the location details
+ * and the map link render "only where the operator has supplied" each one. The address is currently
+ * unsupplied (Open Items item 2), so this section renders the two numbers and the placeholder marker
+ * — and no address, no opening hours, no "serving all of Bangalore since…". There is no sentence in
+ * this component that states a location fact, so none can be invented by editing copy.
+ *
+ * The service area *is* supplied (`settings.serviceArea`), so it is stated — that is a fact the
+ * operator gave, not one this component assumed.
+ *
+ * Requirements: 7.1, 8.5, 19.6, 19.7.
+ */
+import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import ContactNumbers from '@/components/ui/ContactNumbers.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import type { HomepageSection } from '@/schemas/homepage';
+
+interface Props {
+  section: HomepageSection;
+}
+
+const { section } = Astro.props;
+const settings = getSiteSettings();
+const { location, serviceArea } = settings;
+
+const addressLines = location.addressLines.filter((line) => line.trim() !== '');
+const hasAddress = addressLines.length > 0 || location.city.trim() !== '';
+---
+
+<section
+  class="ngf-home-section ngf-home-contact"
+  aria-labelledby="ngf-contact-heading"
+  data-ngf-section="contactLocation"
+>
+  <SectionHeader
+    eyebrow={section.eyebrow}
+    heading={section.heading ?? 'Contact'}
+    subheading={section.subheading}
+    headingId="ngf-contact-heading"
+  />
+
+  <div class="ngf-contact-grid">
+    <ContactNumbers layout="stack" />
+
+    <div class="ngf-contact-place">
+      {
+        hasAddress ? (
+          <address class="ngf-contact-address">
+            {addressLines.map((line) => (
+              <span>{line}</span>
+            ))}
+            {location.city.trim() !== '' && (
+              <span>
+                {[location.city, location.state, location.postalCode ?? '']
+                  .filter((part) => part.trim() !== '')
+                  .join(', ')}
+              </span>
+            )}
+          </address>
+        ) : section.body !== undefined ? (
+          <PlaceholderCopy body={section.body} contentKey={`homepage.${section.key}.body`} />
+        ) : null
+      }
+
+      {
+        /* Requirement 8.5: the map link renders only where the operator supplied one. */
+        location.mapUrl !== null && (
+          <a class="ngf-contact-map" href={location.mapUrl} target="_blank" rel="noopener">
+            Open in maps
+          </a>
+        )
+      }
+
+      {
+        serviceArea.length > 0 && (
+          <p class="ngf-contact-area">
+            <span class="ngf-contact-area-label">We deliver and install across</span>
+            {serviceArea.join(', ')}
+          </p>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .ngf-contact-grid {
+    display: grid;
+    gap: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .ngf-contact-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-contact-place {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .ngf-contact-address {
+    display: flex;
+    flex-direction: column;
+    font-style: normal;
+  }
+
+  .ngf-contact-map {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 1rem;
+    border: 1px solid var(--color-obsidian);
+    color: var(--color-obsidian);
+    text-decoration: none;
+  }
+
+  .ngf-contact-area {
+    margin: 0;
+    color: var(--color-espresso);
+  }
+
+  .ngf-contact-area-label {
+    display: block;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+</style>

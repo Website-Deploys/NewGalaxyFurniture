@@ -1,0 +1,148 @@
+---
+/**
+ * `/workshop`.
+ *
+ * The page whose whole subject — how the furniture is made — is the thing that has not been supplied.
+ * Requirement 7.10 forbids stating any manufacturing process, timeline, capability, or business
+ * achievement the operator has not supplied, and Requirement 23.17 asks for genuine location content.
+ * Both are satisfied the same way: the page states that furniture is made in Bengaluru (which is
+ * established) and carries a visible placeholder where the process description goes (which is not).
+ *
+ * There is deliberately no paragraph here about seasoned timber, mortise-and-tenon joinery, hand-
+ * rubbed finishes, or curing times. Every one of those would be plausible and none of them has been
+ * confirmed.
+ *
+ * Requirements: 7.10, 8.1, 8.8, 23.17.
+ */
+import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import AnimatedBed from '@/components/motion/AnimatedBed.astro';
+import AnimatedChair from '@/components/motion/AnimatedChair.astro';
+import AnimatedSofa from '@/components/motion/AnimatedSofa.astro';
+import AnimatedTable from '@/components/motion/AnimatedTable.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const settings = getSiteSettings();
+
+const meta = pageMeta(Astro, {
+  title: 'Workshop',
+  description:
+    'Where New Galaxy Furniture is made. Our workshop in Bengaluru builds sofas, beds, dining furniture and custom pieces to order.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">The workshop</p>
+      <h1>Where the furniture is made</h1>
+      <p class="ngf-page-lead">
+        {settings.businessName} manufactures in Bengaluru. What leaves the workshop is what we photographed,
+        sized and finished ourselves.
+      </p>
+    </div>
+
+    <div class="ngf-page-body">
+      <h2>How we make it</h2>
+      <PlaceholderCopy
+        body="[PLACEHOLDER — describe the making: timber selection and seasoning, joinery, upholstery, finishing, and quality checks, in your own words. No process, material specification, tolerance, or timeline has been supplied, and none has been invented here.]"
+        contentKey="page.workshop.body"
+      />
+
+      <h2>Visiting</h2>
+      <p>
+        The showroom address, opening hours and a map link are published on the
+        <a href="/contact">contact page</a> as soon as they are confirmed. Until then, call or message
+        us and we will arrange a time.
+      </p>
+
+      {
+        /*
+        The four furniture primitives, as a "what we make" band.
+        
+        They are **meaningful, not decorative**, which is why each carries a `title`: the band is the
+        only thing on this page that says what kinds of furniture the workshop builds, and the copy
+        above it cannot say so — Requirement 7.10 forbids asserting a capability the operator has not
+        supplied, and the four categories *are* supplied, in `data/categories/`. A titled `role="img"`
+        conveys that to a screen reader; an `aria-hidden` drawing would leave the band saying nothing
+        at all to anyone who cannot see it (Requirement 24.10).
+
+        Exactly four primitives on this page, which is Requirement 21.15's ceiling. The grid is one
+        `data-motion-group`, so the four draw as one staggered group rather than four independent
+        animations.
+      */
+      }
+      <h2 id="ngf-workshop-makes-heading">What we build</h2>
+      <ul
+        class="ngf-workshop-makes"
+        data-reveal
+        data-motion-group
+        aria-labelledby="ngf-workshop-makes-heading"
+      >
+        <li>
+          <AnimatedSofa strokeWidth={1} trigger="none" title="A three-seater sofa" />
+          <span>Sofas and sectionals</span>
+        </li>
+        <li>
+          <AnimatedBed strokeWidth={1} trigger="none" title="A bed with a headboard" />
+          <span>Beds</span>
+        </li>
+        <li>
+          <AnimatedTable strokeWidth={1} trigger="none" title="A dining table" />
+          <span>Dining tables</span>
+        </li>
+        <li>
+          <AnimatedChair strokeWidth={1} trigger="none" title="A dining chair" />
+          <span>Chairs</span>
+        </li>
+      </ul>
+
+      <h2>Made to order</h2>
+      <p>
+        Most of the catalogue can be built to a size, timber or finish you choose rather than the
+        one shown. Start from <a href="/custom-furniture">custom furniture</a> and tell us what the room
+        needs.
+      </p>
+
+      <div class="ngf-page-actions">
+        <WhatsAppLink context={{ kind: 'general' }} />
+        <CallLink variant="outline" />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-workshop-makes {
+    display: grid;
+    gap: 1.5rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    color: var(--color-walnut);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-workshop-makes {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-workshop-makes li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .ngf-workshop-makes span {
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+  }
+</style>

@@ -1,0 +1,137 @@
+---
+/**
+ * Customer reviews.
+ *
+ * Two refusals define this section, and both are already decided elsewhere so this component only
+ * has to not undo them:
+ *
+ * - **Published only.** The reviews arrive through `getPublishedReviews()`, which is the single
+ *   reader for public surfaces (Requirement 8.6). Nothing here re-filters, because a second filter is
+ *   a second place for an unpublished testimonial to leak from.
+ * - **No aggregate rating.** These are operator-entered testimonials, not verified purchase reviews
+ *   (Open Items item 11), so no average, no star summary, and — critically — **no
+ *   `aggregateRating` structured data**. This component emits no JSON-LD at all; task 20 owns
+ *   structured data and `aggregateRatingFor` already returns `null` for site-wide reviews.
+ *
+ * With no reviews the section renders its designed empty state rather than disappearing: unlike the
+ * four product sections, Requirement 7.9 does not name reviews, and Requirement 26.14 explicitly
+ * asks for a designed "no reviews" state with a next action. The next action is the honest one —
+ * enquire, and leave a review after buying.
+ *
+ * Requirements: 8.6, 18.8, 18.10, 26.14.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import type { HomepageSection } from '@/schemas/homepage';
+import type { Review } from '@/schemas/review';
+
+interface Props {
+  section: HomepageSection;
+  /** Already filtered to published by `getPublishedReviews()`. */
+  reviews: readonly Review[];
+  limit?: number;
+}
+
+const { section, reviews, limit = 6 } = Astro.props;
+const shown = reviews.slice(0, limit);
+---
+
+<section
+  class="ngf-home-section ngf-home-reviews"
+  aria-labelledby="ngf-reviews-heading"
+  data-ngf-section="customerReviews"
+>
+  <SectionHeader
+    eyebrow={section.eyebrow}
+    heading={section.heading ?? 'Customer reviews'}
+    subheading={section.subheading}
+    headingId="ngf-reviews-heading"
+  />
+
+  {
+    shown.length === 0 ? (
+      <EmptyState
+        heading="No reviews published yet"
+        message="We would rather show none than write our own. When customers send us their words, they will appear here."
+      >
+        <WhatsAppLink
+          slot="action"
+          context={{ kind: 'general' }}
+          variant="outline"
+          label="Talk to us on WhatsApp"
+        />
+      </EmptyState>
+    ) : (
+      <ul class="ngf-reviews-grid">
+        {shown.map((review) => (
+          <li class="ngf-review">
+            {/*
+              The rating is rendered as text, not as a star glyph run: five stars with three filled
+              reads as a rating a screen reader cannot parse, and `4 out of 5` is what the value is.
+            */}
+            <p class="ngf-review-rating">{review.rating} out of 5</p>
+            <blockquote class="ngf-review-text">{review.text}</blockquote>
+            <p class="ngf-review-attribution">
+              {review.customerName}
+              {review.date === undefined ? '' : ` · ${review.date}`}
+            </p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <p class="ngf-reviews-note">
+    Reviews are collected by us from customers and published as they were given. We publish no
+    overall rating, because these are testimonials rather than verified purchase reviews.
+  </p>
+</section>
+
+<style>
+  .ngf-reviews-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  }
+
+  .ngf-review {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-taupe);
+    background-color: var(--color-white);
+  }
+
+  .ngf-review-rating {
+    margin: 0;
+    color: var(--color-champagne);
+    font-size: var(--text-small);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ngf-review-text {
+    margin: 0;
+    color: var(--color-espresso);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1.35;
+  }
+
+  .ngf-review-attribution {
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+  }
+
+  .ngf-reviews-note {
+    margin: 1.5rem 0 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+  }
+</style>

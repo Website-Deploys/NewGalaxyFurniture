@@ -1,0 +1,67 @@
+---
+/**
+ * The catalogue's designed empty state.
+ *
+ * `data/products/` ships empty, so this is not an edge case — it is the **normal rendering
+ * path** for `/collection` and all nine category routes until real product content arrives.
+ * It is therefore composed rather than apologetic: a line illustration, a sentence that says
+ * what is happening, and three ways forward (search, another category, an enquiry).
+ *
+ * The same component serves the no-filter-match state and the unknown-category state, because
+ * all three are "nothing to show here, and here is where to go", and giving them three separate
+ * compositions would guarantee that two of them rot.
+ *
+ * **It is a specialisation of `EmptyState`, not a second composition of one.** The shared primitive
+ * owns the illustration, the heading, the message and the action row; this adds the one thing the
+ * catalogue's version needs and no other empty state does — the row of category shortcuts. Task 21.6
+ * folded it in, so there is exactly one empty-state composition on the public side and any change to
+ * its spacing or tone reaches all of them.
+ *
+ * The illustration is the animated `AnimatedFurnitureLine` primitive the design calls for, drawn on
+ * entry and rendered in its final state under reduced motion.
+ *
+ * Requirements: 1.4, 1.15, 3.17, 26.12, 26.14.
+ * Design: Error Handling → Empty states.
+ */
+import AnimatedFurnitureLine from '@/components/motion/AnimatedFurnitureLine.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { CATEGORY_NAV } from '@/lib/site/navigation';
+
+interface Props {
+  heading: string;
+  message: string;
+  /** Hides the category chip row where the surrounding page already lists them. */
+  showCategories?: boolean;
+  /** The enquiry the WhatsApp CTA pre-fills. */
+  categoryName?: string;
+}
+
+const { heading, message, showCategories = true, categoryName } = Astro.props;
+---
+
+<EmptyState heading={heading} message={message} tone="page" class="ngf-empty">
+  <span slot="illustration" class="ngf-empty-figure" aria-hidden="true">
+    <AnimatedFurnitureLine strokeWidth={1} />
+  </span>
+
+  <a slot="action" class="ngf-card-enquire" href="/collection">Browse the full collection</a>
+  <WhatsAppLink
+    slot="action"
+    context={categoryName === undefined ? { kind: 'general' } : { kind: 'category', categoryName }}
+    variant="outline"
+    label="Ask on WhatsApp"
+  />
+
+  {
+    showCategories && (
+      <ul class="ngf-empty-categories">
+        {CATEGORY_NAV.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</EmptyState>

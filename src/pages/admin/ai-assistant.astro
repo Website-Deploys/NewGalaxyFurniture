@@ -1,0 +1,95 @@
+---
+/**
+ * /admin/ai-assistant — draft product copy from facts and photographs.
+ *
+ * The page's only server-side job is to supply the two closed lists the assistant needs: the
+ * existing categories (read from the repository, so one created since the last deploy is
+ * offered) and the products that already have images, so a suggestion can be based on real
+ * photographs rather than on nothing.
+ *
+ * The screen is reachable only with `ai.generate`, which the nav and the middleware both
+ * enforce; a viewer never sees it and the endpoint would refuse them regardless.
+ *
+ * Requirements: 16.1, 16.3, 16.4, 16.5, 16.8, 16.12, 26.7.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import AiAssistant from '@/components/admin/AiAssistant';
+import { can } from '@/lib/auth/permissions';
+import { CategorySchema } from '@/schemas/category';
+import { categoryContentPath } from '@/lib/github/paths';
+import { createGitHubClient } from '@/lib/github/factory';
+import { getKV } from '@/lib/env';
+import { listProductSummaries } from '@/lib/products/index-store';
+import { getDraft } from '@/lib/github/drafts';
+import { readContentRecord } from '@/lib/github/content-writer';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+
+let categories: { slug: string; name: string }[] = [];
+let productsWithImages: { id: string; name: string; images: { id: string; alt: string }[] }[] = [];
+let notice: string | null = null;
+
+try {
+  const client = createGitHubClient(Astro);
+  for (const slug of await client.listCategorySlugs()) {
+    const path = categoryContentPath(slug);
+    if (path === null) continue;
+    const record = await readContentRecord(client, path, CategorySchema);
+    if (record !== null) categories.push({ slug: record.value.slug, name: record.value.name });
+  }
+  categories.sort((a, b) => a.name.localeCompare(b.name));
+} catch (error) {
+  console.error('[admin/ai] could not read the categories', error);
+  notice =
+    'The category list could not be read, so no category can be suggested or chosen here. Create the product manually instead.';
+}
+
+try {
+  const drafts = getKV(Astro, 'DRAFTS');
+  for (const summary of await listProductSummaries(drafts)) {
+    const draft = await getDraft(drafts, summary.id);
+    const images = draft?.product.images ?? [];
+    if (images.length === 0) continue;
+    productsWithImages.push({
+      id: summary.id,
+      name: summary.name,
+      images: [...images]
+        .sort((a, b) => a.order - b.order)
+        .map((image) => ({ id: image.id, alt: image.alt })),
+    });
+  }
+  productsWithImages.sort((a, b) => a.name.localeCompare(b.name));
+} catch (error) {
+  // Not fatal: the assistant works from notes alone.
+  console.error('[admin/ai] could not list products with images', error);
+}
+---
+
+<AdminLayout title="AI Product Assistant">
+  <p class="mb-4 max-w-[70ch] text-body text-walnut">
+    The assistant drafts wording — a name, descriptions, style tags, SEO text, alt text and an
+    enquiry message. It does not decide facts. Anything you do not tell it is left blank and
+    reported to you rather than guessed, and any claim about your business it produces — years
+    trading, certifications, awards, delivery times, warranties, prices, being the best at anything
+    — is removed before you ever see it.
+  </p>
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    Nothing here publishes. A product created from a suggestion is saved as a draft, invisible to
+    visitors, for you to check.
+  </p>
+
+  {
+    notice !== null && (
+      <p class="mb-6 border border-espresso bg-white px-4 py-3 text-body">{notice}</p>
+    )
+  }
+
+  <AiAssistant
+    client:load
+    categories={categories}
+    productsWithImages={productsWithImages}
+    canWrite={can(role, 'ai.generate')}
+  />
+</AdminLayout>

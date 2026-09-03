@@ -1,0 +1,97 @@
+---
+/**
+ * Best sellers — the **asymmetric 2-up**.
+ *
+ * Composition (Requirement 7.2): 3 items per row at 1280 px, a 16/10 landscape item ratio, block
+ * scroll axis. The landscape ratio is what most obviously separates it from the other three, all of
+ * which are portrait or square, and the alternating wide/narrow tracks keep it from reading as a
+ * uniform grid.
+ *
+ * **The honesty note is not optional.** The site records no transactions, so there is no measured
+ * basis for "best selling" — the ordering is the operator's curated list from
+ * `data/site/rankings.json`. Requirements 3.13–3.16 make the catalogue's sort control say so, and
+ * saying it on the catalogue but not here would be a distinction without a difference. The subheading
+ * from `homepage.json` already carries that sentence; this component renders the fallback if the
+ * operator clears it, so the claim can never appear unqualified.
+ *
+ * **Zero qualifying products means the whole section is absent** (Requirement 7.9).
+ *
+ * Requirements: 3.13, 3.14, 7.1, 7.2, 7.9, 15.17.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import ProductCard from '@/components/product/ProductCard.astro';
+import { compositionFor } from '@/lib/site/homepage-sections';
+import type { HomepageSection } from '@/schemas/homepage';
+import type { Product } from '@/schemas/product';
+
+interface Props {
+  section: HomepageSection;
+  products: readonly Product[];
+  categoryNames?: Record<string, string>;
+}
+
+const { section, products, categoryNames = {} } = Astro.props;
+const composition = compositionFor('bestSellers');
+
+/** Never unqualified: with no transactions recorded, "best selling" is a curated ordering. */
+const CURATED_NOTE = 'Curated by us — the site records no online transactions.';
+---
+
+{
+  products.length > 0 && (
+    <section
+      class="ngf-home-section ngf-home-bestsellers"
+      aria-labelledby="ngf-bestsellers-heading"
+      data-ngf-section="bestSellers"
+      data-layout={composition.layout}
+      data-items-per-row={composition.itemsPerRowAt1280}
+      data-scroll-axis={composition.scrollAxis}
+      style={`--ngf-card-ratio: ${composition.aspectRatio};`}
+    >
+      <SectionHeader
+        eyebrow={section.eyebrow}
+        heading={section.heading ?? 'Best sellers'}
+        subheading={section.subheading ?? CURATED_NOTE}
+        headingId="ngf-bestsellers-heading"
+      />
+
+      <ul class="ngf-bestsellers-grid" data-reveal data-motion-group>
+        {products.map((product, index) => (
+          <li data-emphasis={index % 3 === 0 ? 'wide' : 'narrow'}>
+            <ProductCard product={product} categoryName={categoryNames[product.category]} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .ngf-bestsellers-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 768px) {
+    .ngf-bestsellers-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /*
+   * 3 items per row at 1280 px, in alternating widths: a wide item then two narrow ones, which is
+   * the asymmetry. Expressed as a 4-column grid with the wide item spanning two.
+   */
+  @media (min-width: 1024px) {
+    .ngf-bestsellers-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .ngf-bestsellers-grid > li[data-emphasis='wide'] {
+      grid-column: span 2;
+    }
+  }
+</style>

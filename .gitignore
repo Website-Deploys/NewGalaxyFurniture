@@ -1,0 +1,29 @@
+# build output
+dist/
+.astro/
+.wrangler/
+
+# dependencies
+node_modules/
+
+# secrets — never commit real values; .env.example is the only tracked env file
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# test artefacts
+playwright-report/
+test-results/
+coverage/
+blob-report/
+.playwright/
+
+# logs / editor / OS
+*.log
+npm-debug.log*
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

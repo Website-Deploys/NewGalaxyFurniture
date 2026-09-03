@@ -1,0 +1,68 @@
+---
+/**
+ * `/shipping`.
+ *
+ * The page a customer most wants a number on, and the page where inventing one would do the most
+ * damage: a delivery timeframe published here becomes a promise the workshop has to keep.
+ * Requirement 8.4 forbids stating any delivery timeframe the operator has not supplied, and none has
+ * been, so this page states none — not "typically", not "usually", not a range.
+ *
+ * Requirements: 8.2, 8.3, 8.4, 8.8.
+ */
+import PolicyPage from '@/components/ui/PolicyPage.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const meta = pageMeta(Astro, {
+  title: 'Shipping & Delivery',
+  description:
+    'How New Galaxy Furniture delivers and installs. This policy is being finalised — contact us for current delivery terms.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <PolicyPage
+    title="Shipping & Delivery"
+    lead="Where we deliver, how a delivery is arranged, and what happens on the day."
+    contentKey="page.shipping.body"
+    sections={[
+      {
+        heading: 'Where we deliver',
+        prompt:
+          'This section will state the delivery area precisely. The service area shown on the contact page is what we have confirmed so far.',
+      },
+      {
+        heading: 'Delivery timeframes',
+        prompt:
+          'This section will state the timeframe for each kind of piece once it has been agreed with the workshop. No timeframe is stated here yet — ask us and we will tell you the honest date for the piece you want.',
+      },
+      {
+        heading: 'Delivery charges',
+        prompt:
+          'This section will state how the delivery charge is calculated. No charge is stated here yet.',
+      },
+      {
+        heading: 'Assembly and installation',
+        prompt:
+          'This section will describe what is assembled on delivery and what arrives assembled.',
+      },
+      {
+        heading: 'Access, lifts, and staircases',
+        prompt:
+          'This section will explain what we need to know about access before delivery day, and what happens if a piece will not fit.',
+      },
+      {
+        heading: 'Damage in transit',
+        prompt:
+          'This section will state what to do and what we will do if a piece arrives damaged.',
+      },
+      {
+        heading: 'Rescheduling a delivery',
+        prompt:
+          'This section will state the notice we need to move a delivery. No notice period is stated here yet.',
+      },
+    ]}
+  />
+</BaseLayout>

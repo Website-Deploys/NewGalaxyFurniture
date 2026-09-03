@@ -1,0 +1,98 @@
+---
+/**
+ * `/about`.
+ *
+ * Two facts about the business are established by the specification itself: New Galaxy Furniture is a
+ * Bengaluru-based furniture manufacturer and showroom, and it serves Karnataka. Both are stated here
+ * once, naturally, because Requirement 23.17 asks for location signals carried by *genuine content*
+ * rather than keyword stuffing — one natural placement per target phrase, well under the 2% density
+ * ceiling.
+ *
+ * Everything else a customer would want on an About page — how long the workshop has run, how many
+ * pieces it has made, who works there, what it has won — has not been supplied, and none of it is
+ * invented. The `page.about.body` placeholder is where it goes, and it is in the admin content
+ * checklist until it arrives (Requirement 8.8).
+ *
+ * The service area comes from `settings.serviceArea`, so it is the operator's own value rather than
+ * this page's assumption.
+ *
+ * Requirements: 8.1, 8.8, 19.6, 23.17.
+ */
+import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const settings = getSiteSettings();
+const serviceArea = settings.serviceArea.join(', ');
+
+const meta = pageMeta(Astro, {
+  title: 'About',
+  description:
+    'New Galaxy Furniture is a furniture manufacturer in Bengaluru serving Karnataka. Sofas, beds, dining, storage and custom furniture, made to order.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">About us</p>
+      <h1>{settings.businessName}</h1>
+      <p class="ngf-page-lead">
+        A furniture manufacturer and showroom in Bengaluru, making sofas, beds, dining furniture,
+        storage and custom pieces for homes across {serviceArea}.
+      </p>
+    </div>
+
+    <div class="ngf-page-columns">
+      <div class="ngf-page-body">
+        <h2>What we do</h2>
+        <p>
+          We make furniture and we sell it directly. There is no reseller between the workshop and
+          your room, which is why every enquiry on this site reaches us rather than a marketplace.
+        </p>
+        <p>
+          The catalogue on this site is the range we make. Sizes, timber, finishes and upholstery
+          can be changed on most pieces, and pieces can be built to a drawing or a measurement you
+          give us — that is what the <a href="/custom-furniture">custom furniture</a> page is for.
+        </p>
+
+        <h2>Where we are</h2>
+        <p>
+          We are based in Bengaluru and we deliver and install across {serviceArea}. Our address,
+          our opening hours and a map link appear on the <a href="/contact">contact page</a> as soon as
+          they are confirmed; until then, both numbers reach us directly.
+        </p>
+
+        <h2>Our story</h2>
+        {
+          /*
+          Requirement 8.8 / design Open Items item 1: nothing about the workshop's history, scale, or
+          achievements has been supplied, so nothing is claimed. The placeholder is visible and
+          labelled rather than filled with plausible copy.
+        */
+        }
+        <PlaceholderCopy
+          body="[PLACEHOLDER — the story of the business: when it started, who runs it, and what it has built. No date, scale, capability, or achievement has been supplied, and none has been invented here.]"
+          contentKey="page.about.body"
+        />
+      </div>
+
+      <aside class="ngf-page-body">
+        <h2>Talk to us</h2>
+        <p>
+          The fastest way to get a price, a photograph, or an honest delivery date is to ask. Both
+          numbers are for orders and enquiries.
+        </p>
+        <div class="ngf-page-actions" style="margin-top: 1rem;">
+          <WhatsAppLink context={{ kind: 'general' }} />
+          <CallLink variant="outline" />
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

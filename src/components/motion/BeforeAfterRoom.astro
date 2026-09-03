@@ -1,0 +1,112 @@
+---
+/**
+ * The before/after room transformation slider.
+ *
+ * Two `AnimatedRoom` layers — one unfurnished, one furnished — with a draggable `clip-path` divider
+ * between them. It is one of the design's named deliverables and the one that has to survive
+ * reduced motion completely intact: Requirement 21.11 says it "stays fully functional as a draggable
+ * control with no easing", so the easing is the only thing that is motion here.
+ *
+ * **It is a working control before any JavaScript runs.** The markup below is a `role="slider"` with
+ * `tabindex="0"`, its three ARIA value attributes, an `aria-valuetext` that names what is showing,
+ * and a starting `clip-path` at 50%. With the motion runtime blocked, a visitor sees a legible
+ * half-and-half comparison with both illustrations drawn — not an inert widget and not a blank box.
+ * `before-after-control.ts` adds dragging and keyboard stepping on top of that.
+ *
+ * **`role="slider"` and not two radio buttons**, because the value is continuous and the interaction
+ * is a drag; the keyboard contract (arrows, Page Up/Down, Home, End) is implemented in
+ * `before-after.ts` and is the reason a slider role is honest rather than aspirational.
+ *
+ * Both illustrations are `aria-hidden` — the comparison's meaning is in the labels and the value
+ * text, and announcing "a drawing of a room" twice would say less than the value text already does.
+ *
+ * Requirements: 21.6, 21.8, 21.11, 24.3, 24.5.
+ */
+import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
+import { BEFORE_AFTER_ATTRIBUTE } from '@/lib/motion/before-after-control';
+import { clipFor, DEFAULT_POSITION, handleOffset, valueText } from '@/lib/motion/before-after';
+
+interface Props {
+  beforeLabel?: string;
+  afterLabel?: string;
+  /** The accessible name of the whole control. */
+  label?: string;
+  class?: string;
+}
+
+const {
+  beforeLabel = 'Empty room',
+  afterLabel = 'Furnished by New Galaxy',
+  label = 'Compare the room empty and furnished',
+  class: className,
+} = Astro.props;
+
+const start = DEFAULT_POSITION;
+---
+
+<figure class:list={['ngf-ba-wrap', className]}>
+  <div
+    class="ngf-ba"
+    {...{ [BEFORE_AFTER_ATTRIBUTE]: '' }}
+    data-ngf-before-label={beforeLabel}
+    data-ngf-after-label={afterLabel}
+  >
+    {/* The "before" layer: architecture only. */}
+    <div class="ngf-ba-layer ngf-ba-before">
+      <AnimatedRoom furnished={false} strokeWidth={1} />
+    </div>
+
+    {/* The "after" layer, clipped by the divider. */}
+    <div
+      class="ngf-ba-layer ngf-ba-after"
+      data-ngf-after-layer
+      style={`clip-path:${clipFor(start)}`}
+    >
+      <AnimatedRoom furnished strokeWidth={1.5} />
+    </div>
+
+    <div class="ngf-ba-divider" data-ngf-divider style={`left:${handleOffset(start)}`}>
+      <span class="ngf-ba-grip" aria-hidden="true">⇄</span>
+    </div>
+
+    {
+      /*
+      The control. A `<div role="slider">` rather than an `<input type="range">`: a range input
+      cannot be laid over two illustrations without either its own track showing through or a pile
+      of appearance overrides, and the keyboard contract we need is the one we implement.
+    */
+    }
+    <div
+      class="ngf-ba-slider"
+      role="slider"
+      tabindex="0"
+      aria-label={label}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={start}
+      aria-valuetext={valueText(start, beforeLabel.toLowerCase(), afterLabel.toLowerCase())}
+    >
+    </div>
+  </div>
+
+  <figcaption class="ngf-ba-labels">
+    <span>{beforeLabel}</span>
+    <span>{afterLabel}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .ngf-ba-wrap {
+    margin: 0;
+  }
+
+  .ngf-ba {
+    /* A reserved box, so the two layered illustrations cannot shift the page as they draw. */
+    aspect-ratio: 8 / 5;
+    color: var(--color-espresso);
+  }
+
+  .ngf-ba-before {
+    color: var(--color-taupe);
+  }
+</style>

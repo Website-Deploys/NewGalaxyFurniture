@@ -1,0 +1,250 @@
+---
+/**
+ * The product detail body — one component, two callers.
+ *
+ * Requirement 12.9 says preview must render "using the same components that render the public
+ * product detail page". The only way that holds over time is for there to be exactly one
+ * component, so this is it: `/admin/preview/:id` renders it against the KV draft, and the public
+ * `/product/{slug}` route renders it against the baked catalogue. Neither owns it, and there is no
+ * preview-only markup anywhere — a divergence between what an operator approves and what a
+ * customer sees would make preview worthless.
+ *
+ * Task 15 did not fork this component; it **decomposed** it. The breadcrumbs, price block, stock
+ * badge, spec list, and variant list moved into their own components (Requirement 4.2 names them
+ * as distinct blocks and the task list names the files), and this component composes them. So the
+ * public page gains nothing preview lacks, and preview gains every fix the public page gets.
+ *
+ * The one thing the two callers genuinely differ on is the **gallery**. The public PDP mounts the
+ * interactive `Gallery` island — thumbnail rail, swipe, zoom, keyboard — and preview has no need
+ * of an island to approve a photograph. So the gallery is a **named slot**: a caller that supplies
+ * one gets theirs, and a caller that does not gets the static sequence below, which is the same
+ * images in the same order through the same `ResponsiveImage`. Not a second gallery — a fallback
+ * rendering of the same content.
+ *
+ * What is still deliberately **not** here: the page shell, the metadata, the structured data,
+ * related products, and recently viewed. Those are the public page's concerns; preview does not
+ * need them and must not simulate them.
+ *
+ * Requirements: 4.2, 4.3, 4.12, 5.1–5.8, 5.20, 12.9, 15.10, 15.17.
+ */
+import Breadcrumbs from '@/components/product/Breadcrumbs.astro';
+import { safeText, safeTextOrUndefined } from '@/lib/security/sanitize';
+import { productCrumbs } from '@/lib/site/breadcrumbs';
+import PriceBlock from '@/components/product/PriceBlock.astro';
+import SpecList from '@/components/product/SpecList.astro';
+import StockBadge from '@/components/product/StockBadge.astro';
+import VariantList from '@/components/product/VariantList.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { NUMBERS_CAPTION } from '@/lib/site/contact';
+import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
+import { primaryImageOf, type Product } from '@/schemas/product';
+
+interface Props {
+  product: Product;
+  /** The category's display name, when it is known. Falls back to the slug. */
+  categoryName?: string;
+  /** The canonical PDP URL, carried into the enquiry message when it is known. */
+  productUrl?: string;
+  /**
+   * True when the caller fills the `gallery` slot.
+   *
+   * Declared rather than sniffed with `Astro.slots.has('gallery')`, and that is not fussiness: a
+   * caller writing `{images.length > 0 && <Gallery slot="gallery" />}` registers the slot as
+   * *present* even when the expression renders nothing, so `has()` reports `true` for a product
+   * with no photographs and the static fallback below is skipped — leaving an empty media column.
+   * That was a real defect, caught by building a product with no images. An explicit boolean
+   * cannot be wrong about it.
+   */
+  gallerySlot?: boolean;
+}
+
+const { product, categoryName, productUrl, gallerySlot } = Astro.props;
+const settings = getSiteSettings();
+
+/*
+ * Every operator-supplied string this component renders, sanitized once (Requirement 25.2,
+ * Property 55). Sanitizing here rather than at each interpolation matters because three of these
+ * values do not end up as text nodes: the name goes into `data-ngf-product-name`, which an island
+ * reads back, and into an `aria-label`.
+ *
+ * `safeText` is the identity on ordinary prose and preserves paragraph breaks, so descriptions read
+ * exactly as they were written.
+ */
+const name = safeText(product.name);
+const sku = safeText(product.sku);
+const description = safeText(product.description);
+const customization = safeTextOrUndefined(product.customization);
+const deliveryInformation = safeTextOrUndefined(product.deliveryInformation);
+
+const primary = primaryImageOf(product);
+const gallery = [...product.images].sort((a, b) => a.order - b.order);
+const rest = gallery.filter((image) => image.id !== primary?.id);
+const hasGallerySlot = gallerySlot ?? Astro.slots.has('gallery');
+
+/**
+ * Requirement 4.12: an out-of-stock product keeps both controls, presented as an availability
+ * enquiry. The controls are relabelled and nothing else changes — the destination, the message,
+ * and the tap targets are identical, because removing, hiding, or disabling either one is exactly
+ * what the requirement forbids.
+ *
+ * The message itself needs no branch: `buildEnquiryMessage` already asks about "price,
+ * availability and order details", which is the right sentence in both cases.
+ */
+const outOfStock = product.stockStatus === 'OUT_OF_STOCK';
+const whatsappLabel = outOfStock
+  ? 'Ask about availability on WhatsApp'
+  : 'Order or Enquire on WhatsApp';
+const callLabel = outOfStock ? 'Call about availability' : 'Call about this piece';
+
+const enquiryContext = {
+  kind: 'product' as const,
+  productName: product.name,
+  sku: product.sku,
+  ...(productUrl === undefined ? {} : { productUrl }),
+};
+
+/**
+ * Quick Enquire, as the same progressively-enhanced link the product card uses.
+ *
+ * Base layer: a WhatsApp URL carrying the product name and SKU. Enhanced layer: the public PDP
+ * mounts `QuickEnquireHost`, which intercepts the click and opens the enquiry form in place
+ * (Requirement 6.1 — Quick Enquire opens "from a product card or PDP without navigating away").
+ * `/admin/preview/:id` mounts no host, so there the control resolves to the link — which is the
+ * correct behaviour for a preview screen and not a degradation of it.
+ */
+const quickEnquireHref = (() => {
+  const number = settings.whatsapp[0];
+  if (number === undefined) return null;
+  return buildWhatsAppUrl(number.e164, buildEnquiryMessage(enquiryContext, settings));
+})();
+---
+
+<article
+  class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+  data-product={product.slug}
+  data-stock={product.stockStatus}
+>
+  <div class="flex flex-col gap-3">
+    {
+      hasGallerySlot ? (
+        <slot name="gallery" />
+      ) : primary === null ? (
+        <div class="flex aspect-[4/3] items-center justify-center border border-dashed border-taupe bg-cream text-small text-walnut">
+          No photograph yet
+        </div>
+      ) : (
+        <>
+          <ResponsiveImage productId={product.id} image={primary} context="galleryPrimary" />
+          {rest.length > 0 && (
+            <ul class="flex list-none flex-wrap gap-2 p-0">
+              {rest.map((image) => (
+                <li class="w-24">
+                  <ResponsiveImage
+                    productId={product.id}
+                    image={image}
+                    context="galleryThumb"
+                    widths={[320]}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )
+    }
+  </div>
+
+  <div class="flex flex-col gap-5">
+    {
+      /* The one trail: the same array the PDP serialises as `BreadcrumbList` (Requirement 23.10). */
+    }
+    <Breadcrumbs items={productCrumbs(product, categoryName)} />
+
+    <header class="flex flex-col gap-2">
+      <h1 class="font-display text-h1 leading-tight text-espresso">{name}</h1>
+      <p class="text-small text-walnut">SKU {sku}</p>
+    </header>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <PriceBlock
+        price={product.price}
+        priceOnEnquiry={product.priceOnEnquiry}
+        originalPrice={product.originalPrice}
+        discount={product.discount}
+      />
+      <StockBadge status={product.stockStatus} />
+    </div>
+
+    {
+      /*
+      The conversion controls, through the shared link components — so the destinations are built
+      by `buildWhatsAppUrl`/`buildTelUrl` from `buildEnquiryMessage` and long-press, middle-click,
+      and copy-link all resolve to what activation resolves to (Requirement 5.11).
+    */
+    }
+    <div class="flex flex-col gap-2">
+      <div class="flex flex-wrap gap-3">
+        <WhatsAppLink context={enquiryContext} label={whatsappLabel} variant="solid" />
+        <CallLink label={callLabel} variant="outline" number={settings.phone[0]} />
+        {
+          quickEnquireHref !== null && (
+            <a
+              href={quickEnquireHref}
+              target="_blank"
+              rel="noopener"
+              class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-taupe px-4 py-2 text-small font-semibold tracking-wide text-espresso no-underline"
+              data-ngf-quick-enquire
+              data-ngf-product-slug={product.slug}
+              data-ngf-product-name={name}
+              aria-label={`Quick enquire about ${name}`}
+            >
+              Quick Enquire
+            </a>
+          )
+        }
+      </div>
+      <p class="text-small text-walnut">{NUMBERS_CAPTION}</p>
+    </div>
+
+    <div class="max-w-[var(--measure-prose)] whitespace-pre-line text-body">
+      {description}
+    </div>
+
+    <SpecList product={product} />
+
+    <VariantList variants={product.variants} />
+
+    {
+      product.madeToOrder && (
+        <p class="border-l-2 border-champagne pl-3 text-body">
+          Made to order. Ask about timelines when you enquire.
+        </p>
+      )
+    }
+
+    {
+      customization !== undefined && (
+        <section>
+          <h2 class="font-display text-h3 text-espresso">Customization</h2>
+          <p class="mt-1 max-w-[var(--measure-prose)] whitespace-pre-line text-body">
+            {customization}
+          </p>
+        </section>
+      )
+    }
+
+    {
+      deliveryInformation !== undefined && (
+        <section>
+          <h2 class="font-display text-h3 text-espresso">Delivery</h2>
+          <p class="mt-1 max-w-[var(--measure-prose)] whitespace-pre-line text-body">
+            {deliveryInformation}
+          </p>
+        </section>
+      )
+    }
+  </div>
+</article>

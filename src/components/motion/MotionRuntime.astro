@@ -1,0 +1,30 @@
+---
+/**
+ * The motion system's single `<script>` and its stylesheet.
+ *
+ * One component, mounted once by `BaseLayout`, so that:
+ *
+ * - **There is exactly one motion chunk in the build.** `size-limit` holds it to 14 KB Brotli
+ *   (Requirement 21.15), and a budget is only enforceable against a chunk that exists at a
+ *   predictable path — which is why `astro.config.mjs` names it in `manualChunks` and why every
+ *   motion module is reachable from this one import.
+ * - **There is exactly one boot.** `bootMotion()` is idempotent, but a second mount would still
+ *   mean a second stylesheet and a second script tag in the document.
+ *
+ * The script is not `is:inline`, so Astro bundles it and it loads from `/_astro/**` — which keeps
+ * the content security policy at `script-src 'self'` with no nonce (Requirement 25.10). It is
+ * deferred, so it cannot block paint, and nothing on the page depends on it having run: every
+ * from-state in `motion.css` is inside a `prefers-reduced-motion: no-preference` block and every
+ * final state is the default, so a page whose motion script never arrives is a page with no motion
+ * rather than a page with no content.
+ *
+ * Requirements: 21.10, 21.11, 21.15, 25.10.
+ */
+import '@/styles/motion.css';
+---
+
+<script>
+  import { bootMotion } from '@/lib/motion/runtime';
+
+  bootMotion();
+</script>

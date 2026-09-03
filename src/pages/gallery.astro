@@ -1,0 +1,119 @@
+---
+/**
+ * `/gallery`.
+ *
+ * Every photograph the catalogue holds, each one linking to the piece it shows. There is no separate
+ * gallery collection on purpose: a second place to upload the same photographs would drift from the
+ * first within a month, and a gallery image that does not link to a buyable piece is a dead end.
+ *
+ * With no photography (design Open Items item 5) the page renders the designed "no images" empty state
+ * required by Requirement 26.14 — composed, with a next action, not a blank grid.
+ *
+ * Requirements: 8.1, 15.17, 26.14.
+ */
+import CallLink from '@/components/ui/CallLink.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
+import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getCatalogue } from '@/lib/content/catalogue';
+import { cardImagePreload } from '@/lib/images/preload';
+import { isEagerCard } from '@/lib/images/staging';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const products = await getCatalogue();
+
+/** Every image of every Catalogue product, in operator order within each product. */
+const tiles = products.flatMap((product) =>
+  [...product.images].sort((a, b) => a.order - b.order).map((image) => ({ product, image })),
+);
+
+/**
+ * The one preloaded image: the first tile, which is this page's largest contentful element. The
+ * remaining first-row tiles are eager but not prioritised, and everything below is lazy.
+ */
+const lead = tiles[0];
+const leadPreload = lead === undefined ? null : cardImagePreload(lead.product.id, lead.image);
+
+const meta = pageMeta(Astro, {
+  title: 'Gallery',
+  description:
+    'Photographs of furniture made by New Galaxy Furniture — sofas, beds, dining furniture, storage and custom pieces.',
+});
+---
+
+<BaseLayout meta={meta}>
+  <ImagePreload slot="head" hint={leadPreload} />
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">Our work</p>
+      <h1>Gallery</h1>
+      <p class="ngf-page-lead">
+        {
+          tiles.length === 0
+            ? 'Our pieces are being photographed. Ask us and we will send photographs of comparable work today.'
+            : 'Every photograph here is a piece we made. Tap one to see its page.'
+        }
+      </p>
+    </div>
+
+    {
+      tiles.length === 0 ? (
+        <EmptyState
+          heading="Photography is in progress"
+          message="Tell us what you are looking for — a sofa for a particular room, a bed in a particular timber — and we will send photographs of work we have done."
+        >
+          <WhatsAppLink slot="action" context={{ kind: 'general' }} label="Ask for photographs" />
+          <CallLink slot="action" variant="outline" />
+        </EmptyState>
+      ) : (
+        <ul class="ngf-gallerypage">
+          {tiles.map((tile, index) => (
+            <li>
+              <a href={`/product/${tile.product.slug}`}>
+                <ResponsiveImage
+                  productId={tile.product.id}
+                  image={tile.image}
+                  context="card"
+                  eager={isEagerCard(index)}
+                  priority={index === 0}
+                />
+                <span class="ngf-gallerypage-caption">{tile.product.name}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-gallerypage {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  }
+
+  .ngf-gallerypage > li {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 20rem;
+  }
+
+  .ngf-gallerypage a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    color: var(--color-obsidian);
+    text-decoration: none;
+  }
+
+  .ngf-gallerypage-caption {
+    font-size: var(--text-small);
+  }
+</style>

@@ -1,0 +1,372 @@
+---
+/**
+ * The homepage hero.
+ *
+ * Everything Requirements 7.3, 7.4, 7.5, 7.6, 7.11, and 7.12 pin down, and why each is structured
+ * the way it is:
+ *
+ * - **The brand mark, the positioning line, and exactly three CTAs** — Explore Collection, Order or
+ *   Enquire on WhatsApp, Call Now. Three, and a fourth is impossible rather than discouraged: the
+ *   CTA row is not a slot and takes no props, so there is no way to pass another one in (7.3). Each
+ *   is ≥ 44 px through `.ngf-hero-cta`'s `min-height`.
+ * - **Exactly one image, and it is the largest painted element.** One `<img>`, with its intrinsic
+ *   width and height emitted so the box is reserved before a byte arrives (7.4, 15.10). Everything
+ *   else in the hero is type, a hairline rule, or a small ornament — nothing paints larger at any
+ *   width from 320 px to 1920 px, because nothing else has a painted area at all.
+ * - **No video. Anywhere.** There is no `<video>`, no `<source>`, and no autoplaying media in this
+ *   component or on any other public surface (7.5).
+ * - **Three parallax planes, transform and opacity only.** The planes are declared here as
+ *   `data-parallax-plane="0|1|2"` with a `--plane-depth` each, and *nothing animates them yet*:
+ *   task 19 owns the motion system, and the whole point of declaring the planes now is that task 19
+ *   attaches the assembly to existing markup rather than restructuring the hero (7.6). The
+ *   stylesheet animates `transform` and `opacity` and no other property, which is the constraint
+ *   task 19 inherits.
+ * - **Reduced motion renders the final drawn state on first paint** (7.11). Since the planes hold
+ *   their neutral position until task 19 moves them, the reduced-motion state is what the hero
+ *   already renders — and the explicit rule below keeps it that way when the motion arrives.
+ * - **The LQIP fills the slot at the final layout dimensions until load, with no shift** (7.12). The
+ *   figure carries the aspect ratio and a painted ground; the image reveals over it on `load`. The
+ *   brand mark, the line, and all three CTAs are outside the figure, so they are rendered and
+ *   operable from first paint regardless of the image.
+ *
+ * **On the image asset.** No photograph has been supplied — Open Items item 5 — and one will not be
+ * invented here. So the hero renders the project's own hairline room composition
+ * (`public/brand/hero-composition.svg`), which is a design asset in the established visual language
+ * rather than a claim about the business, and it is a real responsive image: vector, so it is
+ * resolution-independent at every viewport width without a `srcset`, with intrinsic dimensions
+ * emitted. When the operator supplies a photograph, `settings.heroImage` swaps it in with no code
+ * change — the same one-field swap the logo uses (Open Items item 1). Until then `site.heroImage`
+ * sits in the content checklist.
+ *
+ * Requirements: 7.3, 7.4, 7.5, 7.6, 7.8, 7.11, 7.12, 15.10, 15.11, 24.3.
+ */
+import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
+import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
+import TextReveal from '@/components/motion/TextReveal.astro';
+import BrandMark from '@/components/ui/BrandMark.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { loadingAttributes } from '@/lib/images/staging';
+import { heroImageOf } from '@/lib/site/hero-image';
+import type { HomepageSection } from '@/schemas/homepage';
+
+interface Props {
+  section: HomepageSection;
+  /** The positioning line in force — `effectiveTagline(settings, homepage)`. */
+  tagline: string | null;
+}
+
+const { section, tagline } = Astro.props;
+const settings = getSiteSettings();
+
+/*
+ * The hero image is resolved by `heroImageOf` rather than here, because the homepage preloads the
+ * same image and the two must not resolve it separately (Requirement 22.10).
+ */
+const image = heroImageOf(settings);
+const loading = loadingAttributes({ priority: true });
+
+const ctaLabel = section.ctaLabel ?? 'Explore Collection';
+const ctaHref = section.ctaHref ?? '/collection';
+---
+
+<section
+  class="ngf-hero"
+  aria-labelledby="ngf-hero-heading"
+  data-ngf-section="hero"
+  data-parallax-root
+>
+  {
+    /*
+    Plane 0 — the deepest ground, and the slowest parallax. It carries the layered `AnimatedRoom`
+    and `CraftsmanshipLines` assembly: both are decorative (no `title`, so both are `aria-hidden`),
+    both draw once on entry, and neither is the hero's image — the `<img>` on plane 1 remains the
+    largest painted element at every width.
+  */
+  }
+  <div
+    class="ngf-hero-plane"
+    data-parallax-plane="0"
+    style="--plane-depth: 0.15;"
+    aria-hidden="true"
+  >
+    <span class="ngf-hero-wash"></span>
+    <span class="ngf-hero-room">
+      <AnimatedRoom strokeWidth={1} />
+    </span>
+    <span class="ngf-hero-detail">
+      <CraftsmanshipLines strokeWidth={1} delay={320} />
+    </span>
+  </div>
+
+  {/* Plane 1 — the one image. */}
+  <div
+    class="ngf-hero-plane ngf-hero-plane-media"
+    data-parallax-plane="1"
+    style="--plane-depth: 0.35;"
+  >
+    <figure
+      class="ngf-hero-figure"
+      style={`aspect-ratio: ${image.width} / ${image.height};${
+        image.lqip === undefined ? '' : `background-image:url(${image.lqip});`
+      }`}
+      data-has-lqip={image.lqip === undefined ? 'false' : 'true'}
+    >
+      <img
+        src={image.src}
+        width={image.width}
+        height={image.height}
+        alt={image.alt}
+        loading={loading.loading}
+        fetchpriority={loading.fetchpriority}
+        decoding={loading.decoding}
+        data-ngf-hero-image
+      />
+    </figure>
+  </div>
+
+  {/* Plane 2 — the nearest plane: type and controls. Never moves under reduced motion. */}
+  <div
+    class="ngf-hero-plane ngf-hero-plane-copy"
+    data-parallax-plane="2"
+    style="--plane-depth: 0.6;"
+  >
+    <div class="ngf-hero-copy">
+      <h1 id="ngf-hero-heading" class="ngf-hero-brand">
+        <BrandMark size="lg" tone="dark" href={null} />
+      </h1>
+
+      {
+        /*
+        The positioning line, revealed line by line with a `clip-path` wipe. The lines are the
+        operator's own — whatever they typed in Admin → Homepage, split on the newlines they wrote —
+        so nothing is re-flowed by JavaScript and nothing is split per character. A single-line
+        tagline is one line, which wipes once (Requirement 21.6).
+
+        Requirement 7.11: under reduced motion the line renders unclipped on the first paint, so it
+        is visible and legible for the whole visit.
+      */
+        tagline !== null && (
+          <TextReveal
+            as="p"
+            class="ngf-hero-tagline"
+            lines={tagline
+              .split('\n')
+              .map((line) => line.trim())
+              .filter((line) => line !== '')}
+          />
+        )
+      }
+
+      {
+        /*
+        Exactly three controls. Requirement 7.3 names them, and there is no slot here through which
+        a fourth could be added.
+      */
+      }
+      <div class="ngf-hero-ctas">
+        <a class="ngf-hero-cta ngf-hero-cta-primary" href={ctaHref}>{ctaLabel}</a>
+        <WhatsAppLink
+          context={{ kind: 'general' }}
+          label="Order or Enquire on WhatsApp"
+          variant="outline"
+          class="ngf-hero-cta"
+        />
+        <CallLink label="Call Now" variant="outline" class="ngf-hero-cta" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ngf-hero {
+    position: relative;
+    display: grid;
+    align-items: center;
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding: clamp(3rem, 8vh, 6rem) 1.25rem clamp(3rem, 8vh, 5rem);
+    isolation: isolate;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-hero {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 3rem;
+      padding-inline: 2rem;
+    }
+  }
+
+  /*
+   * The three planes.
+   *
+   * `will-change` is still deliberately absent from this stylesheet: the parallax loop applies it
+   * when it starts and removes it when it stops (see `frame-loop.ts`), so three layers are promoted
+   * only while they are actually being written to. A standing `will-change` here would cost the
+   * memory on every visit including the reduced-motion ones, where nothing ever moves.
+   *
+   * Only `transform` and `opacity` are transitioned, which is the constraint the motion system
+   * inherits from Requirement 21.8.
+   */
+  .ngf-hero-plane {
+    transform: translate3d(0, 0, 0);
+    transition:
+      transform var(--dur-reveal) var(--ease-entrance),
+      opacity var(--dur-reveal) var(--ease-entrance);
+  }
+
+  /* Requirement 7.11: planes hold their neutral position for the whole visit. */
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-hero-plane {
+      transform: none;
+      transition: none;
+    }
+  }
+
+  :global([data-motion='off']) .ngf-hero-plane {
+    transform: none;
+    transition: none;
+  }
+
+  /* Plane 0 is a hairline wash, not media: it paints a rule, not an area. */
+  .ngf-hero-plane[data-parallax-plane='0'] {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .ngf-hero-wash {
+    position: absolute;
+    top: 12%;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background-color: var(--color-taupe);
+  }
+
+  /*
+   * The two primitives on plane 0. Both are positioned ornaments at low contrast — taupe on ivory
+   * — and both are sized in `vw` so they scale with the composition rather than being re-laid out
+   * at breakpoints. They are hidden below 768 px: on a phone the hero is type and one image, and a
+   * line drawing behind the headline is noise at that width.
+   */
+  .ngf-hero-room,
+  .ngf-hero-detail {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .ngf-hero-room,
+    .ngf-hero-detail {
+      position: absolute;
+      display: block;
+      color: var(--color-taupe);
+      pointer-events: none;
+    }
+
+    .ngf-hero-room {
+      right: 2%;
+      bottom: 0;
+      width: 42vw;
+      max-width: 520px;
+      opacity: 0.55;
+    }
+
+    .ngf-hero-detail {
+      top: 18%;
+      left: 0;
+      width: 18vw;
+      max-width: 220px;
+      opacity: 0.5;
+    }
+  }
+
+  .ngf-hero-plane-copy {
+    order: 1;
+  }
+
+  .ngf-hero-plane-media {
+    order: 2;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-hero-plane-copy {
+      order: 0;
+    }
+
+    .ngf-hero-plane-media {
+      order: 0;
+    }
+  }
+
+  .ngf-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .ngf-hero-brand {
+    margin: 0;
+  }
+
+  /*
+   * Astro forwards the scope class through a component's `class` prop, so this scoped selector
+   * still matches the `<p>` `TextReveal` renders.
+   */
+  .ngf-hero-tagline {
+    margin: 0;
+    max-width: 24ch;
+    color: var(--color-espresso);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1.3;
+  }
+
+  .ngf-hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* Requirement 7.3 / 24.3: every hero control is at least 44 px in each dimension. */
+  .ngf-hero-ctas :global(.ngf-hero-cta) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+    font-size: var(--text-body);
+    text-decoration: none;
+  }
+
+  .ngf-hero-cta-primary {
+    background-color: var(--color-obsidian);
+    color: var(--color-ivory);
+  }
+
+  /*
+   * Requirement 7.12: the slot is reserved at the image's final layout dimensions and painted
+   * before the image arrives, so nothing shifts when it completes.
+   */
+  .ngf-hero-figure {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--color-cream);
+    background-position: center;
+    background-size: cover;
+  }
+
+  .ngf-hero-figure > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+</style>

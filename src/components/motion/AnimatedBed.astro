@@ -1,0 +1,36 @@
+---
+/**
+ * `AnimatedBed` — a bed with a headboard.
+ *
+ * Signature motion (design's component table): "headboard draws, frame extends horizontally,
+ * pillows settle". Three stages, three mechanisms — the headboard is a dashoffset draw, the frame
+ * is a draw with a delay so it reads as extending away from the headboard, and the pillows are
+ * `.ngf-part` entering from above, which is what "settle" means here.
+ *
+ * Requirements: 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs(Astro.props, 'bed', 880);
+---
+
+<svg {...svg} viewBox="0 0 240 128" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+  {/* 1. The headboard, at the left. */}
+  <path class="ngf-draw" d="M20 100V24h34v76M20 40h34"></path>
+  {/* 2. The frame, extending right. Mattress plane, footboard, then the legs. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:260ms" d="M54 76h158v24H54z"></path>
+  <path class="ngf-draw" style="--ngf-draw-delay:420ms" d="M212 76V52M212 100v14M28 100v14"></path>
+  {/* The mattress edge, one line above the frame so the depth reads. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:520ms" d="M54 76l6-10h148l4 10"></path>
+
+  {/* 3. Two pillows, settling from above. */}
+  <g>
+    <path class="ngf-part" style="--ngf-part-y:-10px;--ngf-part-delay:120ms" d="M62 66V48h34v18z"
+    ></path>
+    <path class="ngf-part" style="--ngf-part-y:-10px;--ngf-part-delay:210ms" d="M100 66V48h34v18z"
+    ></path>
+  </g>
+</svg>

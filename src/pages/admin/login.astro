@@ -1,0 +1,178 @@
+---
+/**
+ * /admin/login — the only admin page reachable without a session.
+ *
+ * Accessibility is not decoration on this form; it is the form's contract
+ * (Requirement 24.8): every control has a real `<label for>`, errors are announced
+ * through `aria-describedby` and marked with `aria-invalid`, the error region is a
+ * `role="alert"` live region, and the whole thing is operable and submittable by
+ * keyboard alone.
+ *
+ * The page works without JavaScript being clever: it is a real `<form>` whose submit
+ * is intercepted only to send JSON and to keep the operator's typed email on failure.
+ * `?next=` is carried through and validated below.
+ *
+ * No CSRF token is bootstrapped here, and that is correct rather than an oversight —
+ * there is no session yet, so there is no token to double-submit. `POST /api/admin/login`
+ * is protected by the origin check and the two rate limits instead.
+ *
+ * Design: Admin Authentication; Pages, Navigation, and States → Route inventory.
+ * Requirements: 10.2, 10.5, 24.8, 26.3.
+ */
+import '@/styles/global.css';
+
+export const prerender = false;
+
+/**
+ * `next` is attacker-controlled, so it is validated to a same-site admin path here
+ * and again in the client script. Without this an open redirect turns the login page
+ * into a credential-phishing hop.
+ */
+const requestedNext = Astro.url.searchParams.get('next') ?? '';
+const safeNext =
+  requestedNext.startsWith('/admin') && !requestedNext.startsWith('/admin/login')
+    ? requestedNext
+    : '/admin';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Sign in — New Galaxy Furniture admin</title>
+  </head>
+  <body class="min-h-screen bg-ivory text-obsidian antialiased">
+    <main class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+      <p class="text-small tracking-[0.18em] text-walnut uppercase">New Galaxy Furniture</p>
+      <h1 class="mt-2 font-display text-h2 leading-tight text-espresso">Admin sign in</h1>
+
+      <form
+        id="login-form"
+        method="post"
+        action="/api/admin/login"
+        class="mt-8 flex flex-col gap-5"
+        novalidate
+      >
+        <input type="hidden" name="next" value={safeNext} />
+
+        <div
+          id="login-error"
+          role="alert"
+          aria-live="polite"
+          hidden
+          class="border-l-2 border-walnut bg-cream px-4 py-3 text-small text-espresso"
+        >
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label for="email" class="text-small font-medium text-espresso">Email address</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            inputmode="email"
+            required
+            aria-describedby="login-error"
+            class="min-h-[44px] border border-taupe bg-white px-3 py-2 text-obsidian focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagne"
+          />
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label for="password" class="text-small font-medium text-espresso">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            aria-describedby="login-error"
+            class="min-h-[44px] border border-taupe bg-white px-3 py-2 text-obsidian focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagne"
+          />
+        </div>
+
+        <button
+          id="login-submit"
+          type="submit"
+          class="min-h-[44px] bg-espresso px-4 py-2 text-ivory hover:bg-obsidian focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagne disabled:opacity-60"
+        >
+          Sign in
+        </button>
+      </form>
+    </main>
+
+    <script>
+      const form = document.getElementById('login-form') as HTMLFormElement | null;
+      const errorBox = document.getElementById('login-error');
+      const submit = document.getElementById('login-submit') as HTMLButtonElement | null;
+      const email = document.getElementById('email') as HTMLInputElement | null;
+      const password = document.getElementById('password') as HTMLInputElement | null;
+
+      /** Same-site admin paths only — never an absolute URL, never back to login. */
+      function safeRedirect(value: string): string {
+        return value.startsWith('/admin') &&
+          !value.startsWith('//') &&
+          !value.startsWith('/admin/login')
+          ? value
+          : '/admin';
+      }
+
+      function showError(message: string) {
+        if (errorBox === null) return;
+        errorBox.textContent = message;
+        errorBox.hidden = false;
+        // The failure is not attributable to one field — the server deliberately does
+        // not say which — so both controls are marked and neither is cleared.
+        email?.setAttribute('aria-invalid', 'true');
+        password?.setAttribute('aria-invalid', 'true');
+        password?.focus();
+      }
+
+      form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (errorBox !== null) errorBox.hidden = true;
+        email?.removeAttribute('aria-invalid');
+        password?.removeAttribute('aria-invalid');
+        if (submit !== null) {
+          submit.disabled = true;
+          submit.textContent = 'Signing in…';
+        }
+
+        const next = safeRedirect(
+          (form.elements.namedItem('next') as HTMLInputElement | null)?.value ?? '/admin',
+        );
+
+        void fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: email?.value ?? '', password: password?.value ?? '' }),
+        })
+          .then(async (response) => {
+            if (response.status === 204) {
+              window.location.assign(next);
+              return;
+            }
+            let message = 'Those credentials are not correct.';
+            try {
+              const body = (await response.json()) as { message?: unknown };
+              if (typeof body.message === 'string' && body.message !== '') message = body.message;
+            } catch {
+              // Keep the default sentence: a non-JSON body is never displayed.
+            }
+            showError(message);
+          })
+          .catch(() => {
+            showError('Could not reach the server. Check your connection and try again.');
+          })
+          .finally(() => {
+            if (submit !== null) {
+              submit.disabled = false;
+              submit.textContent = 'Sign in';
+            }
+          });
+      });
+    </script>
+  </body>
+</html>

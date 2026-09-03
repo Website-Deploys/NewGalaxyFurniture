@@ -1,0 +1,185 @@
+---
+/**
+ * /admin/content — the checklist of content keys still awaiting real copy.
+ *
+ * This screen is the honest inventory of what the site does not yet know about the business.
+ * Its source is `SiteSettings.placeholders` plus every homepage section still holding a
+ * `[PLACEHOLDER — …]` marker, which is why it cannot drift from reality: the settings endpoint
+ * recomputes `placeholders` from the stored values on every save, and the homepage endpoint
+ * recomputes `awaitingCopy` from the body text, so a field the operator has just filled in
+ * disappears from this list without anyone maintaining it (Requirement 8.8).
+ *
+ * There is no island here and no interactivity by design — the checklist's job is to tell the
+ * operator where to go, and each entry links to the screen that owns it.
+ *
+ * Requirements: 7.10, 8.8, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { createGitHubClient } from '@/lib/github/factory';
+import { homepagePlaceholderKeys } from '@/lib/site/store';
+import { HomepageSchema } from '@/schemas/homepage';
+import { readContentRecord } from '@/lib/github/content-writer';
+import { siteContentPath } from '@/lib/github/paths';
+import { SiteSettingsSchema } from '@/schemas/site';
+
+export const prerender = false;
+
+/**
+ * Where each family of keys is edited, and what it means while it is unsupplied.
+ *
+ * Longest-prefix wins, so `site.social.instagram` picks the social entry rather than the
+ * generic `site.` one.
+ */
+const GUIDANCE: readonly {
+  prefix: string;
+  where: string;
+  href: string;
+  effect: string;
+}[] = [
+  {
+    prefix: 'site.logo',
+    where: 'Settings → Brand mark',
+    href: '/admin/settings#brand',
+    effect: 'The site renders the typographic wordmark instead of a logo.',
+  },
+  {
+    prefix: 'site.location',
+    where: 'Settings → Location and service area',
+    href: '/admin/settings#location',
+    effect: 'The detail is omitted from the contact page, the footer and structured data.',
+  },
+  {
+    prefix: 'site.social',
+    where: 'Settings → Social profiles',
+    href: '/admin/settings#social',
+    effect: 'The profile link is omitted from the footer and structured data.',
+  },
+  {
+    prefix: 'site.seoDefaults',
+    where: 'Settings → SEO defaults',
+    href: '/admin/settings#seo',
+    effect: 'Social previews fall back to the wordmark image.',
+  },
+  {
+    prefix: 'homepage.',
+    where: 'Homepage',
+    href: '/admin/homepage',
+    effect: 'Visitors see a visibly marked placeholder in that section.',
+  },
+  {
+    prefix: 'page.',
+    where: 'The page’s own content file',
+    href: '/admin/content',
+    effect: 'The page shows a visibly marked placeholder where the copy will go.',
+  },
+  {
+    prefix: 'content.',
+    where: 'Products, Reviews and the gallery',
+    href: '/admin/products',
+    effect: 'The surface has no records to show yet.',
+  },
+];
+
+function guidanceFor(key: string): (typeof GUIDANCE)[number] | null {
+  let best: (typeof GUIDANCE)[number] | null = null;
+  for (const entry of GUIDANCE) {
+    if (!key.startsWith(entry.prefix)) continue;
+    if (best === null || entry.prefix.length > best.prefix.length) best = entry;
+  }
+  return best;
+}
+
+let keys: string[] = [];
+let unavailable: string | null = null;
+
+try {
+  const client = createGitHubClient(Astro);
+  const settingsPath = siteContentPath('settings');
+  const homepagePath = siteContentPath('homepage');
+  if (settingsPath === null || homepagePath === null) throw new Error('path not allowlisted');
+
+  const settings = await readContentRecord(client, settingsPath, SiteSettingsSchema);
+  if (settings === null) throw new Error('settings.json is missing from the repository');
+  const homepage = await readContentRecord(client, homepagePath, HomepageSchema);
+
+  keys = [
+    ...new Set([
+      ...settings.value.placeholders,
+      ...(homepage === null ? [] : homepagePlaceholderKeys(homepage.value)),
+    ]),
+  ].sort();
+} catch (error) {
+  console.error('[admin/content] could not read the content checklist', error);
+  unavailable =
+    'The content checklist could not be read from the content repository just now. This is a configuration or connectivity problem — it does not mean the checklist is empty.';
+}
+
+/** Grouped by the screen that owns them, so the list reads as a set of errands. */
+const grouped = new Map<string, { where: string; href: string; effect: string; keys: string[] }>();
+for (const key of keys) {
+  const guidance = guidanceFor(key);
+  const where = guidance?.where ?? 'Not yet editable in the admin';
+  const bucket = grouped.get(where);
+  if (bucket === undefined) {
+    grouped.set(where, {
+      where,
+      href: guidance?.href ?? '/admin/content',
+      effect: guidance?.effect ?? 'This content key has no admin screen yet.',
+      keys: [key],
+    });
+  } else {
+    bucket.keys.push(key);
+  }
+}
+const groups = [...grouped.values()];
+---
+
+<AdminLayout title="Content" heading="Content awaiting your words">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    These are the parts of the site that have no real content yet. Nothing on this list has been
+    filled in with an invented value — no manufacturing process, no timeline, no achievement, no
+    address. Until you supply them, the public pages either omit the detail entirely or show a
+    visibly marked placeholder, and this list is how you find them.
+  </p>
+
+  {
+    unavailable !== null ? (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    ) : keys.length === 0 ? (
+      <div class="border border-dashed border-taupe bg-white px-6 py-12 text-center">
+        <h2 class="font-display text-h3 text-espresso">Nothing is awaiting content</h2>
+        <p class="mx-auto mt-2 max-w-[52ch] text-body text-walnut">
+          Every tracked content key has a supplied value. This list repopulates itself automatically
+          if a value is cleared.
+        </p>
+      </div>
+    ) : (
+      <>
+        <p class="mb-4 text-small text-walnut">
+          {keys.length} content key{keys.length === 1 ? '' : 's'} awaiting real copy.
+        </p>
+        <div class="flex flex-col gap-4">
+          {groups.map((group) => (
+            <section class="border border-taupe bg-white p-4">
+              <h2 class="font-display text-h3 text-espresso">{group.where}</h2>
+              <p class="mt-1 max-w-[70ch] text-small text-walnut">{group.effect}</p>
+              <ul class="mt-3 flex flex-col gap-1">
+                {group.keys.map((key) => (
+                  <li class="text-body text-obsidian">
+                    <code>{key}</code>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={group.href}
+                class="mt-3 inline-block min-h-[44px] border border-espresso px-4 py-2 text-espresso no-underline"
+              >
+                Go to {group.where}
+              </a>
+            </section>
+          ))}
+        </div>
+      </>
+    )
+  }
+</AdminLayout>

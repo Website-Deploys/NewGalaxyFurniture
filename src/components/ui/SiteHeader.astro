@@ -1,0 +1,225 @@
+---
+/**
+ * The public site header.
+ *
+ * Two headers in one component, split by breakpoint rather than by scaling one down:
+ *
+ * - **≥ 1024 px** (Requirement 9.1): the brand mark, then exactly the nine destinations, then
+ *   the search control and the WhatsApp CTA. Dining, Chairs, and Tables are `<details>`-backed
+ *   dropdowns, so all nine categories are one action away while the bar itself stays at nine
+ *   items (Requirement 9.2).
+ * - **< 1024 px** (Requirement 9.4): the brand mark, a search control, a menu control, and a
+ *   persistent enquiry affordance.
+ *
+ * **Transparent over the hero, solid obsidian on scroll** (Requirement 9.3), changing
+ * *background and opacity only*. The scroll state is set by a tiny inline listener rather than
+ * an island: it must be correct on the first frame after paint, and it is three lines that
+ * touch one attribute. Nothing here animates position, size, or layout, so the header cannot
+ * contribute to CLS.
+ *
+ * The dropdowns are `<details>`/`<summary>` on purpose — keyboard operable, Escape-closable, and
+ * screen-reader announced with zero JavaScript. The only script is the `pointerdown`-outside and
+ * Escape close, which are conveniences rather than the mechanism.
+ *
+ * Requirements: 9.1, 9.2, 9.3, 9.4, 19.4, 24.4, 24.12.
+ * Design: Pages, Navigation, and States → Navigation.
+ */
+import BrandMark from '@/components/ui/BrandMark.astro';
+import MobileNav from '@/components/ui/MobileNav';
+import SearchBox from '@/components/ui/SearchBox';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { CATEGORY_NAV, HEADER_NAV, SUPPORT_NAV } from '@/lib/site/navigation';
+import { contactChannels, NUMBER_LABEL, NUMBER_LABEL_SPOKEN } from '@/lib/site/contact';
+import { buildEnquiryMessage, buildTelUrl, buildWhatsAppUrl } from '@/lib/whatsapp';
+
+interface Props {
+  /** `/search-index/{hash}.json` — the header search fetches this on first intent. */
+  indexUrl: string;
+  /** Published categories, for the search suggestions and the mobile panel. */
+  categories: readonly { slug: string; name: string }[];
+  /**
+   * True only at the top of the homepage, where the header sits over the hero. Every other
+   * page starts solid, because there is no hero image behind it to be transparent over.
+   */
+  overHero?: boolean;
+  /** The current path, for `aria-current`. */
+  currentPath: string;
+}
+
+const { indexUrl, categories, overHero = false, currentPath } = Astro.props;
+
+const settings = getSiteSettings();
+const channels = contactChannels(settings);
+const primary = channels[0];
+const generalMessage = buildEnquiryMessage({ kind: 'general' }, settings);
+
+// Pre-built server-side so the mobile island never assembles a `wa.me` URL itself.
+const whatsappHref = primary === undefined ? '#' : buildWhatsAppUrl(primary.e164, generalMessage);
+const telHref = primary === undefined ? '#' : buildTelUrl(primary.e164);
+
+const isCurrent = (href: string): boolean =>
+  currentPath === href || (href !== '/' && currentPath.startsWith(`${href}/`));
+
+const mobilePages = [
+  { label: 'Collection', href: '/collection' },
+  ...SUPPORT_NAV.map((link) => ({ label: link.label, href: link.href })),
+];
+---
+
+<header
+  class="ngf-header"
+  data-over-hero={overHero ? 'true' : 'false'}
+  data-scrolled="false"
+  data-surface="dark"
+>
+  <div class="ngf-header-inner">
+    <BrandMark size="md" tone="light" href="/" class="ngf-header-brand" />
+
+    <!-- Desktop navigation: nine destinations, three of them dropdowns. -->
+    <nav class="ngf-header-nav" aria-label="Main">
+      <ul>
+        {
+          HEADER_NAV.map((entry) =>
+            entry.kind === 'link' ? (
+              <li>
+                <a href={entry.href} aria-current={isCurrent(entry.href) ? 'page' : undefined}>
+                  {entry.label}
+                </a>
+              </li>
+            ) : (
+              <li class="ngf-header-group">
+                <details name="ngf-nav">
+                  <summary>
+                    {entry.label}
+                    <svg
+                      viewBox="0 0 12 8"
+                      width="10"
+                      height="7"
+                      aria-hidden="true"
+                      focusable="false"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <path d="M1 1l5 5 5-5" />
+                    </svg>
+                  </summary>
+                  {/* Two columns: the routes, and one orienting line. No invented facts. */}
+                  <div class="ngf-header-panel">
+                    <ul class="ngf-header-panel-links">
+                      {entry.items.map((item) => (
+                        <li>
+                          <a href={item.href}>{item.label}</a>
+                        </li>
+                      ))}
+                    </ul>
+                    <div class="ngf-header-panel-note">
+                      <p>{entry.note}</p>
+                      <a href="/collection">Browse the full collection</a>
+                    </div>
+                  </div>
+                </details>
+              </li>
+            ),
+          )
+        }
+      </ul>
+    </nav>
+
+    <div class="ngf-header-tools">
+      {
+        /*
+        The search control is in the tab order of every public page without opening any menu
+        (Requirement 2.1). `client:idle` so it costs nothing during first paint.
+      */
+      }
+      <SearchBox client:idle indexUrl={indexUrl} categories={categories} variant="full" />
+
+      <WhatsAppLink
+        context={{ kind: 'general' }}
+        variant="solid"
+        label="Enquire"
+        ariaLabel={`Order or enquire on WhatsApp — ${NUMBER_LABEL_SPOKEN}`}
+        class="ngf-header-cta"
+      />
+    </div>
+
+    <div class="ngf-header-mobile">
+      <SearchBox client:idle indexUrl={indexUrl} categories={categories} variant="compact" />
+      {/* The persistent enquiry affordance Requirement 9.4 asks for. */}
+      <a
+        href={whatsappHref}
+        target="_blank"
+        rel="noopener"
+        class="ngf-header-mobile-cta"
+        aria-label={`Order or enquire on WhatsApp — ${NUMBER_LABEL_SPOKEN}`}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="currentColor"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.97L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm5.8 14.03c-.24.68-1.4 1.3-1.94 1.35-.54.06-1.04.08-1.6-.1a13.4 13.4 0 0 1-4.2-2.4 11.3 11.3 0 0 1-2.3-3.1c-.24-.5-.32-.94-.32-1.34 0-.6.3-1.1.72-1.53.16-.16.34-.2.48-.2h.34c.16 0 .32 0 .46.32.16.38.6 1.46.66 1.56.06.1.1.22.02.38-.08.16-.14.26-.26.4l-.2.24c-.1.12-.2.24-.1.44.1.2.48.82 1.02 1.32.7.66 1.28.86 1.48.96.2.1.32.08.44-.04.12-.14.5-.58.64-.78.14-.2.28-.16.46-.1.18.06 1.16.56 1.36.66.2.1.34.14.38.22.04.1.04.52-.14 1.06Z"
+          ></path>
+        </svg>
+      </a>
+      <MobileNav
+        client:idle
+        categories={CATEGORY_NAV.map((link) => ({ label: link.label, href: link.href }))}
+        pages={mobilePages}
+        whatsappHref={whatsappHref}
+        telHref={telHref}
+        telDisplay={primary?.display ?? ''}
+        numberLabel={NUMBER_LABEL}
+      />
+    </div>
+  </div>
+</header>
+
+<script>
+  /**
+   * Scroll state and dropdown dismissal.
+   *
+   * `data-scrolled` flips once past 8 px, and the stylesheet does the rest — only
+   * `background-color` and `opacity` change, per Requirement 9.3.
+   */
+  const header = document.querySelector<HTMLElement>('.ngf-header');
+  if (header !== null) {
+    let frame = 0;
+    const sync = (): void => {
+      frame = 0;
+      header.dataset.scrolled = window.scrollY > 8 ? 'true' : 'false';
+    };
+    sync();
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (frame === 0) frame = window.requestAnimationFrame(sync);
+      },
+      { passive: true },
+    );
+
+    const closeAll = (): void => {
+      for (const details of header.querySelectorAll<HTMLDetailsElement>(
+        'details[name="ngf-nav"]',
+      )) {
+        details.open = false;
+      }
+    };
+    document.addEventListener('pointerdown', (event) => {
+      if (!header.contains(event.target as Node)) closeAll();
+    });
+    header.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const open = header.querySelector<HTMLDetailsElement>('details[name="ngf-nav"][open]');
+      if (open === null) return;
+      open.open = false;
+      open.querySelector('summary')?.focus();
+    });
+  }
+</script>

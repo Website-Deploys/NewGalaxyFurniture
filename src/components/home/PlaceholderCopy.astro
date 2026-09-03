@@ -1,0 +1,75 @@
+---
+/**
+ * Copy the operator has not supplied yet, rendered as a visibly marked placeholder.
+ *
+ * Requirement 7.10 asks for three things at once, and this component is where all three are kept
+ * true rather than remembered at four call sites:
+ *
+ * 1. **Visually distinguished from supplied copy and labelled as awaiting content.** A hairline
+ *    champagne border, a tinted ground, and the words "Awaiting content" as a real label — not a
+ *    grey italic that a reviewer mistakes for a design choice.
+ * 2. **Listed in the admin content checklist.** The `contentKey` is the key the checklist tracks
+ *    (`getPlaceholderKeys()` derives it from `awaitingCopy` on the same section), and it is emitted
+ *    into the markup as `data-content-key` so the checklist and the page can be reconciled by
+ *    inspection.
+ * 3. **No invented fact.** The body text is the operator's own `[PLACEHOLDER — …]` marker from
+ *    `data/site/homepage.json`, printed verbatim. This component supplies structure and never
+ *    prose: no manufacturing process, timeline, capability, or business achievement appears here,
+ *    because there is nowhere in this file for one to be written.
+ *
+ * Requirements: 7.10, 8.4, 8.8.
+ * Design: Pages, Navigation, and States → Homepage composition; Open Items item 3.
+ */
+
+interface Props {
+  /** The operator's placeholder text, verbatim from the content file. */
+  body: string;
+  /** The checklist key this placeholder belongs to, e.g. `homepage.craftsmanship.body`. */
+  contentKey: string;
+  class?: string;
+}
+
+const { body, contentKey, class: className } = Astro.props;
+---
+
+<div
+  class:list={['ngf-placeholder', className]}
+  data-content-key={contentKey}
+  data-ngf-awaiting-content
+>
+  <p class="ngf-placeholder-label">
+    <span aria-hidden="true">◇</span> Awaiting content — <span class="ngf-placeholder-key"
+      >{contentKey}</span
+    >
+  </p>
+  <p class="ngf-placeholder-body">{body}</p>
+</div>
+
+<style>
+  .ngf-placeholder {
+    border-left: 2px solid var(--color-champagne);
+    background-color: var(--color-cream);
+    padding: 1rem 1.25rem;
+  }
+
+  .ngf-placeholder-label {
+    margin: 0 0 0.5rem;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .ngf-placeholder-key {
+    font-family: var(--font-body);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .ngf-placeholder-body {
+    margin: 0;
+    color: var(--color-espresso);
+  }
+</style>

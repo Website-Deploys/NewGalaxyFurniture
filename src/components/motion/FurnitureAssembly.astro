@@ -1,0 +1,56 @@
+---
+/**
+ * `FurnitureAssembly` — an exploded piece coming together.
+ *
+ * Signature motion (design's component table): "parts translate from offset positions into final
+ * assembly, staggered, `--dur-story`".
+ *
+ * The whole illustration is `.ngf-part` groups and no `.ngf-draw` paths at all — it is the one
+ * primitive of the nine that is entirely an assembly rather than a drawing. Each part's offset is
+ * the direction it would come from if the piece were being built: the top from above, the legs from
+ * below and outward, the rails from their own ends. That is what distinguishes it from a generic
+ * fade-and-rise: the offsets describe the construction, so the motion says something about how the
+ * furniture is made, which is the section it illustrates.
+ *
+ * Under reduced motion every part renders at its final offset — assembled, not exploded — because
+ * the from-state lives inside the `no-preference` block (Requirement 21.11: nothing is left
+ * "invisible or half-drawn", and half-assembled is the same fault).
+ *
+ * Requirements: 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs({ variant: 'assemble', ...Astro.props }, 'assembly', 640);
+---
+
+<svg {...svg} viewBox="0 0 200 160" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+
+  {/* The top, arriving from above. */}
+  <g class="ngf-part" style="--ngf-part-y:-28px">
+    <path d="M24 56h152v10H24z"></path>
+  </g>
+
+  {/* The two side panels, arriving from their own sides. */}
+  <g class="ngf-part" style="--ngf-part-x:-24px;--ngf-part-y:0;--ngf-part-delay:90ms">
+    <path d="M32 66v62M32 128h20"></path>
+  </g>
+  <g class="ngf-part" style="--ngf-part-x:24px;--ngf-part-y:0;--ngf-part-delay:135ms">
+    <path d="M168 66v62M148 128h20"></path>
+  </g>
+
+  {/* The stretcher, arriving from below — the part that locks the frame. */}
+  <g class="ngf-part" style="--ngf-part-y:22px;--ngf-part-delay:225ms">
+    <path d="M32 108h136"></path>
+  </g>
+
+  {/* A drawer front, last, sliding in. */}
+  <g class="ngf-part" style="--ngf-part-x:0;--ngf-part-y:16px;--ngf-part-delay:315ms">
+    <path d="M48 76h104v24H48zM88 88h24"></path>
+  </g>
+
+  {/* The floor: the one part that is already there. */}
+  <path d="M16 140h168"></path>
+</svg>

@@ -1,0 +1,115 @@
+---
+/**
+ * The telephone affordance. A real `tel:` link, for the same reasons as `WhatsAppLink`.
+ *
+ * `buildTelUrl` guarantees the shape: a leading `+`, the country code, then digits only
+ * (Requirement 5.13). Dialers are unforgiving about spaces and punctuation in `tel:`
+ * values, which is why the display text and the href come from different functions —
+ * `formatDisplayPhone` for humans, `buildTelUrl` for the dialer.
+ *
+ * No `target="_blank"`: `tel:` hands off to the dialer and a blank target leaves an empty
+ * tab behind on desktop.
+ *
+ * Requirements: 5.11, 5.12, 5.13, 24.3.
+ */
+import { getSiteSettings } from '@/lib/content/site';
+import { formatDisplayPhone } from '@/lib/phone';
+import { buildTelUrl } from '@/lib/whatsapp';
+import type { ContactNumberValue } from '@/schemas/site';
+
+interface Props {
+  /** Which stored number to dial. Defaults to the first phone number. */
+  number?: ContactNumberValue;
+  /** Visible text. Defaults to "Call {formatted number}"; the slot overrides it. */
+  label?: string;
+  variant?: 'solid' | 'outline' | 'bare';
+  ariaLabel?: string;
+  class?: string;
+}
+
+const settings = getSiteSettings();
+const {
+  number = settings.phone[0],
+  label,
+  variant = 'outline',
+  ariaLabel,
+  class: className,
+} = Astro.props;
+
+const href = number === undefined ? null : buildTelUrl(number.e164);
+const text = label ?? (number === undefined ? 'Call' : `Call ${formatDisplayPhone(number.e164)}`);
+---
+
+{
+  href !== null && (
+    <a
+      href={href}
+      data-ngf-call
+      aria-label={ariaLabel}
+      class:list={['ngf-cta', `ngf-cta-${variant}`, className]}
+    >
+      <svg
+        class="ngf-cta-glyph"
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="currentColor"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a.99.99 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1A17 17 0 0 1 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.24.2 2.45.57 3.57.1.35.02.74-.25 1.02l-2.2 2.2Z" />
+      </svg>
+      <span>
+        <slot>{text}</slot>
+      </span>
+    </a>
+  )
+}
+
+<style>
+  .ngf-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-hair);
+    font-size: var(--text-small);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-cta-solid {
+    background-color: var(--color-obsidian);
+    color: var(--color-ivory);
+  }
+
+  .ngf-cta-outline {
+    border: 1px solid currentColor;
+    color: var(--color-espresso);
+  }
+
+  .ngf-cta-bare {
+    padding: 0.5rem 0;
+    color: inherit;
+    font-weight: 400;
+  }
+
+  @media (hover: hover) {
+    .ngf-cta-solid:hover {
+      background-color: var(--color-espresso);
+    }
+
+    .ngf-cta-outline:hover {
+      background-color: var(--color-cream);
+    }
+  }
+
+  .ngf-cta-glyph {
+    flex: none;
+  }
+</style>

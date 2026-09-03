@@ -1,0 +1,64 @@
+---
+/**
+ * `/terms`.
+ *
+ * Structure only. No order term, cancellation term, or liability limit is stated, because none has
+ * been supplied (Requirements 8.3, 8.4).
+ *
+ * Requirements: 8.2, 8.3, 8.4, 8.8.
+ */
+import PolicyPage from '@/components/ui/PolicyPage.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const meta = pageMeta(Astro, {
+  title: 'Terms of Use',
+  description:
+    'The terms that apply to using this site and to enquiring with New Galaxy Furniture. This policy is being finalised — contact us for current terms.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <PolicyPage
+    title="Terms of Use"
+    lead="What this site is, what an enquiry is and is not, and the terms that will apply once they are published."
+    contentKey="page.terms.body"
+    sections={[
+      {
+        heading: 'This site is a catalogue, not a shop',
+        prompt:
+          'There is no cart, no checkout, and no payment on this site. An enquiry starts a conversation on WhatsApp or by phone; it places no order and commits you to nothing.',
+      },
+      {
+        heading: 'Prices and availability',
+        prompt:
+          'This section will state how long a quoted price holds and how availability is confirmed. No period is stated here yet.',
+      },
+      {
+        heading: 'Placing and confirming an order',
+        prompt:
+          'This section will describe how an enquiry becomes a confirmed order, and what confirmation you receive.',
+      },
+      {
+        heading: 'Cancellation and changes',
+        prompt:
+          'This section will state the cancellation and change terms once they have been agreed. No term is stated here yet.',
+      },
+      {
+        heading: 'Product photographs and descriptions',
+        prompt:
+          'This section will explain how closely a photograph represents a made piece, particularly for timber grain and fabric colour.',
+      },
+      {
+        heading: 'Intellectual property',
+        prompt: 'This section will state what may and may not be reused from this site.',
+      },
+      {
+        heading: 'Governing law',
+        prompt: 'This section will name the jurisdiction once it has been confirmed.',
+      },
+    ]}
+  />
+</BaseLayout>

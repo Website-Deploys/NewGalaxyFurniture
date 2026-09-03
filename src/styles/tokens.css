@@ -1,0 +1,70 @@
+/**
+ * Design tokens — the single enforced home for the NGF palette and motion scale.
+ *
+ * This file is a VERBATIM transcription of the token blocks in design.md
+ * (Visual Design System → Palette tokens; Motion System → Tokens), which is why
+ * it is listed in `.prettierignore`: Prettier lowercases hex digits and trims
+ * `0.30` to `0.3`, and the token values are specified character for character.
+ * Keep the alignment and casing as they are; add new tokens in the third block.
+ *
+ * `static` keeps every token in the emitted `:root` block even when no utility
+ * references it, because hand-authored CSS and inline SVG primitives read these
+ * variables directly (`var(--dur-reveal)`, `var(--ease-draw)`, …).
+ *
+ * Requirements: 21.1, 21.7.
+ */
+
+@theme static {
+  --color-obsidian:  #171513;  /* primary text, dark sections, strong CTAs */
+  --color-espresso:  #3B2A21;  /* secondary dark surfaces, buttons, nav states */
+  --color-walnut:    #6B4A36;  /* sparing accents, hover */
+  --color-champagne: #B88A45;  /* restrained luxury accent — see usage rule */
+  --color-ivory:     #F8F2EA;  /* primary light background */
+  --color-cream:     #EFE4D7;  /* secondary background */
+  --color-taupe:     #CBBBA9;  /* supporting neutral, rules, dividers */
+  --color-white:     #FFFFFF;  /* cards, contrast */
+}
+
+@theme static {
+  --dur-fast:      180ms;   /* hover, button press, chip toggle */
+  --dur-normal:    320ms;   /* menus, tab switches, image cross-fade */
+  --dur-reveal:    640ms;   /* premium section/product reveal */
+  --dur-story:    1000ms;   /* line-drawing, assembly sequences */
+
+  --ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);    /* decelerate, general */
+  --ease-entrance: cubic-bezier(0.16, 1, 0.30, 1);       /* expo-out, premium reveal */
+  --ease-exit:     cubic-bezier(0.55, 0, 0.55, 0.2);
+  --ease-draw:     cubic-bezier(0.65, 0, 0.35, 1);       /* symmetric, for path draws */
+
+  --stagger-tight: 45ms;
+  --stagger-loose: 90ms;
+}
+
+@theme static {
+  /* Typography families. Display serif above the fold, neutral grotesque for
+     body, interface and the whole admin UI. Requirement 21.4. */
+  --font-display: 'Fraunces', 'Fraunces Fallback', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', 'Inter Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Helvetica, Arial, sans-serif;
+
+  /* Fluid type scale (design → Typography). */
+  --text-h1: clamp(2.25rem, 5vw, 4.5rem);
+  --text-h2: clamp(1.75rem, 3.2vw, 3rem);
+  --text-h3: clamp(1.25rem, 2vw, 1.75rem);
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+
+  /* Radius scale — architectural, not bubbly. Nothing else is permitted. */
+  --radius-none: 0;
+  --radius-hair: 2px;
+  --radius-soft: 4px;
+
+  /* Two elevation levels only, tight and low-opacity. */
+  --shadow-level1: 0 1px 2px rgb(23 21 19 / 0.06), 0 1px 3px rgb(23 21 19 / 0.04);
+  --shadow-level2: 0 2px 8px rgb(23 21 19 / 0.08), 0 8px 24px rgb(23 21 19 / 0.06);
+
+  /* Layout language. */
+  --container-content: 1440px;
+  --spacing-section: clamp(4rem, 10vh, 9rem);
+  --measure-prose: 68ch;
+}

@@ -1,0 +1,37 @@
+---
+/**
+ * `AnimatedTable` — a dining table.
+ *
+ * Signature motion (design's component table): "top draws left-to-right, legs drop into place with
+ * `--ease-entrance`". The top is a single dashoffset draw whose path starts at the left, so the
+ * direction is a property of the path data rather than of a transform. The legs are `.ngf-part`
+ * with a negative `--ngf-part-y`, which is what makes them arrive downward into position — the
+ * stylesheet's part transition uses `--ease-entrance`, exactly as the table specifies.
+ *
+ * Requirements: 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs(Astro.props, 'table', 700);
+---
+
+<svg {...svg} viewBox="0 0 240 112" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+  {/* The top, drawn left to right: upper edge out, thickness back. */}
+  <path class="ngf-draw" d="M12 40h216v12H12z"></path>
+  {/* The apron rail under it. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:240ms" d="M28 52v8h184v-8"></path>
+
+  {/* Four legs, dropping in. Rear pair first, so the perspective settles before the front. */}
+  <g>
+    <path class="ngf-part" style="--ngf-part-y:-14px;--ngf-part-delay:300ms" d="M36 60v40"></path>
+    <path class="ngf-part" style="--ngf-part-y:-14px;--ngf-part-delay:330ms" d="M204 60v40"></path>
+    <path class="ngf-part" style="--ngf-part-y:-14px;--ngf-part-delay:375ms" d="M56 60v44"></path>
+    <path class="ngf-part" style="--ngf-part-y:-14px;--ngf-part-delay:420ms" d="M184 60v44"></path>
+  </g>
+
+  {/* The floor line, last, tying it down. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:520ms" d="M8 104h224"></path>
+</svg>

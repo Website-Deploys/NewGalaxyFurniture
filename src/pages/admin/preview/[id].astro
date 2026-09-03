@@ -1,0 +1,115 @@
+---
+/**
+ * /admin/preview/:id — the draft as a customer would see it.
+ *
+ * Three properties make this preview worth trusting:
+ *
+ * 1. **It renders the real component.** `ProductDetail.astro` is the same component the public
+ *    product page uses (task 15 wraps it in the public shell); there is no preview-only
+ *    renderer, so preview and production cannot diverge (Requirement 12.9).
+ * 2. **It reads the draft.** `resolveProduct` prefers the KV working copy, so a save is visible
+ *    here within a second and without waiting for a deploy (12.4).
+ * 3. **It is never indexed.** `noindex, nofollow` as a meta tag here, and as an `X-Robots-Tag`
+ *    header plus `cache-control: no-store` from `src/middleware.ts`, which also gates the route
+ *    behind a session (12.10, 11.5).
+ *
+ * The banner at the top says what is being looked at and what is missing from it. A preview that
+ * pretended to be the finished page — with the site header, the related products, the mobile
+ * action bar — would invite the operator to approve chrome that is not there yet.
+ *
+ * Requirements: 12.4, 12.9, 12.10, 23.15.
+ */
+import ProductDetail from '@/components/product/ProductDetail.astro';
+import { createGitHubClient } from '@/lib/github/factory';
+import { getKV } from '@/lib/env';
+import { getPublishedCategories } from '@/lib/content/catalogue';
+import { resolveProduct } from '@/lib/github/drafts';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/global.css';
+import type { Product } from '@/schemas/product';
+
+export const prerender = false;
+
+const id = Astro.params.id ?? '';
+
+let product: Product | null = null;
+let source: 'draft' | 'repo' | null = null;
+let failure: string | null = null;
+try {
+  const resolved = await resolveProduct(
+    { drafts: getKV(Astro, 'DRAFTS'), client: createGitHubClient(Astro) },
+    id,
+  );
+  if (resolved !== null) {
+    product = resolved.product;
+    source = resolved.source;
+  }
+} catch (error) {
+  console.error('[admin/preview] could not resolve the product', error);
+  failure = 'This product could not be loaded for preview.';
+}
+
+const categoryName =
+  product === null
+    ? undefined
+    : (await getPublishedCategories()).find((category) => category.slug === product.category)?.name;
+
+/**
+ * Preview metadata comes from the same builder as everything else, with `noindex` (Requirement
+ * 23.15). The route is also `noindex` by header and `no-store` by cache directive from
+ * `src/middleware.ts` — three mechanisms because a draft leaking into an index is not recoverable
+ * by fixing the page afterwards.
+ */
+const meta = pageMeta(Astro, {
+  title: `Preview — ${product?.name ?? 'product'}`,
+  description: 'An unpublished working copy, visible only to signed-in operators.',
+  noindex: true,
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content={meta.robots} />
+    <title>{meta.title}</title>
+  </head>
+  <body class="bg-ivory text-obsidian antialiased">
+    <p
+      class="border-b border-champagne bg-cream px-4 py-3 text-small"
+      data-preview-banner
+      role="status"
+    >
+      <strong>Preview.</strong>{' '}
+      {
+        source === 'draft'
+          ? 'Showing your unpublished working copy.'
+          : 'Showing the stored version — there is no unsaved working copy.'
+      }{' '}
+      Not visible to customers and not indexed by search engines. The site header, footer and related
+      products are part of the public page and are not shown here.{' '}
+      <a href={`/admin/products/${id}`} class="underline">Back to the editor</a>
+    </p>
+
+    <main class="mx-auto max-w-[1200px] px-4 py-8">
+      {
+        failure !== null ? (
+          <p class="border border-espresso bg-white px-4 py-3">{failure}</p>
+        ) : product === null ? (
+          <div class="border border-dashed border-taupe bg-white px-6 py-10">
+            <h1 class="font-display text-h3 text-espresso">Nothing to preview</h1>
+            <p class="mt-2 text-body text-walnut">
+              That product could not be found. It may have been deleted.
+            </p>
+            <a href="/admin/products" class="mt-4 inline-block underline">
+              Back to all products
+            </a>
+          </div>
+        ) : (
+          <ProductDetail product={product} categoryName={categoryName} />
+        )
+      }
+    </main>
+  </body>
+</html>

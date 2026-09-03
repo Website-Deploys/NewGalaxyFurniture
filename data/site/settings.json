@@ -1,0 +1,67 @@
+{
+  "businessName": "New Galaxy Furniture",
+  "logo": {
+    "src": null,
+    "wordmarkFallback": "NEW GALAXY FURNITURE"
+  },
+  "whatsapp": [
+    { "label": "Orders & Enquiries 1", "e164": "+919513443606" },
+    { "label": "Orders & Enquiries 2", "e164": "+918147083703" }
+  ],
+  "phone": [
+    { "label": "Orders & Enquiries 1", "e164": "+919513443606" },
+    { "label": "Orders & Enquiries 2", "e164": "+918147083703" }
+  ],
+  "location": {
+    "addressLines": [],
+    "city": "",
+    "state": "",
+    "postalCode": null,
+    "mapUrl": null,
+    "geo": null
+  },
+  "serviceArea": ["Karnataka"],
+  "social": {
+    "instagram": null,
+    "facebook": null,
+    "youtube": null,
+    "pinterest": null
+  },
+  "seoDefaults": {
+    "titleSuffix": " | New Galaxy Furniture",
+    "description": "New Galaxy Furniture catalogue — sofas, beds, dining tables and chairs, accent chairs, coffee and side tables, storage, office, and outdoor furniture. Enquire on WhatsApp or by phone.",
+    "ogImageKey": null
+  },
+  "placeholders": [
+    "site.logo.src",
+    "site.heroImage",
+    "site.location.addressLines",
+    "site.location.city",
+    "site.location.state",
+    "site.location.postalCode",
+    "site.location.mapUrl",
+    "site.location.geo",
+    "site.location.openingHours",
+    "site.social.instagram",
+    "site.social.facebook",
+    "site.social.youtube",
+    "site.social.pinterest",
+    "site.seoDefaults.ogImageKey",
+    "homepage.craftsmanship.body",
+    "homepage.directManufacturer.body",
+    "homepage.customFurniture.body",
+    "homepage.workshopStory.body",
+    "homepage.contactLocation.body",
+    "page.about.body",
+    "page.workshop.body",
+    "page.faq.entries",
+    "page.privacy.body",
+    "page.terms.body",
+    "page.shipping.body",
+    "page.returns.body",
+    "page.warranty.body",
+    "content.products",
+    "content.reviews",
+    "content.gallery"
+  ]
+}

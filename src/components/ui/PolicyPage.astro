@@ -1,0 +1,105 @@
+---
+/**
+ * The shared shell for the five policy pages.
+ *
+ * Requirements 8.2, 8.3, 8.4, and 8.8 describe one page five times, so there is one component:
+ *
+ * - **Professionally structured.** Each page declares its real section headings — the questions a
+ *   customer actually has — so the page reads as a policy that is being written rather than as a
+ *   stub. Structure is the part that can be supplied honestly without the operator.
+ * - **A visible notice that the policy is being finalised, directing the visitor to contact the
+ *   business for current terms** (8.3). It is the first thing under the heading, it is not
+ *   dismissible, and it carries both conversion controls so "contact us" is an action rather than an
+ *   instruction.
+ * - **No term the operator has not supplied** (8.4). Each declared section carries a `prompt` — a
+ *   statement of *what will go here* — and never a value. There is no delivery timeframe, return
+ *   window, cancellation term, or warranty term anywhere in this component or in any page that uses
+ *   it, and there is no prop through which one could be passed as a default. A section the operator
+ *   has filled in renders their `body`; until then it renders the prompt, visibly marked.
+ * - **`[FOR BUSINESS REVIEW]` as an inline source marker** (task 16.3, design Open Items item 3).
+ *   It is emitted as an HTML comment: present in the delivered source for whoever reviews the page,
+ *   absent from the rendered text so a customer is not shown internal workflow.
+ * - **Registered in the content checklist** (8.8). `contentKey` is the key
+ *   `SiteSettings.placeholders` already carries for this page, and it is emitted as
+ *   `data-content-key` so the page and the checklist can be reconciled by inspection.
+ *
+ * Requirements: 8.2, 8.3, 8.4, 8.8, 26.15.
+ */
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { NUMBERS_CAPTION } from '@/lib/site/contact';
+
+export interface PolicySection {
+  heading: string;
+  /** What will be stated here once the operator supplies it. Never a term or a value. */
+  prompt: string;
+}
+
+interface Props {
+  title: string;
+  /** One sentence naming what the page will cover. No terms. */
+  lead: string;
+  sections: readonly PolicySection[];
+  /** The `SiteSettings.placeholders` key for this page, e.g. `page.shipping.body`. */
+  contentKey: string;
+}
+
+const { title, lead, sections, contentKey } = Astro.props;
+const settings = getSiteSettings();
+
+/** Whether the checklist still lists this page — the one source for "unfinished". */
+const outstanding = settings.placeholders.includes(contentKey);
+---
+
+{/* [FOR BUSINESS REVIEW] — this policy page ships as structure only. No term below is stated. */}
+<div class="ngf-page" data-content-key={contentKey} data-policy-outstanding={String(outstanding)}>
+  <div class="ngf-page-head">
+    <p class="ngf-page-eyebrow">Policy</p>
+    <h1>{title}</h1>
+    <p class="ngf-page-lead">{lead}</p>
+  </div>
+
+  {
+    outstanding && (
+      <div class="ngf-policy-notice" role="note" aria-label="Policy status">
+        <span class="ngf-policy-notice-label">This policy is being finalised</span>
+        <p>
+          We are writing this policy properly rather than publishing terms we have not agreed. Until
+          it is published here, please contact us for the current terms that apply to your order —
+          we will tell you exactly where you stand before you commit to anything.
+        </p>
+        <p>{NUMBERS_CAPTION}</p>
+        <div class="ngf-page-actions" style="margin-top: 1rem;">
+          <WhatsAppLink
+            context={{ kind: 'general' }}
+            label="Ask about current terms"
+            variant="solid"
+          />
+          <CallLink label={`Call ${settings.phone[0]?.label ?? ''}`.trim()} variant="outline" />
+        </div>
+      </div>
+    )
+  }
+
+  <div class="ngf-page-body">
+    {
+      sections.map((section) => (
+        <section class="ngf-policy-section">
+          <h2>{section.heading}</h2>
+          <p>{section.prompt}</p>
+          {outstanding && (
+            <p class="ngf-policy-outstanding">
+              ◇ Awaiting content — this section states no term yet.
+            </p>
+          )}
+        </section>
+      ))
+    }
+  </div>
+
+  <div class="ngf-page-actions">
+    <WhatsAppLink context={{ kind: 'general' }} label="Order or Enquire on WhatsApp" />
+    <CallLink variant="outline" />
+  </div>
+</div>

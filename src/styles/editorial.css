@@ -1,0 +1,152 @@
+/**
+ * The editorial page measure: the supporting pages and the policy pages.
+ *
+ * One stylesheet rather than a scoped block per page, because twelve pages sharing one measure and
+ * one vertical rhythm is exactly the case where scoped styles produce twelve slightly different
+ * paddings. It is imported by the pages that use it rather than by `BaseLayout`, so the homepage,
+ * the catalogue, and the PDP do not pay for it.
+ *
+ * Requirements: 8.1, 8.2, 8.3, 24.1.
+ */
+
+.ngf-page {
+  max-width: var(--container-content);
+  margin-inline: auto;
+  padding: 2rem 1.25rem var(--spacing-section);
+}
+
+@media (min-width: 1024px) {
+  .ngf-page {
+    padding-inline: 2rem;
+  }
+}
+
+.ngf-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: var(--measure-prose);
+  margin-bottom: 3rem;
+}
+
+.ngf-page-eyebrow {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.ngf-page-head h1 {
+  margin: 0;
+}
+
+.ngf-page-lead {
+  margin: 0;
+  color: var(--color-espresso);
+  font-size: var(--text-h3);
+  font-family: var(--font-display);
+  line-height: 1.35;
+}
+
+.ngf-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: var(--measure-prose);
+}
+
+.ngf-page-body h2 {
+  margin: 2rem 0 0;
+  font-size: var(--text-h3);
+}
+
+.ngf-page-body h2:first-child {
+  margin-top: 0;
+}
+
+.ngf-page-body p {
+  margin: 0;
+  color: var(--color-espresso);
+}
+
+.ngf-page-body ul,
+.ngf-page-body ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-espresso);
+}
+
+.ngf-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.5rem;
+}
+
+.ngf-page-columns {
+  display: grid;
+  gap: 2.5rem;
+}
+
+@media (min-width: 900px) {
+  .ngf-page-columns {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+/**
+ * The unfinished-policy notice (Requirement 8.3).
+ *
+ * `role="note"` plus a champagne rule and a tinted ground: it must be impossible to skim past, and
+ * it must not look like body copy. It is the only place on a policy page that makes a promise, and
+ * the promise it makes is "ask us", which is the only one that is true today.
+ */
+.ngf-policy-notice {
+  border: 1px solid var(--color-champagne);
+  background-color: var(--color-cream);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2.5rem;
+  max-width: var(--measure-prose);
+}
+
+.ngf-policy-notice > p {
+  margin: 0;
+  color: var(--color-espresso);
+}
+
+.ngf-policy-notice > p + p {
+  margin-top: 0.75rem;
+}
+
+.ngf-policy-notice-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/** A policy heading with no terms under it — structure the operator fills in. */
+.ngf-policy-section {
+  border-top: 1px solid var(--color-taupe);
+  padding-top: 1.25rem;
+}
+
+.ngf-policy-section > h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-h3);
+}
+
+.ngf-policy-section > p {
+  margin: 0;
+  color: var(--color-espresso);
+}
+
+.ngf-policy-outstanding {
+  margin: 0.75rem 0 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}

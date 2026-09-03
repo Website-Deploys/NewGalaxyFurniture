@@ -1,0 +1,74 @@
+---
+/**
+ * /admin/reviews — review management.
+ *
+ * Read from the repository rather than the bundled collection, for the same reason the
+ * category screen is: a review saved a minute ago is in `data/reviews/` but not yet in the
+ * deployed bundle.
+ *
+ * Requirements: 18.6, 18.7, 18.8, 18.9, 10.17, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import ReviewEditor from '@/components/admin/ReviewEditor';
+import { can } from '@/lib/auth/permissions';
+import { createGitHubClient } from '@/lib/github/factory';
+import { getKV } from '@/lib/env';
+import { listProductSummaries } from '@/lib/products/index-store';
+import { readContentRecord } from '@/lib/github/content-writer';
+import { reviewContentPath } from '@/lib/github/paths';
+import { ReviewSchema, type Review } from '@/schemas/review';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+
+let reviews: Review[] = [];
+let products: { id: string; name: string }[] = [];
+let unavailable: string | null = null;
+
+try {
+  const client = createGitHubClient(Astro);
+  const ids = await client.listReviewIds();
+  const loaded: Review[] = [];
+  for (const id of ids) {
+    const path = reviewContentPath(id);
+    if (path === null) continue;
+    const record = await readContentRecord(client, path, ReviewSchema);
+    if (record !== null) loaded.push(record.value);
+  }
+  reviews = loaded.sort(
+    (a, b) =>
+      Number(b.featured) - Number(a.featured) || a.order - b.order || a.id.localeCompare(b.id),
+  );
+  products = (await listProductSummaries(getKV(Astro, 'DRAFTS')))
+    .map((summary) => ({ id: summary.id, name: summary.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+} catch (error) {
+  console.error('[admin/reviews] could not read the reviews', error);
+  unavailable =
+    'The reviews could not be read from the content repository just now. This is a configuration or connectivity problem, not an empty review list.';
+}
+---
+
+<AdminLayout title="Reviews">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    Reviews are entered from what customers actually said. Nothing on this screen is generated — no
+    wording, no rating, no name — and a review is invisible to visitors until you publish it. A star
+    rating appears in search-engine structured data only for a product that has published reviews
+    linked to it.
+  </p>
+
+  {
+    unavailable === null ? (
+      <ReviewEditor
+        client:load
+        reviews={reviews}
+        products={products}
+        canWrite={can(role, 'review.write')}
+        canDelete={can(role, 'review.publish')}
+      />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>

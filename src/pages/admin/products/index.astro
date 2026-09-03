@@ -1,0 +1,73 @@
+---
+/**
+ * /admin/products — the catalogue list.
+ *
+ * Read from the KV product index in one call, so the table draws without a GitHub round trip
+ * per row. The index is a cache of committed records; the editor resolves the record itself.
+ *
+ * Requirements: 10.17, 12.2, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import ProductTable from '@/components/admin/ProductTable';
+import { can } from '@/lib/auth/permissions';
+import { getKV } from '@/lib/env';
+import { getPublishedCategories } from '@/lib/content/catalogue';
+import { listProductSummaries, type ProductSummary } from '@/lib/products/index-store';
+
+export const prerender = false;
+
+const session = Astro.locals.adminSession;
+const role = session?.role ?? 'viewer';
+const canWrite = can(role, 'product.write');
+
+let summaries: ProductSummary[] = [];
+let unavailable: string | null = null;
+try {
+  summaries = await listProductSummaries(getKV(Astro, 'DRAFTS'));
+} catch (error) {
+  // A missing binding is a deployment fault. Saying so beats rendering an empty table that
+  // reads as "you have no products".
+  console.error('[admin/products] could not read the product index', error);
+  unavailable =
+    'The product list could not be read in this environment. It is a configuration problem, not an empty catalogue.';
+}
+
+const categories = (await getPublishedCategories()).map((category) => ({
+  slug: category.slug,
+  name: category.name,
+}));
+
+const deleted = Astro.url.searchParams.get('deleted') === '1';
+---
+
+<AdminLayout title="Products">
+  {
+    deleted && (
+      <p class="mb-4 border border-taupe bg-white px-4 py-3 text-small" role="status">
+        Product deleted. The page, listing, search entry and sitemap entry come down at the next
+        site build.
+      </p>
+    )
+  }
+
+  {
+    canWrite && (
+      <p class="mb-6">
+        <a
+          href="/admin/products/new"
+          class="inline-block min-h-[44px] bg-espresso px-5 py-3 text-ivory no-underline"
+        >
+          Add a product
+        </a>
+      </p>
+    )
+  }
+
+  {
+    unavailable === null ? (
+      <ProductTable client:load summaries={summaries} categories={categories} canWrite={canWrite} />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>

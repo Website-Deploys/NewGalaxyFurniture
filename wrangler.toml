@@ -1,0 +1,224 @@
+#:schema node_modules/wrangler/config-schema.json
+#
+# Cloudflare Workers configuration for New Galaxy Furniture.
+#
+# NO SECRET VALUE APPEARS IN THIS FILE, and none ever may. Every secret is set
+# out of band, per environment:
+#
+#   wrangler secret put GITHUB_TOKEN        # fine-grained PAT, contents:write on the content repo
+#   wrangler secret put GITHUB_REPO         # "owner/repo" the write pipeline commits to
+#   wrangler secret put GITHUB_BRANCH       # branch content commits land on (e.g. main)
+#   wrangler secret put AI_PROVIDER         # provider id for the product assistant
+#   wrangler secret put AI_API_KEY          # provider key — server-side only, never public
+#   wrangler secret put AI_MODEL            # model id for the assistant
+#   wrangler secret put SESSION_SECRET      # 32+ random bytes, admin session signing
+#   wrangler secret put CF_DEPLOY_HOOK_URL  # optional: deploy hook used to start a build
+#   wrangler secret put CF_ACCOUNT_ID       # optional: read side of /api/admin/deploy-status
+#   wrangler secret put CF_API_TOKEN        # optional: Workers Scripts:Read token for the above
+#   wrangler secret put CF_WORKER_NAME      # optional: script name to poll, defaults to `name`
+#
+# The `id` fields below are placeholders. Replace them with the real namespace and
+# database identifiers printed by `wrangler kv namespace create` / `d1 create` /
+# `r2 bucket create`; they are resource identifiers, not credentials.
+#
+# Design: Architecture → Folder Structure (Bindings); Deployment.
+# Requirements: 25.12, 25.13, 28.5, 28.7, 28.9.
+
+name = "new-galaxy-furniture"
+# `main` is deliberately NOT set. @astrojs/cloudflare v14 builds through
+# @cloudflare/vite-plugin, which resolves the Worker entry while the wrangler
+# config is being read — before any build output exists. Pointing `main` at a
+# build artifact (`./dist/_worker.js/index.js`) therefore fails the plugin's
+# existence check on a clean tree. When `main` is absent the adapter injects its
+# own package entrypoint (`@astrojs/cloudflare/entrypoints/server`), which is the
+# supported v14 arrangement and resolves correctly in both the assets-only build
+# (no on-demand routes yet) and once `/admin/**` and `/api/**` opt out of
+# prerendering.
+main = "./src/worker.ts"
+compatibility_date = "2026-09-02"
+# The Worker runs Node built-ins (WebCrypto helpers, Buffer in the image path).
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+preview_urls = true
+
+# Prerendered HTML, hashed assets, and fonts are served from the static asset
+# store; the Worker only runs for /admin/**, /api/**, and /img/**.
+#
+# `./dist/client`, not `./dist`: @astrojs/cloudflare v14 splits the build into
+# `dist/client` (public assets) and `dist/server` (the Worker bundle). Pointing
+# this at `./dist` would place the server bundle inside the uploaded asset tree,
+# where only `public/.assetsignore` would stand between it and the public
+# Internet. Naming `dist/client` keeps `dist/server` structurally outside the
+# asset store; the `.assetsignore` guard then remains a second line of defence
+# rather than the only one.
+[assets]
+binding = "ASSETS"
+directory = "./dist/client"
+# Trailing slashes are normalised away at the edge (Requirement 23.15). `/about/` gets a 301 to
+# `/about`, which is the form `buildPageMeta` emits in `<link rel="canonical">` — so the redirect
+# target and the canonical tag come from one rule and cannot disagree. `src/middleware.ts` applies
+# the same rule to the routes the Worker serves and to `astro dev`; this switch covers prerendered
+# HTML, which the asset store answers without invoking the Worker at all.
+html_handling = "drop-trailing-slash"
+
+# --- Scheduled work --------------------------------------------------------
+# The nightly analytics snapshot: `src/worker.ts` exports the `scheduled` handler,
+# which writes `data/snapshots/analytics.json` from the D1 daily rollups and commits
+# it with `[skip ci]`, so the next build serves fresh Most Viewed and Trending data
+# without an extra deploy (Requirements 3.14, 3.15, 20.11).
+#
+# 19:30 UTC is 01:00 IST — after the day it summarises has closed in UTC, and in the
+# quietest hour for the audience this site actually has.
+[triggers]
+crons = ["30 19 * * *"]
+
+[observability]
+enabled = true
+
+[placement]
+mode = "smart"
+
+# --- Public (non-secret) variables ------------------------------------------
+# These are printed on the site itself, so they are configuration, not secrets.
+[vars]
+PUBLIC_SITE_URL = "https://newgalaxyfurniture.com"
+PUBLIC_WHATSAPP_NUMBERS = "+919513443606,+918147083703"
+PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
+
+# --- KV ---------------------------------------------------------------------
+# SESSIONS: opaque admin sessions at session:{id}, 12 h TTL.
+# DRAFTS:   draft product JSON at draft:{id} for instant /admin/preview.
+# RATELIMIT: counters for the windows longer than the Rate Limiting binding's
+#            maximum period of 60 s (15-minute login windows, hourly AI and lead
+#            caps, 10-minute upload caps) plus the short write locks.
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_SESSIONS_KV_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "DRAFTS"
+id = "REPLACE_WITH_DRAFTS_KV_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "RATELIMIT"
+id = "REPLACE_WITH_RATELIMIT_KV_NAMESPACE_ID"
+
+# --- D1 ---------------------------------------------------------------------
+# Leads, analytics events and daily rollups, admin users, login attempts.
+[[d1_databases]]
+binding = "DB"
+database_name = "ngf-content"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# --- R2 ---------------------------------------------------------------------
+# Image originals and generated derivatives, served through /img/**.
+#
+# TWO DEPLOYMENT STEPS THIS FILE CANNOT EXPRESS:
+#
+# 1. **The 30-day recovery window for deleted images (Requirement 15.16).** Deleting an
+#    image in the admin moves every stored object to the `deleted/` prefix rather than
+#    removing it; the expiry itself is an R2 *bucket lifecycle rule*, which wrangler.toml
+#    has no field for. Set it once per bucket:
+#
+#      wrangler r2 bucket lifecycle add ngf-media \
+#        --name expire-deleted --prefix deleted/ --expire-days 30
+#
+#    Without that rule nothing breaks and nothing is lost — deleted objects simply accumulate.
+#
+# 2. **Worker size.** The image pipeline carries three WebAssembly modules as Worker assets:
+#    Photon (1.5 MB raw / ~0.6 MB gzip) for decode, resize, WebP and JPEG, and jSquash's AVIF
+#    encoder and decoder (3.5 MB / ~1.1 MB and 1.2 MB / ~0.34 MB) — Photon has no AVIF support
+#    at all, and Requirements 15.1 and 15.9 require AVIF in both directions. That is roughly
+#    2.1 MB gzipped of WebAssembly before the application bundle, which fits the paid plan's
+#    10 MB ceiling comfortably and leaves little room under the free plan's 3 MB. If the
+#    free-tier limit is the constraint, the decision to take is which AVIF direction to drop —
+#    not whether to ship a stub.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "ngf-media"
+
+# --- Rate Limiting binding --------------------------------------------------
+# The binding supports 10 s and 60 s periods only, so it covers the per-minute
+# rows of the abuse-control table and KV covers the longer windows.
+[[ratelimits]]
+name = "RL_ADMIN_API"
+namespace_id = "1001"
+simple = { limit = 120, period = 60 }
+
+[[ratelimits]]
+name = "RL_EVENTS"
+namespace_id = "1002"
+simple = { limit = 200, period = 60 }
+
+# ---------------------------------------------------------------------------
+# Preview environment: PR deployments. Distinct PUBLIC_SITE_URL so preview
+# content never leaks into canonical tags or gets indexed (Requirement 28.2).
+#
+# SELECT THIS ENVIRONMENT AT BUILD TIME, NOT AT DEPLOY TIME:
+#
+#     CLOUDFLARE_ENV=preview npm run build && wrangler deploy
+#
+# Under @astrojs/cloudflare v14 the build emits a fully resolved, single-
+# environment config to `dist/client/wrangler.json` and writes a redirect at
+# `.wrangler/deploy/config.json`, so `wrangler deploy` reads that generated file
+# instead of this one. `wrangler deploy --env preview` therefore no longer selects
+# anything: it silently deploys whatever environment was baked in at build time.
+# Building without CLOUDFLARE_ENV and deploying with `--env preview` would ship
+# the production PUBLIC_SITE_URL and the production KV/D1/R2 bindings under the
+# preview Worker name — which is exactly what Requirement 28.2 forbids.
+# ---------------------------------------------------------------------------
+[env.preview]
+name = "new-galaxy-furniture-preview"
+workers_dev = true
+
+# NO CRON ON PREVIEW, and this empty list is the whole reason this block exists:
+# `triggers` is an inheritable key, so without it the preview Worker would inherit
+# the nightly schedule and commit its own snapshot — computed from the *preview* D1
+# database — into the same content repository the production site builds from. Two
+# Workers writing one file, one of them from throwaway data. An empty list is how
+# wrangler is told "this environment has no schedule".
+[env.preview.triggers]
+crons = []
+
+[env.preview.vars]
+PUBLIC_SITE_URL = "https://preview.newgalaxyfurniture.workers.dev"
+PUBLIC_WHATSAPP_NUMBERS = "+919513443606,+918147083703"
+PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
+
+[env.preview.assets]
+binding = "ASSETS"
+directory = "./dist/client"
+html_handling = "drop-trailing-slash"
+
+[[env.preview.kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_PREVIEW_SESSIONS_KV_NAMESPACE_ID"
+
+[[env.preview.kv_namespaces]]
+binding = "DRAFTS"
+id = "REPLACE_WITH_PREVIEW_DRAFTS_KV_NAMESPACE_ID"
+
+[[env.preview.kv_namespaces]]
+binding = "RATELIMIT"
+id = "REPLACE_WITH_PREVIEW_RATELIMIT_KV_NAMESPACE_ID"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "ngf-content-preview"
+database_id = "REPLACE_WITH_PREVIEW_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[[env.preview.r2_buckets]]
+binding = "MEDIA"
+bucket_name = "ngf-media-preview"
+
+[[env.preview.ratelimits]]
+name = "RL_ADMIN_API"
+namespace_id = "1001"
+simple = { limit = 120, period = 60 }
+
+[[env.preview.ratelimits]]
+name = "RL_EVENTS"
+namespace_id = "1002"
+simple = { limit = 200, period = 60 }

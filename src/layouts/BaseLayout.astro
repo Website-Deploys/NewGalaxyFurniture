@@ -1,0 +1,225 @@
+---
+/**
+ * The public page shell.
+ *
+ * What this layout guarantees so no page has to remember it:
+ *
+ * - **Semantic landmarks** — `header`, `main`, `footer` — and a `main` that holds the page's
+ *   single `h1` via the default slot. The `h1` itself belongs to the page, because only the page
+ *   knows its heading; the layout only guarantees there is exactly one `main` for it to live in.
+ * - **Skip-to-content as the first focusable element** (Requirement 24.4). First in DOM order,
+ *   visible on focus, and pointing at `#main`.
+ * - **The reduce-motion preference applied before first paint.** A blocking inline script, which
+ *   is the one case where blocking is correct: applying it after paint would animate one frame of
+ *   exactly what the visitor asked not to see.
+ * - **Bottom spacing reserved for the mobile action bar** (Requirement 5.19): 56 px plus the
+ *   safe-area inset, below 768 px, as CSS on `main` — so the footer is never covered at any
+ *   scroll position, whether or not the island has hydrated.
+ * - **The search index URL** on the document, so `SearchBox` knows where to fetch from without
+ *   the index being in the payload (Requirement 22.8).
+ *
+ * **Metadata arrives as a `PageMeta` and nothing else.** There is no `title` prop and no
+ * `description` prop, so a page physically cannot hand-write a title, a description, a canonical,
+ * an Open Graph tag, or a robots directive: the only way to get metadata onto a page is to build a
+ * `PageMeta` with `buildPageMeta`, which is what makes the length bounds, the canonical origin, and
+ * the `noindex` rules hold everywhere rather than on the pages that remembered (Requirement 23.1).
+ * Structured data travels on the same object and is serialised here, once.
+ *
+ * Requirements: 5.19, 9.x, 21.13, 22.8, 23.1, 23.2, 23.3, 23.4, 23.18, 24.4, 24.12.
+ */
+import MotionRuntime from '@/components/motion/MotionRuntime.astro';
+import AnalyticsBeacon from '@/components/ui/AnalyticsBeacon.astro';
+import SiteFooter from '@/components/ui/SiteFooter.astro';
+import SiteHeader from '@/components/ui/SiteHeader.astro';
+import MobileActionBar from '@/components/ui/MobileActionBar';
+import { getPublishedCategories } from '@/lib/content/catalogue';
+import { getSiteSettings } from '@/lib/content/site';
+import { getSearchIndexUrl } from '@/lib/search/index-asset';
+import { contactChannels, NUMBER_LABEL } from '@/lib/site/contact';
+import { jsonLdText } from '@/lib/seo/meta';
+import type { PageMeta } from '@/lib/seo/meta';
+import { buildEnquiryMessage, buildTelUrl, buildWhatsAppUrl } from '@/lib/whatsapp';
+import '@/styles/global.css';
+import '@/styles/shell.css';
+
+interface Props {
+  /** Built by `buildPageMeta`. The only metadata channel this layout has. */
+  meta: PageMeta;
+  /** True only on the homepage, where the header starts transparent over the hero. */
+  heroHeader?: boolean;
+  /** Extra classes on `main`, for pages that need a wider or full-bleed measure. */
+  mainClass?: string;
+  /**
+   * The page's own analytics view event, and what a conversion click on it is about.
+   *
+   * Declared by the page because only the page knows what it is showing. Absent on the static
+   * content pages, which still count WhatsApp and call clicks — with an empty entity, because a
+   * click from `/about` is genuinely not about any one product.
+   */
+  analytics?: {
+    event?: { type: 'product_view' | 'category_view'; entity: string };
+    entity?: string;
+  };
+}
+
+const { meta, heroHeader = false, mainClass, analytics } = Astro.props;
+
+const settings = getSiteSettings();
+const categories = (await getPublishedCategories()).map((category) => ({
+  slug: category.slug,
+  name: category.name,
+}));
+const indexUrl = await getSearchIndexUrl();
+
+const channels = contactChannels(settings);
+const primary = channels[0];
+const generalMessage = buildEnquiryMessage({ kind: 'general' }, settings);
+const whatsappHref = primary === undefined ? '#' : buildWhatsAppUrl(primary.e164, generalMessage);
+const telHref = primary === undefined ? '#' : buildTelUrl(primary.e164);
+---
+
+<!doctype html>
+<html lang="en-IN" data-motion="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {
+      /*
+      Everything below comes from `buildPageMeta` — no value on this page was written by hand.
+      `robots` is present only when the page must not be indexed, because the absence of the tag
+      already means "index, follow" and emitting the default would be noise on every page.
+    */
+    }
+    <title>{meta.title}</title>
+    <meta name="description" content={meta.description} />
+    <link rel="canonical" href={meta.canonical} />
+    {meta.robots !== undefined && <meta name="robots" content={meta.robots} />}
+
+    <meta property="og:type" content={meta.og.type} />
+    <meta property="og:site_name" content={meta.og.siteName} />
+    <meta property="og:title" content={meta.og.title} />
+    <meta property="og:description" content={meta.og.description} />
+    <meta property="og:url" content={meta.og.url} />
+    <meta property="og:locale" content="en_IN" />
+    {
+      meta.og.image !== undefined && (
+        <>
+          <meta property="og:image" content={meta.og.image.url} />
+          {meta.og.image.alt !== undefined && (
+            <meta property="og:image:alt" content={meta.og.image.alt} />
+          )}
+          {meta.og.image.width !== undefined && (
+            <meta property="og:image:width" content={String(meta.og.image.width)} />
+          )}
+          {meta.og.image.height !== undefined && (
+            <meta property="og:image:height" content={String(meta.og.image.height)} />
+          )}
+        </>
+      )
+    }
+    <meta name="twitter:card" content={meta.twitter.card} />
+
+    {
+      /*
+      Structured data. Every block came from a typed generator in `@/lib/seo/jsonld`, and
+      `jsonLdText` escapes `<`, `>` and `&` so no description or operator-written string can close
+      the element early (Requirement 23.18).
+    */
+    }
+    {meta.jsonLd.map((block) => <script type="application/ld+json" set:html={jsonLdText(block)} />)}
+
+    <link
+      rel="preload"
+      href="/fonts/fraunces-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    {/* Read by SearchBox. The index itself is fetched on first search intent, never here. */}
+    <meta name="ngf:search-index" content={indexUrl} />
+    {
+      /*
+      Per-page head content: the PDP's LCP image preload, canonicals, and — from task 20 — the
+      structured data blocks. A named slot rather than a `Props` field per tag, because the set of
+      tags a page needs is open-ended and a layout that enumerated them would be edited by every
+      task that adds one.
+    */
+    }
+    <slot name="head" />
+
+    {
+      /*
+      Measurement. Daily aggregate counters only — no cookie, no identifier, no retained address
+      (Requirement 20.2). The batcher flushes with `sendBeacon` on the visibility transition, so
+      it never competes with the page for bandwidth while the page is being read.
+    */
+    }
+    <AnalyticsBeacon event={analytics?.event} entity={analytics?.entity} />
+
+    {
+      /*
+      The motion system: `motion.css` plus its one boot script. Every from-state it declares is
+      inside a `prefers-reduced-motion: no-preference` block and every final state is the default,
+      so a page whose motion script never arrives renders still rather than blank (Requirement
+      21.11).
+    */
+    }
+    <MotionRuntime />
+
+    {
+      /*
+      The visitor's motion preference, applied before first paint.
+
+      **Why an external file rather than `is:inline`.** This has to be blocking — applying it after
+      paint would animate one frame of exactly what the visitor asked not to see — and it used to be
+      an inline script for that reason. Inline execution is incompatible with the deployment's
+      `script-src 'self'`, and the two honest ways to keep an inline script are a nonce (impossible
+      on a prerendered page: the HTML is one artifact served to everyone) or a hash (which is an
+      exemption to maintain in two places, and drifts the moment the script is edited). A 200-byte
+      same-origin classic script satisfies the policy with no exemption at all, and being static and
+      hash-free it is cached across every route and every deploy that does not change it.
+
+      It is deliberately *not* `defer`/`async`: blocking is the whole point. It is counted against
+      the motion budget alongside the runtime chunk.
+    */
+    }
+    {
+      /*
+      `is:inline` here means "do not process this tag", not "inline the code": Astro requires the
+      directive on any `<script src>` that points into `public/`, and the emitted element is exactly
+      this one — an external, same-origin, blocking classic script with no inline body.
+    */
+    }
+    <script is:inline src="/ngf-motion-preference.js"></script>
+  </head>
+  <body>
+    <a href="#main" class="ngf-skip">Skip to content</a>
+
+    <SiteHeader
+      indexUrl={indexUrl}
+      categories={categories}
+      overHero={heroHeader}
+      currentPath={Astro.url.pathname}
+    />
+
+    <main id="main" class:list={['ngf-main', mainClass]}>
+      <slot />
+    </main>
+
+    <SiteFooter />
+
+    {
+      /*
+      Below 768 px only — enforced in CSS, not here, so the rule holds before hydration.
+      `client:idle` because the bar is visible and operable as static markup; the island only
+      adds the scroll hide/restore behaviour.
+    */
+    }
+    <MobileActionBar
+      client:idle
+      whatsappHref={whatsappHref}
+      telHref={telHref}
+      numberLabel={NUMBER_LABEL}
+    />
+  </body>
+</html>

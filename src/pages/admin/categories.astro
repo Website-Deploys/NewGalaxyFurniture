@@ -1,0 +1,68 @@
+---
+/**
+ * /admin/categories — category management.
+ *
+ * The categories are read from the **repository** rather than from the bundled content
+ * collection, because the collection is baked at build time: a category created two minutes
+ * ago exists in `data/categories/` but not yet in the deployed bundle, and an admin screen
+ * that cannot see it is an admin screen that lets the operator create it twice.
+ *
+ * When the repository cannot be read the page says so instead of rendering an empty table.
+ * "No categories" and "we could not ask" are different facts and the operator has to be able
+ * to tell them apart (Requirement 26.14).
+ *
+ * Requirements: 18.2, 18.3, 18.4, 10.17, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import CategoryTable, { type CategoryRow } from '@/components/admin/CategoryTable';
+import { assignedProductCount } from '@/lib/categories/store';
+import { can } from '@/lib/auth/permissions';
+import { categoryContentPath } from '@/lib/github/paths';
+import { CategorySchema } from '@/schemas/category';
+import { createGitHubClient } from '@/lib/github/factory';
+import { getKV } from '@/lib/env';
+import { listProductSummaries } from '@/lib/products/index-store';
+import { readContentRecord } from '@/lib/github/content-writer';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+const canWrite = can(role, 'settings.write');
+
+let rows: CategoryRow[] = [];
+let unavailable: string | null = null;
+
+try {
+  const client = createGitHubClient(Astro);
+  const summaries = await listProductSummaries(getKV(Astro, 'DRAFTS'));
+  const slugs = await client.listCategorySlugs();
+  const loaded: CategoryRow[] = [];
+  for (const slug of slugs) {
+    const path = categoryContentPath(slug);
+    if (path === null) continue;
+    const record = await readContentRecord(client, path, CategorySchema);
+    if (record === null) continue;
+    loaded.push({ ...record.value, assigned: assignedProductCount(summaries, record.value.slug) });
+  }
+  rows = loaded.sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
+} catch (error) {
+  console.error('[admin/categories] could not read the categories', error);
+  unavailable =
+    'The categories could not be read from the content repository just now. This is a configuration or connectivity problem — nothing is shown rather than an empty list that would read as “no categories”.';
+}
+---
+
+<AdminLayout title="Categories">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    A category is a file in the content repository. Creating one gives the site a listing page, a
+    navigation entry and a filter option at the next build, with no code change.
+  </p>
+
+  {
+    unavailable === null ? (
+      <CategoryTable client:load categories={rows} canWrite={canWrite} />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>

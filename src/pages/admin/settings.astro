@@ -1,0 +1,69 @@
+---
+/**
+ * /admin/settings — every business fact the site displays.
+ *
+ * Read from the repository rather than from the bundled `data/site/settings.json`, for the
+ * same reason the category and review screens are: the bundled copy is the last deploy's, and
+ * a value saved five minutes ago has to be visible here immediately even though the public
+ * site has not rebuilt yet.
+ *
+ * Requirements: 19.1, 19.2, 19.4, 19.5, 19.6, 19.7, 19.8, 7.8, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import SettingsForm from '@/components/admin/SettingsForm';
+import { can } from '@/lib/auth/permissions';
+import { createGitHubClient } from '@/lib/github/factory';
+import { effectiveTagline, taglineOf } from '@/lib/site/store';
+import { HomepageSchema } from '@/schemas/homepage';
+import { readContentRecord } from '@/lib/github/content-writer';
+import { siteContentPath } from '@/lib/github/paths';
+import { SiteSettingsSchema, type SiteSettings } from '@/schemas/site';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+
+let settings: SiteSettings | null = null;
+let tagline: string | null = null;
+let unavailable: string | null = null;
+
+try {
+  const client = createGitHubClient(Astro);
+  const settingsPath = siteContentPath('settings');
+  const homepagePath = siteContentPath('homepage');
+  if (settingsPath === null || homepagePath === null) throw new Error('path not allowlisted');
+
+  const record = await readContentRecord(client, settingsPath, SiteSettingsSchema);
+  if (record === null) throw new Error('settings.json is missing from the repository');
+  settings = record.value;
+
+  const homepage = await readContentRecord(client, homepagePath, HomepageSchema);
+  tagline =
+    homepage === null ? taglineOf(record.value) : effectiveTagline(record.value, homepage.value);
+} catch (error) {
+  console.error('[admin/settings] could not read the settings', error);
+  unavailable =
+    'The site settings could not be read from the content repository just now. This is a configuration or connectivity problem — the stored values are unaffected.';
+}
+---
+
+<AdminLayout title="Settings">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    Everything the site says about the business comes from this screen. Nothing here is hard-coded
+    in the site’s code, and nothing is filled in for you: a field left empty is omitted from every
+    public page and from search-engine structured data rather than being replaced with a guess.
+  </p>
+
+  {
+    settings !== null && unavailable === null ? (
+      <SettingsForm
+        client:load
+        settings={settings}
+        tagline={tagline}
+        canWrite={can(role, 'settings.write')}
+      />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>
