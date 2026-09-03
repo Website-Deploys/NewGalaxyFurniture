@@ -743,18 +743,18 @@ Design references below name the section of `design.md` the task follows. Requir
     - _Design: Error Handling → Disclosure policy, Failure modes, Loading states, Empty states_
 
 - [ ] 22. Build the developer product-addition workflow and the project documentation
-  - [ ] 22.1 Implement the `product:add` CLI
+  - [x] 22.1 Implement the `product:add` CLI
     - Create `scripts/add-product.ts` accepting `--name`, `--category`, `--price`, `--material`, `--dimensions`, `--colors`, `--images`, `--status`, and reusing the exact same `toSlug`/`uniqueSlug`/`generateSku`, upload validation, derivative generation, SEO fallback, and schema code paths the admin uses, so all three creation routes produce byte-compatible files
     - Verify the category file exists, failing with the list of valid slugs and creating no category; generate a unique slug and SKU; process images through the same validation and derivative pipeline capturing intrinsic dimensions; generate SEO title and description where not supplied; validate against `ProductSchema` and additionally `PublishReadySchema` when a published status is requested; assert the product's WhatsApp URL builds and decodes back to the intended message; write exactly one file at `data/products/{slug}.json` and no application source file; print the diff
     - Any validation failure writes no file and reports the failing field
     - _Requirements: 27.1, 27.2, 27.3, 27.4, 27.5, 27.6, 27.7, 27.8, 27.9, 27.10, 27.11_
     - _Design: Kiro / Developer Product Workflow_
 
-  - [ ]* 22.2 Write tests for the CLI
+  - [x]* 22.2 Write tests for the CLI
     - `tests/unit/add-product.test.ts`: an unknown category fails listing the valid slugs and writes nothing; a successful run writes exactly one file under `data/products/` and no source file; `--status PUBLISHED` with no image fails the publish gate naming `images`; the produced file byte-matches the admin creator's output for the same input
     - _Requirements: 27.2, 27.3, 27.6, 27.9, 27.11_
 
-  - [ ] 22.3 Write the project documentation
+  - [x] 22.3 Write the project documentation
     - Create `README.md` covering setup, local development, every environment variable and how to set it as a secret, the `/data` content structure, the admin workflow, the product lifecycle and publish gate, the deployment pipeline and its gate order, the Cloudflare binding and D1 migration steps, the admin seeding command, and the operator checklist of outstanding content (logo asset, address and hours, policy copy, social links, product data)
     - Confirm `.env.example` lists every required variable name with placeholder values only, and document that the production site URL is a single configuration change when the domain is purchased
     - _Requirements: 28.7, 28.8, 28.9_

@@ -262,10 +262,17 @@ Other
   -h, --help                  Show this message`;
 
 function parseIntegerFlag(flag: string, raw: string): number | RunFailure {
-  if (!/^\d+$/.test(raw)) return fieldFailure(flag.replace(/^--/, ''), `${flag} must be a positive whole number of rupees`);
+  if (!/^\d+$/.test(raw))
+    return fieldFailure(
+      flag.replace(/^--/, ''),
+      `${flag} must be a positive whole number of rupees`,
+    );
   const value = Number.parseInt(raw, 10);
   if (!Number.isSafeInteger(value) || value <= 0) {
-    return fieldFailure(flag.replace(/^--/, ''), `${flag} must be a positive whole number of rupees`);
+    return fieldFailure(
+      flag.replace(/^--/, ''),
+      `${flag} must be a positive whole number of rupees`,
+    );
   }
   return value;
 }
@@ -372,7 +379,8 @@ export function parseArgs(argv: readonly string[]): CliOptions | RunFailure | 'h
     '--images-out',
   ]);
   for (const key of values.keys()) {
-    if (!known.has(key)) return failure(`Unknown flag "${key}". Run with --help for the flag list.`);
+    if (!known.has(key))
+      return failure(`Unknown flag "${key}". Run with --help for the flag list.`);
   }
 
   const name = values.get('--name');
@@ -590,9 +598,7 @@ async function nodeCodec(): Promise<ImageCodec> {
     ]);
 
   const wasm = (relative: string): WebAssembly.Module =>
-    new WebAssembly.Module(
-      readFileSync(new URL(`../node_modules/${relative}`, import.meta.url)) as unknown as BufferSource,
-    );
+    new WebAssembly.Module(readFileSync(new URL(`../node_modules/${relative}`, import.meta.url)));
 
   const avifLib = {
     initEncode: (module: WebAssembly.Module) => encode.init(module),
@@ -607,7 +613,7 @@ async function nodeCodec(): Promise<ImageCodec> {
   return createCodec(
     photonApiFrom(photonNode as unknown as Parameters<typeof photonApiFrom>[0]),
     avifApiFrom(
-      avifLib as unknown as Parameters<typeof avifApiFrom>[0],
+      avifLib,
       wasm('@jsquash/avif/codec/enc/avif_enc.wasm'),
       wasm('@jsquash/avif/codec/dec/avif_dec.wasm'),
     ),
@@ -640,11 +646,9 @@ function teeBucket(targets: readonly R2Bucket[]): R2Bucket {
       options?: { httpMetadata?: { contentType?: string } },
     ) => {
       for (const target of targets) {
-        await (target as unknown as { put: (k: string, v: unknown, o?: unknown) => Promise<void> }).put(
-          key,
-          value instanceof Uint8Array ? value.slice() : value,
-          options,
-        );
+        await (
+          target as unknown as { put: (k: string, v: unknown, o?: unknown) => Promise<void> }
+        ).put(key, value instanceof Uint8Array ? value.slice() : value, options);
       }
       return undefined;
     },
@@ -718,7 +722,8 @@ async function processImages(input: {
   const sinks: R2Bucket[] = [];
   if (input.bucket !== null) sinks.push(input.bucket);
   if (input.capture !== null) sinks.push(captureBucket(captured));
-  const target = sinks.length === 0 ? null : sinks.length === 1 ? (sinks[0] as R2Bucket) : teeBucket(sinks);
+  const target =
+    sinks.length === 0 ? null : sinks.length === 1 ? (sinks[0] as R2Bucket) : teeBucket(sinks);
 
   for (const [index, path] of input.paths.entries()) {
     let bytes: Uint8Array;
@@ -736,7 +741,7 @@ async function processImages(input: {
         name: basename(path),
         type: '',
         size: bytes.length,
-        arrayBuffer: () => Promise.resolve(bytes.slice().buffer as ArrayBuffer),
+        arrayBuffer: () => Promise.resolve(bytes.slice().buffer),
       },
       (candidate, type) => input.codec.decode(candidate, type),
     );
@@ -871,7 +876,10 @@ export function assertWhatsAppRoundTrip(
       return fieldFailure('whatsapp', `The enquiry link for ${entry.label} is not a valid URL.`);
     }
     if (parsed.host !== 'wa.me') {
-      return fieldFailure('whatsapp', `The enquiry link for ${entry.label} does not point at wa.me.`);
+      return fieldFailure(
+        'whatsapp',
+        `The enquiry link for ${entry.label} does not point at wa.me.`,
+      );
     }
     if (parsed.pathname !== `/${toDigits(entry.e164)}`) {
       return fieldFailure(
@@ -926,7 +934,10 @@ export interface RunOverrides {
   siteUrl?: string;
 }
 
-export async function run(argv: readonly string[], overrides: RunOverrides = {}): Promise<RunResult | 'help'> {
+export async function run(
+  argv: readonly string[],
+  overrides: RunOverrides = {},
+): Promise<RunResult | 'help'> {
   const parsed = parseArgs(argv);
   if (parsed === 'help') return 'help';
   if ('ok' in parsed) return parsed;
@@ -1217,8 +1228,7 @@ async function main(): Promise<void> {
   process.exitCode = 1;
 }
 
-const invokedDirectly =
-  process.argv[1] !== undefined && process.argv[1].endsWith('add-product.ts');
+const invokedDirectly = process.argv[1] !== undefined && process.argv[1].endsWith('add-product.ts');
 if (invokedDirectly) {
   await main();
 }
