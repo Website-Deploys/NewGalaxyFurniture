@@ -17,7 +17,12 @@
  */
 import EnquiryIsland from '@/components/forms/EnquiryIsland.astro';
 import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import AnimatedFurnitureLine from '@/components/motion/AnimatedFurnitureLine.astro';
+import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
+import ArrowMotion from '@/components/motion/ArrowMotion.astro';
 import BeforeAfterRoom from '@/components/motion/BeforeAfterRoom.astro';
+import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
+import FurnitureAssembly from '@/components/motion/FurnitureAssembly.astro';
 import CallLink from '@/components/ui/CallLink.astro';
 import ContactNumbers from '@/components/ui/ContactNumbers.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
@@ -25,6 +30,43 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getHomepage } from '@/lib/content/site';
 import { pageMeta } from '@/lib/seo/page';
 import '@/styles/editorial.css';
+
+/**
+ * The four stages of a commission, as a scroll-reactive sequence: DISCOVER → DESIGN → CRAFT →
+ * DELIVER. Each stage is a drawing-board panel holding one reused primitive, so the page stays at
+ * exactly four distinct `data-ngf-primitive` names (room, craftsmanship, assembly, furniture-line)
+ * — the same four the before/after slider and the catalogue already draw.
+ *
+ * The copy is an invitation to talk, never a promise: no timeline, no price, no capability that has
+ * not been supplied (Requirement 8.4). Every sentence would be true if the operator never wrote
+ * another word.
+ */
+const stages = [
+  {
+    step: '01',
+    title: 'Discover',
+    copy: 'Tell us the space and how you would like to use it. A quick message is enough to begin.',
+    illustrationTitle: 'A sketched room with its wall, window and floor line',
+  },
+  {
+    step: '02',
+    title: 'Design',
+    copy: 'We work out sizes and proportions on paper with you, and agree the timber and finish.',
+    illustrationTitle: 'A dimensioned blueprint with measurement lines and tick marks',
+  },
+  {
+    step: '03',
+    title: 'Craft',
+    copy: 'Our Bengaluru workshop builds the piece, part by part, to the drawing you approved.',
+    illustrationTitle: 'An exploded joinery drawing of parts coming together',
+  },
+  {
+    step: '04',
+    title: 'Deliver',
+    copy: 'The finished piece arrives and settles into its place. Ask us about the steps in between.',
+    illustrationTitle: 'A finished piece drawn in profile against a wall',
+  },
+] as const;
 
 const section = getHomepage().sections.find((entry) => entry.key === 'customFurniture');
 const body = section?.body;
@@ -49,6 +91,92 @@ const meta = pageMeta(Astro, {
         tell you what is possible and what it costs.
       </p>
     </div>
+
+    {
+      /*
+      The guided-process sequence (Milestone 3, Checkpoint C). Its own top-level <section> so the
+      per-section reveal budget is isolated. The four stages are wrapped in one
+      [data-reveal][data-motion-group] list, so the whole sequence counts as ONE animating element
+      and staggers in as one group — the "scroll-reactive" behaviour, reusing the existing reveal
+      system with no scroll library.
+
+      Each stage's illustration is a REUSED primitive rendered with trigger="none": it draws its
+      final static state and carries no data-reveal of its own. Each is titled, so it is a
+      meaningful role="img" describing the step rather than a decorative ornament.
+    */
+    }
+    <section class="ngf-process" aria-labelledby="ngf-process-heading">
+      <h2 id="ngf-process-heading">How a commission takes shape</h2>
+      <p class="ngf-process-lead">
+        Four steps from an idea to a piece in your home. You can join in at any of them.
+      </p>
+
+      <ol class="ngf-process-steps" data-reveal data-motion-group>
+        <li class="ngf-process-step">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <AnimatedRoom
+                furnished={false}
+                strokeWidth={1}
+                trigger="none"
+                title={stages[0].illustrationTitle}
+              />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[0].step}</p>
+          <h3 class="ngf-process-title">{stages[0].title}</h3>
+          <p class="ngf-process-copy">{stages[0].copy}</p>
+        </li>
+
+        <li class="ngf-process-step">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <CraftsmanshipLines
+                strokeWidth={1}
+                trigger="none"
+                title={stages[1].illustrationTitle}
+              />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[1].step}</p>
+          <h3 class="ngf-process-title">{stages[1].title}</h3>
+          <p class="ngf-process-copy">{stages[1].copy}</p>
+        </li>
+
+        <li class="ngf-process-step">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <FurnitureAssembly
+                strokeWidth={1}
+                trigger="none"
+                title={stages[2].illustrationTitle}
+              />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[2].step}</p>
+          <h3 class="ngf-process-title">{stages[2].title}</h3>
+          <p class="ngf-process-copy">{stages[2].copy}</p>
+        </li>
+
+        <li class="ngf-process-step ngf-process-step-last">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <AnimatedFurnitureLine
+                strokeWidth={1}
+                trigger="none"
+                title={stages[3].illustrationTitle}
+              />
+            </span>
+            {/* The subtle directional treatment the brief asks for at DELIVER: decorative,
+                aria-hidden, and not a primitive, so it implies no claim. */}
+            <span class="ngf-process-arrow"><ArrowMotion size={20} /></span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[3].step}</p>
+          <h3 class="ngf-process-title">{stages[3].title}</h3>
+          <p class="ngf-process-copy">{stages[3].copy}</p>
+        </li>
+      </ol>
+    </section>
 
     <div class="ngf-page-columns">
       <div class="ngf-page-body">
@@ -113,13 +241,23 @@ const meta = pageMeta(Astro, {
         }
         <section data-ngf-custom-enquiry-slot aria-labelledby="ngf-custom-enquiry-heading">
           <h2 id="ngf-custom-enquiry-heading">Start a custom enquiry</h2>
-          <EnquiryIsland form="custom" context={{ kind: 'custom' }} />
+          <p class="ngf-custom-lead">
+            The quickest routes are a message or a call. Both reach the same people who build the
+            piece.
+          </p>
 
-          <p class="ngf-custom-alt-label">Or reach us directly — both are quicker than a form.</p>
-          <div class="ngf-page-actions">
+          {/*
+          The conversion hierarchy the brief sets: WhatsApp first, Call second, the form third. The
+          two direct controls sit above the form in reading order — they are the primary action set,
+          and the form remains fully functional below for anyone who prefers to write it all down.
+        */}
+          <div class="ngf-custom-actions ngf-page-actions">
             <WhatsAppLink context={{ kind: 'custom' }} label="Start on WhatsApp" />
             <CallLink variant="outline" />
           </div>
+
+          <p class="ngf-custom-alt-label">Prefer to set it all out in one go? Use the enquiry form.</p>
+          <EnquiryIsland form="custom" context={{ kind: 'custom' }} />
         </section>
 
         <div class="ngf-custom-numbers">
@@ -131,8 +269,17 @@ const meta = pageMeta(Astro, {
 </BaseLayout>
 
 <style>
+  .ngf-custom-lead {
+    margin: 0.25rem 0 1.5rem;
+    color: var(--color-espresso);
+  }
+
+  .ngf-custom-actions {
+    margin-top: 0;
+  }
+
   .ngf-custom-alt-label {
-    margin-top: 2rem;
+    margin-top: 2.5rem;
     color: var(--color-walnut);
     font-size: var(--text-small);
   }
@@ -144,5 +291,201 @@ const meta = pageMeta(Astro, {
   .ngf-custom-compare {
     max-width: 40rem;
     margin-block: 1.5rem 2.5rem;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* The guided-process sequence (Milestone 3, Checkpoint C).                   */
+  /* -------------------------------------------------------------------------- */
+
+  .ngf-process {
+    max-width: none;
+    margin: 0 0 3.5rem;
+  }
+
+  .ngf-process > h2 {
+    margin: 0;
+    font-size: var(--text-h2);
+  }
+
+  .ngf-process-lead {
+    max-width: var(--measure-prose);
+    margin: 0.75rem 0 2rem;
+    color: var(--color-walnut);
+  }
+
+  /*
+   * The four stages. One track on a phone (a vertical sequence), two at the tablet breakpoint, and
+   * four in a row on a wide viewport — where the sequence reads left to right like a storyboard.
+   */
+  .ngf-process-steps {
+    display: grid;
+    gap: 2rem 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 640px) {
+    .ngf-process-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-process-steps {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-process-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  /*
+   * The drawing-board panel, in the shared light-showroom language: a cream ground with a faint
+   * 24px hairline grid, a 1px taupe border, the extra-large radius and the level-one shadow, plus
+   * architect corner ticks via ::before/::after. The fixed aspect-ratio reserves the frame so the
+   * line drawing inside it never reflows the sequence.
+   */
+  .ngf-process-panel {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    padding: clamp(1rem, 4vw, 1.75rem);
+    overflow: hidden;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-cream);
+    background-image:
+      linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+    background-position: center;
+    background-size: 24px 24px;
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-process-panel::before,
+  .ngf-process-panel::after {
+    position: absolute;
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 0 solid var(--color-taupe);
+    content: '';
+    pointer-events: none;
+  }
+
+  .ngf-process-panel::before {
+    top: 0.6rem;
+    left: 0.6rem;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+
+  .ngf-process-panel::after {
+    right: 0.6rem;
+    bottom: 0.6rem;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+  }
+
+  .ngf-process-glyph {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    color: var(--color-walnut);
+  }
+
+  .ngf-process-glyph :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /*
+   * The connecting line. It joins each panel to the next: a taupe hairline that runs down to the
+   * next stage on a narrow layout and across to it on a wide one. It scales from 0 on reveal via
+   * `transform` only (so it costs no layout), and it sits at full extent by default — present with
+   * no JavaScript and under reduced motion, per the visible-by-default reveal invariant.
+   */
+  .ngf-process-step:not(.ngf-process-step-last)::after {
+    content: '';
+    position: absolute;
+    background-color: var(--color-taupe);
+    opacity: 0.7;
+    transform: scaleY(1);
+    transform-origin: top;
+    transition: transform var(--dur-story) var(--ease-draw);
+    pointer-events: none;
+  }
+
+  /* Narrow / stacked: a vertical connector centred under the panel, into the gap. */
+  .ngf-process-step:not(.ngf-process-step-last)::after {
+    left: calc(clamp(1rem, 4vw, 1.75rem));
+    top: 100%;
+    width: 1px;
+    height: 2rem;
+    margin-top: -1.5rem;
+  }
+
+  /* Wide: a horizontal connector from the panel's right edge to the next stage. */
+  @media (min-width: 1024px) {
+    .ngf-process-step:not(.ngf-process-step-last)::after {
+      top: calc((100% / 3) - 0.5rem);
+      left: 100%;
+      width: 1.5rem;
+      height: 1px;
+      margin-top: 0;
+      margin-left: -0.75rem;
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+
+  .ngf-process-num {
+    margin: 1rem 0 0;
+    color: var(--color-champagne);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .ngf-process-title {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+  }
+
+  .ngf-process-copy {
+    margin: 0.5rem 0 0;
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+  }
+
+  /* The directional arrow at the final stage, resting at the panel's lower-right. */
+  .ngf-process-arrow {
+    position: absolute;
+    right: 0.9rem;
+    bottom: 0.9rem;
+    color: var(--color-walnut);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-process-step::after {
+      transform: scaleY(0);
+    }
+  }
+
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-process-step::after {
+      transform: scaleX(0);
+    }
   }
 </style>
