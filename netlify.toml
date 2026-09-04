@@ -1,0 +1,65 @@
+# Netlify: a temporary visual preview of the storefront.
+#
+# This file adds a deployment target. It changes nothing about the application and nothing about
+# Cloudflare: `wrangler.toml`, `astro.config.mjs`, the adapter, and every source file are untouched.
+# Netlify ignores `wrangler.toml` and Cloudflare ignores this file, so both targets build the same
+# commit from the same `npm run build`.
+#
+# WHAT NETLIFY SERVES, AND WHAT IT DOES NOT
+#
+# `output: 'static'` means all 24 public pages — homepage, /collection, the nine category routes,
+# every editorial and policy page, /sitemap.xml, /robots.txt, the search index — are prerendered into
+# `dist/client` at build time. Netlify serves those directly. That is the whole storefront, and it is
+# what this preview is for.
+#
+# The 38 on-demand routes (`/admin/**`, `/api/**`, `/img/**`) are deliberately NOT deployed here, and
+# no adapter swap is attempted. They are Cloudflare-native by design, not by accident:
+#
+#   - `src/lib/env.ts` imports `cloudflare:workers` at module scope. That module exists only inside
+#     workerd; a Node-runtime bundle cannot resolve it.
+#   - The server layer is D1 (leads, analytics, admin users), KV (sessions, drafts, rate limits),
+#     R2 (image originals and derivatives) and Cloudflare's Rate Limiting bindings. Netlify has no
+#     equivalent for any of them.
+#   - `/img/**` decodes and re-encodes through `@cf-wasm/photon` and `@jsquash/avif`, resolved
+#     against their `workerd` builds.
+#   - The nightly analytics snapshot is a Worker `scheduled()` cron trigger.
+#
+# Running those on Netlify would mean replacing the entire server layer, which is a re-platform
+# rather than a preview, and it would put the production Cloudflare build at risk. So on this URL
+# `/admin/**` and `/api/**` return the site's own 404 page, and product photographs 404 because they
+# live in R2. Everything a visitor sees on the storefront is faithful — including the security
+# headers and the content security policy, because Netlify reads the `_headers` and `_redirects`
+# files the build already emits into `dist/client`.
+#
+# Design: Deployment. Requirements: 28.2, 28.9.
+
+[build]
+  # The project's own build, unchanged: `validate:content` → `astro build` → the seven post-build
+  # audits (motion budget, redirects, SEO, CSP, page budget, image loading, keyword density). If any
+  # of those gates fails, the Netlify build fails too, which is the intent.
+  command = "npm run build"
+
+  # The prerendered site. `dist/server` is the Cloudflare Worker and is deliberately not published.
+  publish = "dist/client"
+
+[build.environment]
+  # `engines.node` in package.json is ">=22.12.0"; Netlify's default image may be older.
+  NODE_VERSION = "22"
+
+  # Netlify fails a build when the value of an environment variable appears in the published output.
+  # These three are public by design — the canonical origin and the two published contact numbers —
+  # and they are *supposed* to appear in the HTML: in every canonical link, every `wa.me` URL and
+  # every `tel:` link. They are already committed in `wrangler.toml` under `[vars]`, so declaring
+  # them here exposes nothing that is not already public.
+  #
+  # Nothing else is omitted. A real secret reaching the output still fails the build, which is what
+  # this scanner is for.
+  SECRETS_SCAN_OMIT_KEYS = "PUBLIC_SITE_URL,PUBLIC_WHATSAPP_NUMBERS,PUBLIC_PHONE_NUMBERS"
+
+# No `[[redirects]]` and no `[[headers]]` blocks on purpose.
+#
+# `src/lib/security/headers.ts` is the single definition of the security headers and the CSP;
+# `public/_headers` mirrors it and `tests/unit/security.headers.test.ts` fails if the two disagree.
+# Netlify reads that same `_headers` file from the publish directory, so the policy applies here with
+# no second copy to keep in sync. `dist/client/_redirects` is emitted by `scripts/emit-redirects.ts`
+# from `data/site/redirects.json` and is read the same way.

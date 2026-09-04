@@ -28,3 +28,9 @@ npm-debug.log*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Netlify CLI local state. `.netlify` is the CLI's own working folder; `deno.lock` is written when it
+# boots its Deno edge-function runtime, which this project does not use — Netlify serves the
+# prerendered `dist/client` and nothing else. Neither belongs in the repository.
+.netlify
+deno.lock
