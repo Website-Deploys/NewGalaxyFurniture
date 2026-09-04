@@ -14,11 +14,12 @@
  * - **No term the operator has not supplied** (8.4). Each declared section carries a `prompt` — a
  *   statement of *what will go here* — and never a value. There is no delivery timeframe, return
  *   window, cancellation term, or warranty term anywhere in this component or in any page that uses
- *   it, and there is no prop through which one could be passed as a default. A section the operator
- *   has filled in renders their `body`; until then it renders the prompt, visibly marked.
+ *   it, and there is no prop through which one could be passed as a default. Each section renders its
+ *   `prompt` — a statement of what will go here — and, while the page is outstanding, a claim-free
+ *   customer-facing "we are finalising this section" line beneath it.
  * - **`[FOR BUSINESS REVIEW]` as an inline source marker** (task 16.3, design Open Items item 3).
- *   It is emitted as an HTML comment: present in the delivered source for whoever reviews the page,
- *   absent from the rendered text so a customer is not shown internal workflow.
+ *   It is a JSX comment: present in the delivered source for whoever reviews the page, and stripped
+ *   at build so a customer is never shown internal workflow.
  * - **Registered in the content checklist** (8.8). `contentKey` is the key
  *   `SiteSettings.placeholders` already carries for this page, and it is emitted as
  *   `data-content-key` so the page and the checklist can be reconciled by inspection.
@@ -54,15 +55,16 @@ const outstanding = settings.placeholders.includes(contentKey);
 
 {/* [FOR BUSINESS REVIEW] — this policy page ships as structure only. No term below is stated. */}
 <div class="ngf-page" data-content-key={contentKey} data-policy-outstanding={String(outstanding)}>
-  <div class="ngf-page-head">
+  <div class="ngf-page-head" data-reveal data-motion-group>
     <p class="ngf-page-eyebrow">Policy</p>
     <h1>{title}</h1>
+    <span class="ngf-hairline ngf-page-hairline" aria-hidden="true"></span>
     <p class="ngf-page-lead">{lead}</p>
   </div>
 
   {
     outstanding && (
-      <div class="ngf-policy-notice" role="note" aria-label="Policy status">
+      <div class="ngf-policy-notice" role="note" aria-label="Policy status" data-reveal>
         <span class="ngf-policy-notice-label">This policy is being finalised</span>
         <p>
           We are writing this policy properly rather than publishing terms we have not agreed. Until
@@ -70,7 +72,7 @@ const outstanding = settings.placeholders.includes(contentKey);
           we will tell you exactly where you stand before you commit to anything.
         </p>
         <p>{NUMBERS_CAPTION}</p>
-        <div class="ngf-page-actions" style="margin-top: 1rem;">
+        <div class="ngf-page-actions ngf-policy-notice-actions">
           <WhatsAppLink
             context={{ kind: 'general' }}
             label="Ask about current terms"
@@ -82,7 +84,7 @@ const outstanding = settings.placeholders.includes(contentKey);
     )
   }
 
-  <div class="ngf-page-body">
+  <div class="ngf-page-body ngf-policy-sections" data-reveal data-motion-group>
     {
       sections.map((section) => (
         <section class="ngf-policy-section">

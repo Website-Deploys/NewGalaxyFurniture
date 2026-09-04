@@ -41,6 +41,14 @@
   margin: 0;
 }
 
+/* A drawn hairline under the page title — one architectural rule, animated as part of the head. */
+.ngf-page-hairline {
+  max-width: 4rem;
+  height: 2px;
+  margin: 0.25rem 0;
+  background-color: var(--color-champagne);
+}
+
 .ngf-page-lead {
   margin: 0;
   color: var(--color-espresso);
@@ -124,16 +132,20 @@
  * the promise it makes is "ask us", which is the only one that is true today.
  */
 .ngf-policy-notice {
+  position: relative;
   border: 1px solid var(--color-champagne);
+  border-radius: var(--radius-lg);
   background-color: var(--color-cream);
-  padding: 1.25rem 1.5rem;
+  padding: clamp(1.25rem, 4vw, 1.75rem);
   margin-bottom: 2.5rem;
   max-width: var(--measure-prose);
+  box-shadow: var(--shadow-level1);
 }
 
 .ngf-policy-notice > p {
   margin: 0;
   color: var(--color-espresso);
+  line-height: 1.65;
 }
 
 .ngf-policy-notice > p + p {
@@ -150,24 +162,60 @@
   text-transform: uppercase;
 }
 
-/** A policy heading with no terms under it — structure the operator fills in. */
+.ngf-policy-notice-actions {
+  margin-top: 1rem;
+}
+
+/**
+ * The declared sections, as a light-showroom stack. Each is a white card with a taupe hairline and
+ * a small architectural corner mark — structure the operator fills in, presented as a finished
+ * surface rather than a bare heading with no terms under it.
+ */
+.ngf-policy-sections {
+  gap: 1rem;
+  max-width: var(--measure-prose);
+}
+
 .ngf-policy-section {
-  border-top: 1px solid var(--color-taupe);
-  padding-top: 1.25rem;
+  position: relative;
+  padding: clamp(1.25rem, 4vw, 1.75rem);
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-level1);
+}
+
+/* A single architectural corner mark, top-left, as the light-showroom signature. */
+.ngf-policy-section::before {
+  content: '';
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-top: 1px solid var(--color-champagne);
+  border-left: 1px solid var(--color-champagne);
+  pointer-events: none;
 }
 
 .ngf-policy-section > h2 {
   margin: 0 0 0.5rem;
+  font-family: var(--font-display);
   font-size: var(--text-h3);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .ngf-policy-section > p {
   margin: 0;
   color: var(--color-espresso);
+  line-height: 1.65;
 }
 
 .ngf-policy-outstanding {
   margin: 0.75rem 0 0;
   color: var(--color-walnut);
   font-size: var(--text-small);
+  line-height: 1.6;
 }
