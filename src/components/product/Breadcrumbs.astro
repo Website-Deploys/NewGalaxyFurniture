@@ -1,0 +1,81 @@
+---
+/**
+ * The breadcrumb trail.
+ *
+ * Requirement 4.2 names the trail exactly: catalogue root → category → product name. It is a
+ * component rather than inline markup because the PDP and the admin preview must render the
+ * identical trail, and because task 20 attaches `BreadcrumbList` structured data to the same
+ * data — one list, one source.
+ *
+ * The last crumb is text, not a link, and carries `aria-current="page"`: linking a page to
+ * itself is a dead control for a keyboard or screen-reader visitor.
+ *
+ * Requirements: 4.2, 24.1.
+ */
+
+import type { Crumb } from '@/lib/site/breadcrumbs';
+
+export type { Crumb };
+
+interface Props {
+  items: readonly Crumb[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class:list={['ngf-pdp-breadcrumbs', className]}>
+  <ol>
+    {
+      items.map((item, index) =>
+        item.href === undefined || index === items.length - 1 ? (
+          <li aria-current="page">{item.label}</li>
+        ) : (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ),
+      )
+    }
+  </ol>
+</nav>
+
+<style>
+  /*
+   * Scoped rather than added to `shell.css`, because the admin preview route renders this
+   * component without the public shell's stylesheet — and a breadcrumb trail that falls back to
+   * a bulleted list in preview is exactly the kind of divergence preview exists to avoid.
+   */
+  nav {
+    font-size: var(--text-small);
+  }
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li + li::before {
+    content: '/';
+    margin-right: 0.5rem;
+    color: var(--color-taupe);
+  }
+
+  a {
+    color: var(--color-espresso);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  [aria-current='page'] {
+    color: var(--color-walnut);
+  }
+</style>

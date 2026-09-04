@@ -1,0 +1,76 @@
+---
+/**
+ * /admin — the dashboard.
+ *
+ * Every figure on this page is a count of stored records: the product counts are tallies of the
+ * KV product index, which is a projection of committed product files, and the recent-activity
+ * list is the commit history of `data/`. Nothing is estimated, sampled or illustrated
+ * (Requirement 11.3).
+ *
+ * Where a figure cannot be derived, the page says so rather than showing a zero. The enquiry
+ * count is read from D1, and a *failed* read is passed as `null` so the card reads "not
+ * available yet" — a zero there would be a claim that no one has enquired, which is a different
+ * statement from "the store could not be reached" (Requirement 11.4). A successful read of an
+ * empty table is a genuine zero and is shown as one.
+ *
+ * Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import DashboardCards, { type RecentChange } from '@/components/admin/DashboardCards';
+import { can } from '@/lib/auth/permissions';
+import { catalogueCounts } from '@/lib/products/query';
+import { countLeadsByStatus } from '@/lib/leads/store';
+import { createGitHubClient } from '@/lib/github/factory';
+import { getD1, getKV } from '@/lib/env';
+import { listProductSummaries, type ProductSummary } from '@/lib/products/index-store';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+
+let summaries: ProductSummary[] = [];
+let countsUnavailable: string | null = null;
+try {
+  summaries = await listProductSummaries(getKV(Astro, 'DRAFTS'));
+} catch (error) {
+  console.error('[admin] could not read the product index', error);
+  countsUnavailable =
+    'Product figures could not be read in this environment. This is a configuration problem — no counts are shown rather than incorrect ones.';
+}
+
+// Null only on failure — see the note in the header. `NEW` is the actionable status: the
+// number the card offers to open is the number of people waiting for a first reply.
+let newLeads: number | null = null;
+try {
+  newLeads = (await countLeadsByStatus(getD1(Astro))).NEW;
+} catch (error) {
+  console.error('[admin] could not count new enquiries', error);
+}
+
+let recent: RecentChange[] = [];
+let recentUnavailable: string | undefined;
+try {
+  recent = await createGitHubClient(Astro).listContentCommits(5);
+} catch (error) {
+  console.error('[admin] could not read the content history', error);
+  recentUnavailable =
+    'The content history could not be read from the repository just now. Your products are unaffected.';
+}
+---
+
+<AdminLayout title="Dashboard">
+  {
+    countsUnavailable !== null ? (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{countsUnavailable}</p>
+    ) : (
+      <DashboardCards
+        client:load
+        counts={catalogueCounts(summaries)}
+        newLeads={newLeads}
+        recent={recent}
+        recentUnavailable={recentUnavailable}
+        canWrite={can(role, 'product.write')}
+      />
+    )
+  }
+</AdminLayout>

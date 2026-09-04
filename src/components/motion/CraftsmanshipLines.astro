@@ -1,0 +1,56 @@
+---
+/**
+ * `CraftsmanshipLines` — measurement and joinery detail lines.
+ *
+ * Signature motion (design's component table): "dimension lines extend, tick marks pop, subtle
+ * continuous 6 s drift".
+ *
+ * This is the **only** component in the system with a continuous animation, and it carries the
+ * whole of the design's "subtle furniture drift". Two things keep that honest:
+ *
+ * - The drift is a ±2 px `transform` on one group at 6 s, declared once in `motion.css` as
+ *   `.ngf-drift`. It is not a loop per element and it is not a loop that runs when the component is
+ *   off-screen — a CSS animation on an off-screen element is not composited, unlike a rAF loop,
+ *   which is exactly why the design puts drift in CSS and keeps rAF for the two scroll-linked cases.
+ * - Under reduced motion it is **removed**, not slowed. The `.ngf-drift` rule lives inside the
+ *   `prefers-reduced-motion: no-preference` block, so there is no animation to clamp
+ *   (Requirement 21.11 — "drift/loop animations are removed entirely").
+ *
+ * The tick marks "pop" as `.ngf-part` with a zero `--ngf-part-y`: they fade and scale from the
+ * dimension line rather than sliding, which is what makes them read as marks on it.
+ *
+ * Requirements: 21.5, 21.6, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs(Astro.props, 'craftsmanship', 820);
+---
+
+<svg {...svg} viewBox="0 0 240 120" preserveAspectRatio="xMidYMid meet">
+  {title !== null && <title>{title}</title>}
+
+  {/* A mortise-and-tenon detail: the two members and the joint between them. */}
+  <path class="ngf-draw" d="M40 40h72v40H40z"></path>
+  <path class="ngf-draw" style="--ngf-draw-delay:140ms" d="M112 52h56v16h-56zM112 56h44M112 64h44"
+  ></path>
+
+  {/* The dimension lines, extending outward from the piece. */}
+  <g class="ngf-drift">
+    <path class="ngf-draw" style="--ngf-draw-delay:320ms" d="M40 24h128"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:440ms" d="M24 40v40"></path>
+
+    {/* Tick marks and witness lines. These pop rather than draw. */}
+    <g>
+      <path class="ngf-part" style="--ngf-part-y:0;--ngf-part-delay:520ms" d="M40 18v12"></path>
+      <path class="ngf-part" style="--ngf-part-y:0;--ngf-part-delay:565ms" d="M112 18v12"></path>
+      <path class="ngf-part" style="--ngf-part-y:0;--ngf-part-delay:610ms" d="M168 18v12"></path>
+      <path class="ngf-part" style="--ngf-part-y:0;--ngf-part-delay:655ms" d="M18 40h12"></path>
+      <path class="ngf-part" style="--ngf-part-y:0;--ngf-part-delay:700ms" d="M18 80h12"></path>
+    </g>
+  </g>
+
+  {/* A hairline under it all, as a datum. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:780ms" d="M16 100h208"></path>
+</svg>

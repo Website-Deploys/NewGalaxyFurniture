@@ -1,0 +1,309 @@
+/**
+ * Global stylesheet: Tailwind v4 entry, self-hosted font faces, the fluid type
+ * scale, the radius and elevation scales, and the global reduced-motion rule.
+ *
+ * Design: Visual Design System → Typography, Layout language; Motion System → Reduced motion.
+ * Requirements: 21.1, 21.4, 21.7, 21.11, 21.12.
+ */
+
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* ------------------------------------------------------------------------- *
+ * Self-hosted faces. Both families are OFL (licences in /public/fonts).
+ * Subset to Latin + ₹ (U+20B9) as variable woff2, `font-display: swap`.
+ * Total payload: 54.9 KB, inside the ≤ 55 KB font budget.
+ * ------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-latin-var.woff2') format('woff2-variations');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2013-2014,
+    U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+20B9,
+    U+2122, U+2212;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-latin-var.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2013-2014,
+    U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030, U+2039-203A, U+2044, U+20AC, U+20B9,
+    U+2122, U+2212;
+}
+
+/**
+ * Metrics-matched fallbacks. The override percentages are the real metrics of
+ * the subset files above (Fraunces: upm 2000, hhea 1956/-510/0;
+ * Inter: upm 2048, hhea 1984/-494/0), so the swap from the local fallback to
+ * the web font cannot change line box height and therefore cannot shift layout.
+ */
+@font-face {
+  font-family: 'Fraunces Fallback';
+  src: local('Times New Roman'), local('Georgia'), local('Liberation Serif');
+  ascent-override: 97.8%;
+  descent-override: 25.5%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Helvetica Neue'), local('Arial'), local('Liberation Sans');
+  ascent-override: 96.88%;
+  descent-override: 24.12%;
+  line-gap-override: 0%;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Base layer
+ * ------------------------------------------------------------------------- */
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-ivory);
+    color: var(--color-obsidian);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: 1.65;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Fluid display scale. Serif for h1–h3, sans for everything else. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  h1 {
+    font-size: var(--text-h1);
+    line-height: 1.04;
+  }
+
+  h2 {
+    font-size: var(--text-h2);
+    line-height: 1.12;
+  }
+
+  h3 {
+    font-size: var(--text-h3);
+    line-height: 1.24;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  small,
+  .text-small {
+    font-size: var(--text-small);
+    line-height: 1.5;
+  }
+
+  /* Prose measure capped at 68ch (design → Typography). */
+  p {
+    max-width: var(--measure-prose);
+    text-wrap: pretty;
+  }
+
+  /* Radius scale is limited to 0 / 2px / 4px — nothing rounder exists. */
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-taupe);
+  }
+
+  /**
+   * Focus indication. Obsidian, not champagne: champagne on ivory measures
+   * 2.79:1 and would fail SC 1.4.11 for a focus indicator. Dark-banded sections
+   * mark themselves with `data-surface="dark"` and invert the ring to ivory
+   * (16.37:1). Both pairings are declared in `tokens.ts` as `uiStroke`.
+   */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-obsidian);
+    outline-offset: 2px;
+    /* Focus indication stays visible and quick even under reduced motion. */
+    transition-duration: var(--dur-fast);
+  }
+
+  [data-surface='dark']
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-color: var(--color-ivory);
+  }
+
+  img,
+  svg,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Reduced motion (Motion System → Reduced motion; Requirements 21.11, 21.12)
+ *
+ * The blanket clamp below is the floor. Per-component intentional degradation
+ * (SVG primitives jumping to their final drawn state, parallax flattening, rAF
+ * hooks returning early) is implemented with the motion component set.
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visitor-facing override (Requirement 21.13); the toggle persists this
+   attribute on <html> from localStorage before first paint. */
+@media screen {
+  [data-motion='off'] *,
+  [data-motion='off'] *::before,
+  [data-motion='off'] *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+ * Loading skeletons (Error Handling → Loading states; Requirements 26.12, 26.13)
+ *
+ * Global rather than scoped to one component, because the same shapes are needed
+ * from Astro (`components/ui/Skeleton.astro`) and from the React islands
+ * (`components/ui/Skeleton.tsx`) — the search dropdown while the index arrives,
+ * the zoom overlay while its chunk arrives, the assistant while a suggestion is
+ * generated. Two copies of these rules would drift, and a skeleton that loses its
+ * shape is indistinguishable from the blank page 26.12 forbids.
+ *
+ * This file is loaded by both the public shell and the admin shell, so both get
+ * them from one place.
+ * ------------------------------------------------------------------------- */
+
+.ngf-skeleton {
+  display: grid;
+  gap: 1rem;
+}
+
+.ngf-skeleton[data-variant='card'] {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.ngf-skeleton[data-variant='row'] {
+  gap: 0.75rem;
+}
+
+.ngf-skeleton-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* A row is a thumbnail beside its lines — the shape of a suggestion or a list row. */
+.ngf-skeleton[data-variant='row'] .ngf-skeleton-item {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ngf-skeleton-media {
+  display: block;
+  width: 100%;
+}
+
+.ngf-skeleton[data-variant='row'] .ngf-skeleton-media {
+  width: 40px;
+  flex: 0 0 auto;
+}
+
+.ngf-skeleton-lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.ngf-skeleton-line {
+  display: block;
+  height: 0.75rem;
+  width: 100%;
+}
+
+/*
+ * The shimmer: a 200% gradient slid across the box, animating `background-position`
+ * only — no layout, and no paint outside the element itself.
+ */
+.ngf-skeleton-fill {
+  background-color: var(--color-cream);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-cream) 0%,
+    var(--color-white) 50%,
+    var(--color-cream) 100%
+  );
+  background-size: 200% 100%;
+  animation: ngf-skeleton-shimmer 1400ms var(--ease-standard) infinite;
+}
+
+@keyframes ngf-skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Requirement 26.13: the placeholder is displayed, without animation. */
+@media (prefers-reduced-motion: reduce) {
+  .ngf-skeleton-fill {
+    animation: none;
+    background-image: none;
+  }
+}
+
+[data-motion='off'] .ngf-skeleton-fill {
+  animation: none;
+  background-image: none;
+}
+
+/* On a dark surface — the zoom overlay — the tint inverts rather than glowing. */
+[data-surface='dark'] .ngf-skeleton-fill {
+  background-color: color-mix(in srgb, var(--color-obsidian) 80%, var(--color-ivory));
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-obsidian) 80%, var(--color-ivory)) 0%,
+    color-mix(in srgb, var(--color-obsidian) 65%, var(--color-ivory)) 50%,
+    color-mix(in srgb, var(--color-obsidian) 80%, var(--color-ivory)) 100%
+  );
+}

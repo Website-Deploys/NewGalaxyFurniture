@@ -1,0 +1,186 @@
+---
+/**
+ * The brand mark — and the one swap-in point for the real logo.
+ *
+ * **No logo asset exists.** That is a fact about this project, not a gap in this component.
+ * The design's resolution (Open Items item 1) is implemented here in full:
+ *
+ * - `settings.logo.src === null` → the typographic wordmark fallback renders: the business
+ *   name in the display serif, letterspaced small caps, over a champagne hairline rule.
+ * - `settings.logo.src` set to a path → that asset renders instead, at the same optical
+ *   size, and the wordmark disappears.
+ *
+ * Swapping in the real mark is therefore **one file drop plus one settings field**, with no
+ * change to this or any other component. Nothing here draws a substitute mark, monogram, or
+ * glyph: an invented logo is worse than an honest wordmark because it looks final.
+ *
+ * The wordmark text comes from `logo.wordmarkFallback` rather than `businessName` so the
+ * operator can adjust the lockup's wording (line breaks, an ampersand) without renaming the
+ * business everywhere else.
+ *
+ * Requirements: 19.4, 19.5.
+ * Design: Pages, Navigation, and States → Navigation; Open Items item 1.
+ */
+import { getSiteSettings } from '@/lib/content/site';
+import { loadingAttributes } from '@/lib/images/staging';
+
+interface Props {
+  /** `sm` for the mobile bar and footer, `md` for the header, `lg` for the hero. */
+  size?: 'sm' | 'md' | 'lg';
+  /** `light` for dark surfaces, `dark` for ivory surfaces. */
+  tone?: 'light' | 'dark';
+  /** Wraps the mark in a link to the homepage. Off inside an existing link. */
+  href?: string | null;
+  class?: string;
+}
+
+const { size = 'md', tone = 'dark', href = '/', class: className } = Astro.props;
+
+const settings = getSiteSettings();
+const src = settings.logo.src;
+const width = settings.logo.width ?? null;
+const height = settings.logo.height ?? null;
+const wordmark = settings.logo.wordmarkFallback;
+const assetLoading = loadingAttributes();
+const Wrapper = href === null ? 'span' : 'a';
+const wrapperProps = href === null ? {} : { href, 'aria-label': `${settings.businessName} home` };
+---
+
+<Wrapper
+  {...wrapperProps}
+  class:list={['ngf-brand', `ngf-brand-${size}`, `ngf-brand-${tone}`, className]}
+  data-brand-source={src === null ? 'wordmark' : 'asset'}
+>
+  {
+    src === null ? (
+      /*
+        The fallback. A `<span>` rather than an SVG so it inherits the loaded display face and
+        needs no asset of its own; `aria-label` on the wrapper already names it, so the visual
+        text is the accessible text and nothing is duplicated to a screen reader.
+
+        The words are separate spans so the lockup can wrap between them on a narrow header
+        instead of forcing a horizontal scrollbar. "NEW GALAXY FURNITURE" letterspaced is ~230 px
+        at header size, which does not fit beside a search control, an enquiry control and a menu
+        control at 320 px — and shrinking the type to ~8 px to make it fit would be worse than
+        stacking it. Wrapping is opt-in per surface (see `.ngf-header-brand` in shell.css); the
+        desktop header and the hero keep it on one line.
+      */
+      <span class="ngf-brand-wordmark">
+        {wordmark
+          .split(/\s+/)
+          .filter((word) => word !== '')
+          .map((word) => (
+            <span class="ngf-brand-word">{word}</span>
+          ))}
+      </span>
+    ) : (
+      /*
+        The supplied asset. `width`/`height` come from Settings, where the schema makes them
+        mandatory as soon as `src` is set, so the header's box is reserved before the file arrives
+        rather than shifting sideways when it does. It is not the page's largest contentful element
+        on any route, so it loads like everything else that is not: deferred, decoded off the
+        critical path.
+      */
+      <img
+        src={src}
+        alt={settings.businessName}
+        class="ngf-brand-asset"
+        {...(width === null ? {} : { width })}
+        {...(height === null ? {} : { height })}
+        loading={assetLoading.loading}
+        decoding={assetLoading.decoding}
+      />
+    )
+  }
+</Wrapper>
+
+<style>
+  .ngf-brand {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /*
+   * The wordmark is a link to the homepage, so on touch it owes the same 44 px as any other control
+   * (Requirement 24.3). Its own type sets its height — around 30 px at the sizes the header and
+   * footer use — which is a comfortable click and a missable tap. `justify-content: center` keeps the
+   * lettering optically where it was; only the hit area grows.
+   */
+  @media (max-width: 767px) {
+    .ngf-brand {
+      min-height: 44px;
+      justify-content: center;
+    }
+  }
+
+  .ngf-brand-wordmark {
+    display: flex;
+    flex-wrap: nowrap; /* surfaces that need wrapping opt in — see shell.css */
+    column-gap: 0.45em;
+    row-gap: 0.1em;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.22em;
+    line-height: 1.05;
+    text-transform: lowercase; /* with all-small-caps this yields even small capitals */
+  }
+
+  .ngf-brand-word {
+    white-space: nowrap;
+  }
+
+  /*
+    The champagne hairline — the one place the accent is used as a rule rather than text. It belongs
+    to the typographic fallback only: once the real asset is dropped in, the mark carries its own
+    design and a rule underneath it would be a decoration nobody asked for.
+  */
+  .ngf-brand[data-brand-source='wordmark']::after {
+    content: '';
+    display: block;
+    height: 1px;
+    margin-top: 0.375rem;
+    background-color: var(--color-champagne);
+  }
+
+  .ngf-brand-sm .ngf-brand-wordmark {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+  }
+
+  .ngf-brand-md .ngf-brand-wordmark {
+    font-size: 1rem;
+  }
+
+  .ngf-brand-lg .ngf-brand-wordmark {
+    font-size: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .ngf-brand-light {
+    color: var(--color-ivory);
+  }
+
+  .ngf-brand-dark {
+    color: var(--color-obsidian);
+  }
+
+  .ngf-brand-asset {
+    display: block;
+    width: auto;
+  }
+
+  .ngf-brand-sm .ngf-brand-asset {
+    height: 24px;
+  }
+
+  .ngf-brand-md .ngf-brand-asset {
+    height: 32px;
+  }
+
+  .ngf-brand-lg .ngf-brand-asset {
+    height: 56px;
+  }
+</style>

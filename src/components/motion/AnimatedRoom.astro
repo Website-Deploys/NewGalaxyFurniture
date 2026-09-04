@@ -1,0 +1,68 @@
+---
+/**
+ * `AnimatedRoom` — a room composition: floor line, wall, window, and three pieces.
+ *
+ * Signature motion (design's component table): "layered: architecture draws, then furniture pieces
+ * enter from their own axes, parallax on scroll". All three are here:
+ *
+ * - **The architecture draws first** — floor, wall return, skirting, window — as `.ngf-draw` paths
+ *   with no delay.
+ * - **The furniture enters from its own axis.** Each piece is a `.ngf-part` group with its own
+ *   `--ngf-part-x` / `--ngf-part-y`: the sofa slides in from the left, the table rises, the lamp
+ *   drops. "Its own axis" is the point — three pieces sliding in from the same direction reads as a
+ *   single sheet moving.
+ * - **Parallax on scroll** is not this component's job and deliberately so: it is the *page's*, and
+ *   it is applied by putting this illustration on one of the hero's `[data-parallax-plane]`
+ *   elements. A primitive that moved itself on scroll would be a second rAF loop, which
+ *   Requirement 21.10 and the design's "these are the only rAF loops in the codebase" both forbid.
+ *
+ * This is also the illustration the before/after slider layers twice — once empty, once furnished —
+ * which is why the architecture and the furniture are separate groups with separate ids.
+ *
+ * Requirements: 7.6, 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+interface Props extends MotionPrimitiveProps {
+  /** False renders the architecture alone — the "before" layer of the comparison slider. */
+  furnished?: boolean;
+}
+
+const { furnished = true, ...rest } = Astro.props;
+const { svg, title } = primitiveAttrs(rest, 'room', 1400);
+---
+
+<svg {...svg} viewBox="0 0 320 200" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+
+  {/* --- The architecture. Always drawn, in both layers of the comparison. --- */}
+  <g>
+    <path class="ngf-draw" d="M8 176h304"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:100ms" d="M8 176V28h304v148"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:180ms" d="M8 166h304"></path>
+    {/* The window: frame, then the two glazing bars. */}
+    <path class="ngf-draw" style="--ngf-draw-delay:260ms" d="M196 44h96v72h-96z"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:340ms" d="M244 44v72M196 80h96"></path>
+  </g>
+
+  {
+    furnished && (
+      <>
+        {/* The sofa, entering from the left wall. */}
+        <g class="ngf-part" style="--ngf-part-x:-18px;--ngf-part-y:0;--ngf-part-delay:420ms">
+          <path d="M28 166v-34h96v34M28 132h20v34M104 132h20v34M48 132V112h56v20" />
+        </g>
+
+        {/* The low table, rising into place. */}
+        <g class="ngf-part" style="--ngf-part-y:14px;--ngf-part-delay:500ms">
+          <path d="M144 152h56v6h-56zM152 158v8M192 158v8" />
+        </g>
+
+        {/* The floor lamp, dropping from above — the vertical accent the composition needs. */}
+        <g class="ngf-part" style="--ngf-part-y:-20px;--ngf-part-delay:580ms">
+          <path d="M266 166v-52M254 114h24l-6-16h-12z" />
+        </g>
+      </>
+    )
+  }
+</svg>

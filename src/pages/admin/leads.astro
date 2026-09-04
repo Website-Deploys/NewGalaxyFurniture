@@ -1,0 +1,72 @@
+---
+/**
+ * /admin/leads — the enquiry inbox.
+ *
+ * The filter comes from this page's own query string and is parsed by the same
+ * `parseLeadQuery` the API uses, so the server-rendered first page and any later fetch
+ * agree about what the filter means. Rendering the first page on the server rather than
+ * fetching it from the island is deliberate: the operator's most common visit is "what came
+ * in overnight", and that should be readable before any JavaScript runs.
+ *
+ * A D1 failure is reported as a failure. It must never render as "no enquiries yet", which
+ * would tell the operator that nobody has been in touch (Requirement 26.14).
+ *
+ * Requirements: 6.12, 6.13, 6.14, 6.15, 6.16, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import LeadTable from '@/components/admin/LeadTable';
+import { can } from '@/lib/auth/permissions';
+import { getD1 } from '@/lib/env';
+import { parseLeadQuery, queryLeads, type Lead, type LeadQuery } from '@/lib/leads/store';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+const query: LeadQuery = parseLeadQuery(Astro.url.searchParams);
+
+let leads: Lead[] = [];
+let total = 0;
+let page = 1;
+let pageCount = 1;
+let filtered = false;
+let unavailable: string | null = null;
+
+try {
+  const result = await queryLeads(getD1(Astro), query);
+  leads = result.items;
+  total = result.total;
+  page = result.page;
+  pageCount = result.pageCount;
+  filtered = result.filtered;
+} catch (error) {
+  console.error('[admin/leads] could not read the leads', error);
+  unavailable =
+    'The enquiry records could not be read in this environment. This is a configuration or connectivity problem — it does not mean no enquiries have been received.';
+}
+---
+
+<AdminLayout title="Leads">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    Every enquiry submitted through the site’s forms, newest first. Enquiries are stored in the
+    site’s own database and are never committed to the content repository, because they are personal
+    data. Conversations started from a WhatsApp or Call button do not appear here — those happen
+    entirely outside the site, and only the click was recorded.
+  </p>
+
+  {
+    unavailable === null ? (
+      <LeadTable
+        client:load
+        leads={leads}
+        total={total}
+        page={page}
+        pageCount={pageCount}
+        filtered={filtered}
+        query={query}
+        canWrite={can(role, 'lead.write')}
+      />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>

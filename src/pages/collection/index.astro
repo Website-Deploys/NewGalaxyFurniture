@@ -1,0 +1,161 @@
+---
+/**
+ * `/collection` — every product in the Catalogue.
+ *
+ * "Every product in the Catalogue" includes `OUT_OF_STOCK` (Requirement 1.1) and excludes every
+ * Draft and UNPUBLISHED record from the listing **and from the count** (1.16). Both follow from
+ * reading `getCatalogue()` and nothing else — the filter exists once, in one module.
+ *
+ * `data/products/` is empty, so **the designed empty state is this page's normal rendering
+ * path**, not an error branch. It is composed, offers search and the other categories, and states
+ * an honest count of zero.
+ *
+ * Loading discipline (Requirement 15.17 / design → delivery budget): the first six cards are
+ * eager, everything after is lazy, and each grid row carries `content-visibility: auto` so
+ * off-screen rows are not laid out.
+ *
+ * Requirements: 1.1, 1.15, 1.16, 3.x (through the island), 15.17, 22.10, 26.14.
+ */
+import QuickEnquireHost from '@/components/forms/QuickEnquireHost.astro';
+import CatalogueControls from '@/components/product/CatalogueControls';
+import CatalogueEmpty from '@/components/product/CatalogueEmpty.astro';
+import AnimatedFurnitureLine from '@/components/motion/AnimatedFurnitureLine.astro';
+import ProductCard from '@/components/product/ProductCard.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getAnalyticsSnapshot } from '@/lib/content/analytics-snapshot';
+import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
+import { getRankings } from '@/lib/content/site';
+import { cardImagePreload } from '@/lib/images/preload';
+import { isEagerCard } from '@/lib/images/staging';
+import { primaryImageOf } from '@/schemas/product';
+import { itemListJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta, siteOrigin } from '@/lib/seo/page';
+import { getSearchIndexUrl } from '@/lib/search/index-asset';
+
+const products = await getCatalogue();
+const categories = await getPublishedCategories();
+const categoryNames = Object.fromEntries(
+  categories.map((category) => [category.slug, category.name]),
+);
+
+const rankings = getRankings();
+const manualRankings = {
+  trending: rankings.trending,
+  bestSeller: rankings.bestSeller,
+  mostViewed: rankings.mostViewed,
+};
+
+const indexUrl = await getSearchIndexUrl();
+// Read only so the honest "curated"/"measured" distinction is visible on the server-rendered
+// page too, before the island decides anything.
+const snapshot = getAnalyticsSnapshot();
+
+const count = products.length;
+
+/**
+ * The one preloaded image: the first card's photograph, which is this listing's largest contentful
+ * element. `null` with an empty catalogue, so a page with no cards hints nothing (Requirement 22.10).
+ */
+const leadImage = products[0] === undefined ? null : primaryImageOf(products[0]);
+const leadPreload = products[0] === undefined ? null : cardImagePreload(products[0].id, leadImage);
+
+/** `ItemList` over what the page actually lists, in the order it lists it (Requirement 23.11). */
+const meta = pageMeta(Astro, {
+  title: 'Collection',
+  description:
+    'Every piece in the New Galaxy Furniture catalogue — sofas, beds, dining, chairs, tables, storage, office, and outdoor furniture.',
+  jsonLd: [
+    itemListJsonLd(
+      products.map((product) => ({ name: product.name, url: `/product/${product.slug}` })),
+      siteOrigin(Astro),
+      { name: 'New Galaxy Furniture collection' },
+    ),
+  ],
+});
+---
+
+<BaseLayout meta={meta}>
+  <ImagePreload slot="head" hint={leadPreload} />
+  <div class="ngf-catalogue">
+    <div class="ngf-catalogue-head" data-reveal>
+      <h1>Collection</h1>
+      <p class="ngf-catalogue-intro">
+        Every piece we currently make, in one place. Filter by what matters for your room, then
+        enquire on WhatsApp or by phone.
+      </p>
+      <p class="ngf-catalogue-count">
+        {count === 1 ? '1 product' : `${count} products`}
+        {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
+      </p>
+      {/* One decorative contour, drawn as the header arrives. Decorative, so `aria-hidden`. */}
+      <span class="ngf-catalogue-ornament">
+        <AnimatedFurnitureLine strokeWidth={1} trigger="none" />
+      </span>
+    </div>
+
+    {
+      /*
+      `client:visible` per the plan: the controls hydrate when the sidebar scrolls into view, and
+      the index itself is fetched on idle from inside the island.
+    */
+    }
+    <CatalogueControls
+      client:visible
+      indexUrl={indexUrl}
+      categoryNames={categoryNames}
+      manualRankings={manualRankings}
+      gridId="ngf-collection-grid"
+      noMatchId="ngf-collection-nomatch"
+    />
+
+    <div>
+      {
+        count === 0 ? (
+          <CatalogueEmpty
+            heading="The catalogue is being photographed"
+            message="No pieces are published yet. Every category below is ready — tell us what you are looking for and we will send options and prices straight away."
+          />
+        ) : (
+          <>
+            {/*
+            A heading for the grid, announced but not drawn.
+
+            Every `ProductCard` titles itself with an `h3`, which is right on the homepage where each
+            rail sits under its own `h2`. Here the grid follows the `h1` directly, so the page jumped
+            from `h1` to `h3` — a skipped level, and for anyone navigating by heading the list of
+            products had no heading at all. Visually hidden rather than shown because the `h1` and the
+            count above it already say this in the design.
+          */}
+            <h2 class="sr-only">Products</h2>
+            <ul class="ngf-grid" id="ngf-collection-grid" data-reveal data-motion-group>
+              {products.map((product, position) => (
+                <li>
+                  <ProductCard
+                    product={product}
+                    categoryName={categoryNames[product.category]}
+                    eager={isEagerCard(position)}
+                    priority={position === 0}
+                  />
+                </li>
+              ))}
+            </ul>
+            {/*
+              The no-filter-match state (Requirement 3.17). Server-rendered and hidden; the island
+              reveals it when a filter combination returns nothing, and the clear control inside
+              the panel is the single action that removes every filter parameter.
+            */}
+            <div id="ngf-collection-nomatch" hidden>
+              <CatalogueEmpty
+                heading="No products match these filters"
+                message="Clear the filters to see the full collection, or start from a category."
+              />
+            </div>
+          </>
+        )
+      }
+    </div>
+  </div>
+  {/* One Quick Enquire dialog host for every card on this page. */}
+  <QuickEnquireHost />
+</BaseLayout>

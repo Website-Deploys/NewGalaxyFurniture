@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" width="1600" height="1200" role="img" aria-label="Hairline drawing of a furnished room: a low sofa, a side table and a floor lamp against a panelled wall.">
+  <title>New Galaxy Furniture — room composition</title>
+  <rect width="1600" height="1200" fill="#EFE4D7"/>
+  <g fill="none" stroke="#3B2A21" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55">
+    <!-- wall panelling -->
+    <path d="M0 132h1600"/>
+    <path d="M160 132v612M400 132v612M640 132v612M880 132v612M1120 132v612M1360 132v612"/>
+    <path d="M0 744h1600"/>
+    <!-- floor line -->
+    <path d="M0 940h1600"/>
+  </g>
+  <g fill="none" stroke="#171513" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- sofa: back, seat, arms, legs -->
+    <path d="M300 940V706a34 34 0 0 1 34-34h632a34 34 0 0 1 34 34v234"/>
+    <path d="M300 806h700"/>
+    <path d="M334 806v-96M650 806v-96M966 806v-96"/>
+    <path d="M262 940V820a30 30 0 0 1 30-30h8M1038 940V820a30 30 0 0 1-30-30h-8"/>
+    <path d="M300 940v52M1000 940v52M262 940v52M1038 940v52"/>
+    <!-- cushion seams -->
+    <path d="M368 872h214M718 872h214" stroke-width="2.5" opacity="0.6"/>
+  </g>
+  <g fill="none" stroke="#171513" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- side table -->
+    <path d="M1128 838h216"/>
+    <path d="M1152 838v152M1320 838v152"/>
+    <path d="M1152 916h168" stroke-width="2.5" opacity="0.6"/>
+  </g>
+  <g fill="none" stroke="#B88A45" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- floor lamp -->
+    <path d="M1420 940V466"/>
+    <path d="M1356 466h128l-24-92h-80z"/>
+    <path d="M1372 940h96"/>
+  </g>
+  <g fill="none" stroke="#B88A45" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+    <!-- craftsmanship hairlines: the grain study task 19 animates -->
+    <path d="M120 1046h1360"/>
+    <path d="M120 1092h880"/>
+    <path d="M120 1138h520"/>
+  </g>
+</svg>

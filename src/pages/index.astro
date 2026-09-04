@@ -1,0 +1,274 @@
+---
+/**
+ * The homepage: fifteen sections, in one fixed relative order.
+ *
+ * **The order is not written here.** It is `HOMEPAGE_SECTION_KEYS` in `src/schemas/homepage.ts`, the
+ * schema rejects a content file that reorders or duplicates a key, and `getEnabledSections()` sorts
+ * by that array before returning. So this page iterates whatever the operator enabled, in the order
+ * Requirement 7.1 fixes, and there is no arrangement of `homepage.json` — and no edit to this file —
+ * that can put best sellers above featured. Omission is allowed and preserves the relative order of
+ * everything that remains (7.1, 7.13); reordering is not representable.
+ *
+ * The `switch` below is exhaustive over the fifteen keys, which is deliberate: adding a sixteenth key
+ * to the schema makes this a TypeScript error rather than a section that silently never renders.
+ *
+ * **`footer` is the fifteenth section and it is `SiteFooter`, in `BaseLayout`.** Requirement 7.1 lists
+ * the footer as a homepage section; Requirements 9.7 and 19.6 specify one footer for every public
+ * page. Rendering a second, homepage-only footer would satisfy neither. So the key is recognised,
+ * accounted for, and rendered by the layout — and `SECTIONS_RENDERED_BY_LAYOUT` records that fact in
+ * one place instead of a comment.
+ *
+ * **Product sections omit themselves.** Each of the four resolves its own products through
+ * `productsForSection`, and each component emits nothing at all — not an empty `<section>` — when the
+ * set is empty, so there is no residual vertical gap and nothing is substituted from another section
+ * (7.9). With `data/products/` empty, that is the current rendering of all four.
+ *
+ * **No background video, here or anywhere** (7.5). There is no `<video>` element in this codebase.
+ *
+ * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.7, 7.9, 7.10, 7.12, 7.13, 8.6, 9.3, 24.3.
+ */
+import QuickEnquireHost from '@/components/forms/QuickEnquireHost.astro';
+import BestSellers from '@/components/home/BestSellers.astro';
+import ContactLocation from '@/components/home/ContactLocation.astro';
+import CustomerReviews from '@/components/home/CustomerReviews.astro';
+import FeaturedProducts from '@/components/home/FeaturedProducts.astro';
+import GallerySection from '@/components/home/GallerySection.astro';
+import HeroSection from '@/components/home/HeroSection.astro';
+import NewArrivals from '@/components/home/NewArrivals.astro';
+import ShopByCategory from '@/components/home/ShopByCategory.astro';
+import StorySection from '@/components/home/StorySection.astro';
+import TrendingProducts from '@/components/home/TrendingProducts.astro';
+import WhatsAppCtaSection from '@/components/home/WhatsAppCtaSection.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getAnalyticsSnapshot } from '@/lib/content/analytics-snapshot';
+import { heroImagePreload } from '@/lib/images/preload';
+import { heroImageOf } from '@/lib/site/hero-image';
+import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
+import { getPublishedReviews } from '@/lib/content/reviews';
+import { getEnabledSections, getHomepage, getRankings, getSiteSettings } from '@/lib/content/site';
+import { productsForSection } from '@/lib/products/homepage-picks';
+import { localBusinessJsonLd, webSiteJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta, siteOrigin } from '@/lib/seo/page';
+import { compositionFor } from '@/lib/site/homepage-sections';
+import { effectiveTagline } from '@/lib/site/store';
+import type { HomepageSectionKeyValue } from '@/schemas/homepage';
+
+/** Keys the shell renders, so the page neither duplicates nor drops them. */
+const SECTIONS_RENDERED_BY_LAYOUT: readonly HomepageSectionKeyValue[] = ['footer'];
+
+const settings = getSiteSettings();
+const homepage = getHomepage();
+const sections = getEnabledSections();
+const tagline = effectiveTagline(settings, homepage);
+
+const [products, categories, reviews] = await Promise.all([
+  getCatalogue(),
+  getPublishedCategories(),
+  getPublishedReviews(),
+]);
+
+const categoryNames = Object.fromEntries(
+  categories.map((category) => [category.slug, category.name]),
+);
+
+/** Counts exclude drafts and unpublished, because they come from `getCatalogue()` (1.16). */
+const categoryTiles = categories.map((category) => ({
+  slug: category.slug,
+  name: category.name,
+  count: products.filter((product) => product.category === category.slug).length,
+  // Selects the tile's glyph. The key is the category schema's own field, so a new category file
+  // brings its illustration with it and no code changes (Requirement 18.3).
+  illustration: category.illustration,
+}));
+
+const rankings = getRankings();
+const picks = {
+  featuredProducts: productsForSection(products, compositionFor('featuredProducts'), rankings),
+  newArrivals: productsForSection(products, compositionFor('newArrivals'), rankings),
+  bestSellers: productsForSection(products, compositionFor('bestSellers'), rankings),
+  trending: productsForSection(products, compositionFor('trending'), rankings),
+};
+
+/**
+ * Trending's basis. A snapshot that covers none of the visible products orders identically to no
+ * snapshot, so claiming "measured" would be false — the same test `resolveRanking` applies for the
+ * catalogue's sort control.
+ */
+const snapshot = getAnalyticsSnapshot();
+const trendingMeasuredAsOf =
+  snapshot !== null &&
+  picks.trending.some((product) => (snapshot.views ?? {})[product.slug] !== undefined)
+    ? snapshot.asOf
+    : undefined;
+
+/**
+ * The homepage's structured data (Requirements 23.9, 23.11).
+ *
+ * `WebSite` carries the `SearchAction` pointing at `/collection?q={query}` — the route the site's
+ * own search box navigates to, so the action offered is the action performed. `FurnitureStore`
+ * emits only what Settings actually holds; the address, hours, price range and coordinates are
+ * absent until the operator supplies them rather than guessed (Requirement 19.6).
+ */
+/** The same image the hero renders, resolved from the same function. */
+const heroPreload = heroImagePreload(heroImageOf(settings).src);
+
+const origin = siteOrigin(Astro);
+const meta = pageMeta(Astro, {
+  path: '/',
+  // The operator's positioning line, so the homepage title is editable from Settings and is not a
+  // second copy of a sentence the hero already owns. `effectiveTagline` is nullable — a settings
+  // file with no tagline falls back to the business name, which is the one thing always known.
+  title: tagline ?? settings.businessName,
+  description: settings.seoDefaults.description,
+  jsonLd: [webSiteJsonLd(settings, origin), localBusinessJsonLd(settings, origin)],
+});
+---
+
+<BaseLayout meta={meta} heroHeader mainClass="ngf-home">
+  {
+    /*
+    The homepage's one image preload: the hero, which is its largest contentful element and is
+    rendered with `fetchpriority="high"`. It is emitted here rather than inside `HeroSection`
+    because a `<link>` belongs in the head and a component two levels down cannot reach the head
+    slot — which is why this hint was missing until now, leaving the site's most-visited page as
+    the only one whose LCP image was prioritised on the element and never hinted in the head.
+    Suppressed when the hero section is disabled, so the page never hints an image it does not
+    render.
+  */
+  }
+  <ImagePreload
+    slot="head"
+    hint={sections.some((section) => section.key === 'hero') ? heroPreload : null}
+  />
+  {
+    sections
+      .filter((section) => !SECTIONS_RENDERED_BY_LAYOUT.includes(section.key))
+      .map((section) => {
+        switch (section.key) {
+          case 'hero':
+            return <HeroSection section={section} tagline={tagline} />;
+          case 'shopByCategory':
+            return <ShopByCategory section={section} categories={categoryTiles} />;
+          case 'featuredProducts':
+            return (
+              <FeaturedProducts
+                section={section}
+                products={picks.featuredProducts}
+                categoryNames={categoryNames}
+              />
+            );
+          case 'newArrivals':
+            return (
+              <NewArrivals
+                section={section}
+                products={picks.newArrivals}
+                categoryNames={categoryNames}
+              />
+            );
+          case 'bestSellers':
+            return (
+              <BestSellers
+                section={section}
+                products={picks.bestSellers}
+                categoryNames={categoryNames}
+              />
+            );
+          case 'trending':
+            return (
+              <TrendingProducts
+                section={section}
+                products={picks.trending}
+                measuredAsOf={trendingMeasuredAsOf}
+              />
+            );
+          case 'craftsmanship':
+            return (
+              <StorySection
+                section={section}
+                fallbackHeading="Craftsmanship"
+                ornament="left"
+                primitive="craftsmanship"
+              />
+            );
+          case 'directManufacturer':
+            return (
+              <StorySection
+                section={section}
+                fallbackHeading="Direct from the manufacturer"
+                ornament="right"
+                primitive="assembly"
+              />
+            );
+          case 'customFurniture':
+            return (
+              <StorySection section={section} fallbackHeading="Custom furniture" ornament="left" />
+            );
+          case 'workshopStory':
+            return (
+              <StorySection
+                section={section}
+                fallbackHeading="Showroom & workshop"
+                ornament="right"
+              />
+            );
+          case 'customerReviews':
+            return <CustomerReviews section={section} reviews={reviews} />;
+          case 'gallery':
+            return <GallerySection section={section} products={products} />;
+          case 'whatsappCta':
+            return <WhatsAppCtaSection section={section} />;
+          case 'contactLocation':
+            return <ContactLocation section={section} />;
+          case 'footer':
+            // Unreachable: filtered above. Present so the switch stays exhaustive.
+            return null;
+        }
+      })
+  }
+  {/* One Quick Enquire dialog host for every card on this page. */}
+  <QuickEnquireHost />
+</BaseLayout>
+
+<style is:global>
+  /*
+   * The band rhythm. Global rather than scoped because every section component is a separate Astro
+   * file and each one would otherwise repeat the same measure and vertical spacing — which is how a
+   * page ends up with fifteen slightly different paddings.
+   */
+  .ngf-home > .ngf-home-section {
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding-block: clamp(3rem, 8vh, 6rem);
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-home > .ngf-home-section {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Full-bleed dark bands keep their own inner measure. */
+  .ngf-home > .ngf-home-section[data-surface='dark'] {
+    max-width: none;
+    padding-block: 0;
+  }
+
+  .ngf-home > .ngf-home-section[data-surface='dark'] > * {
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-home > .ngf-home-section[data-surface='dark'] > * {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Alternating grounds, so consecutive editorial bands do not merge into one slab. */
+  .ngf-home > .ngf-home-story:nth-of-type(even) {
+    background-color: var(--color-cream);
+  }
+</style>

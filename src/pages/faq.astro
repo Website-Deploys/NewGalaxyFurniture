@@ -1,0 +1,200 @@
+---
+/**
+ * `/faq`.
+ *
+ * The FAQ is the page where invented facts hide most comfortably: every question a customer asks has an
+ * answer that *sounds* safe to write. "Do you deliver outside Bengaluru?" "How long does a sofa take?"
+ * "Is there a warranty?" Each of those is a delivery term, a timeline, or a warranty term, and
+ * Requirement 8.4 forbids stating any of them unsupplied.
+ *
+ * So this page publishes the **questions**, answers only the ones whose answers are established facts
+ * about how the site works, and for every other one says where the answer will be and how to get it
+ * today. `page.faq.entries` stays on the admin content checklist until real answers arrive
+ * (Requirement 8.8).
+ *
+ * The three answered questions are answered from things this project actually knows: there is no cart
+ * or checkout (a fact about the site), both numbers are equivalent (Requirement 5.10), and the business
+ * manufactures in Bengaluru and serves its stated service area (the specification's own premise and the
+ * operator's own settings).
+ *
+ * `<details>`/`<summary>` rather than an ARIA accordion: it is keyboard operable, screen-reader
+ * operable, and searchable by the browser's find-in-page with no JavaScript at all.
+ *
+ * Requirements: 8.1, 8.4, 8.8, 24.1, 24.5.
+ */
+import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const settings = getSiteSettings();
+const serviceArea = settings.serviceArea.join(', ');
+
+interface Entry {
+  question: string;
+  /** An established fact, or `null` when the answer has not been supplied. */
+  answer: string | null;
+  /** Where the answer will be published. Shown when `answer` is `null`. */
+  pending?: { label: string; href: string };
+}
+
+const entries: Entry[] = [
+  {
+    question: 'Can I buy directly on this site?',
+    answer:
+      'No, and deliberately. This site is a catalogue: there is no cart, no checkout and no online payment. You send us an enquiry on WhatsApp or by phone, we confirm the price, the specification and the date with you, and the order is agreed between people.',
+  },
+  {
+    question: 'Which of your two numbers should I use?',
+    answer:
+      'Either. Both numbers are for orders and enquiries and both reach the same people — use whichever you prefer, or whichever answers first.',
+  },
+  {
+    question: 'Do you make furniture yourselves?',
+    answer: `Yes. We manufacture in Bengaluru and sell directly, and we deliver and install across ${serviceArea}.`,
+  },
+  {
+    question: 'Can a piece be made in a different size, timber or finish?',
+    answer:
+      'Most pieces can. Send us the size the room needs and the timber or finish you want and we will tell you what is possible before quoting anything.',
+    pending: { label: 'Custom furniture', href: '/custom-furniture' },
+  },
+  {
+    question: 'How long does an order take?',
+    answer: null,
+    pending: { label: 'Shipping & Delivery', href: '/shipping' },
+  },
+  {
+    question: 'Where do you deliver, and what does delivery cost?',
+    answer: null,
+    pending: { label: 'Shipping & Delivery', href: '/shipping' },
+  },
+  {
+    question: 'Can I return or cancel an order?',
+    answer: null,
+    pending: { label: 'Returns & Cancellation', href: '/returns' },
+  },
+  {
+    question: 'Is there a warranty?',
+    answer: null,
+    pending: { label: 'Warranty', href: '/warranty' },
+  },
+  {
+    question: 'What are your showroom opening hours?',
+    answer: null,
+    pending: { label: 'Contact', href: '/contact' },
+  },
+];
+
+const meta = pageMeta(Astro, {
+  title: 'Frequently Asked Questions',
+  description:
+    'Common questions about ordering furniture from New Galaxy Furniture, and how to reach us for anything not answered here.',
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">Questions</p>
+      <h1>Frequently asked questions</h1>
+      <p class="ngf-page-lead">
+        Where we can answer, we answer. Where the answer is a term we have not finalised, we say so
+        and tell you how to get it today rather than publishing a number we cannot stand behind.
+      </p>
+    </div>
+
+    <div class="ngf-page-body">
+      <ul class="ngf-faq" data-content-key="page.faq.entries">
+        {
+          entries.map((entry) => (
+            <li>
+              <details>
+                <summary>{entry.question}</summary>
+                <div class="ngf-faq-answer">
+                  {entry.answer !== null && <p>{entry.answer}</p>}
+                  {entry.answer === null && (
+                    <p>
+                      We have not finalised this yet, and we would rather not publish a term we
+                      cannot keep. Ask us on either number and we will tell you exactly what applies
+                      to your order.
+                    </p>
+                  )}
+                  {entry.pending !== undefined && (
+                    <p class="ngf-policy-outstanding">
+                      {entry.answer === null ? 'Will be published on ' : 'See also '}
+                      <a href={entry.pending.href}>{entry.pending.label}</a>.
+                    </p>
+                  )}
+                </div>
+              </details>
+            </li>
+          ))
+        }
+      </ul>
+
+      <PlaceholderCopy
+        body="[PLACEHOLDER — add the questions customers actually ask you, with your own answers. Delivery timeframes, return windows, cancellation terms and warranty terms belong in the policy pages and none has been supplied yet.]"
+        contentKey="page.faq.entries"
+      />
+
+      <div class="ngf-page-actions">
+        <WhatsAppLink context={{ kind: 'general' }} label="Ask us anything on WhatsApp" />
+        <CallLink variant="outline" />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-faq {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-taupe);
+  }
+
+  .ngf-faq > li {
+    border-bottom: 1px solid var(--color-taupe);
+  }
+
+  .ngf-faq summary {
+    display: flex;
+    align-items: center;
+    min-height: 56px;
+    padding-block: 0.75rem;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    list-style: none;
+  }
+
+  .ngf-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ngf-faq summary::after {
+    content: '+';
+    margin-left: auto;
+    color: var(--color-champagne);
+  }
+
+  .ngf-faq details[open] summary::after {
+    content: '−';
+  }
+
+  .ngf-faq-answer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .ngf-faq-answer p {
+    margin: 0;
+    color: var(--color-espresso);
+  }
+</style>

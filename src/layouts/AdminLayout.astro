@@ -1,0 +1,106 @@
+---
+/**
+ * The admin application shell.
+ *
+ * Responsibilities, in order of how much they matter:
+ *
+ * 1. **Never be indexed.** `noindex, nofollow` as a meta tag here and as an
+ *    `X-Robots-Tag` header from `src/middleware.ts`. The header is the one that
+ *    counts for redirects and API responses; the tag covers the case where the page
+ *    is saved or proxied (Requirements 11.5, 12.10).
+ * 2. **Bootstrap the CSRF token into the SSR payload.** The token lives in the KV
+ *    session record and is never in a readable cookie, so the only way the admin
+ *    islands can put it on `X-CSRF-Token` is to receive it in the rendered HTML.
+ *    It is emitted as `application/json` in a non-executable `<script type>` rather
+ *    than interpolated into JavaScript, so no value can escape into code position.
+ * 3. **Hand the role to the nav** so forbidden controls are hidden (Requirement
+ *    10.17) — cosmetically; the server refuses regardless.
+ *
+ * Design: Admin Authentication; Pages, Navigation, and States → Route inventory.
+ * Requirements: 10.17, 11.1, 11.5, 24.8, 26.3.
+ */
+import AdminNav from '@/components/admin/AdminNav';
+import { permissionsOf } from '@/lib/auth/permissions';
+import { jsonScriptText } from '@/lib/security/sanitize';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+  /** Rendered as the page's single `h1`. Defaults to `title`. */
+  heading?: string;
+}
+
+const { title, heading } = Astro.props;
+
+/**
+ * Admin metadata goes through `buildPageMeta` like every other surface (Requirement 23.1), with
+ * `noindex` set for the whole application — so the claim "there is one metadata path" is literally
+ * true rather than true of the public pages only. `src/middleware.ts` sets the matching
+ * `X-Robots-Tag` header, which is the one that covers redirects and API responses too
+ * (Requirements 11.5, 12.10).
+ */
+const meta = pageMeta(Astro, {
+  title: `${title} — admin`,
+  description: 'New Galaxy Furniture content administration.',
+  noindex: true,
+});
+
+const session = Astro.locals.adminSession;
+// `AdminLayout` is only reachable through the middleware's session check, so a
+// missing session here means the page bypassed it. Render no nav and no token rather
+// than inventing a role.
+const role = session?.role ?? null;
+const bootstrap = {
+  csrfToken: session?.csrfToken ?? null,
+  role,
+  permissions: role === null ? [] : permissionsOf(role),
+  expiresAt: session?.expiresAt ?? null,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content={meta.robots} />
+    <title>{meta.title}</title>
+    {
+      /*
+      JSON in a data script: parsed, never evaluated, and serialised through `jsonScriptText` so `<`
+      is escaped and no value can close the element early. Every field in it is server-generated
+      today; a data block whose safety depends on where its values happened to come from is one
+      refactor away from being an injection point.
+    */
+    }
+    <script id="ngf-admin-bootstrap" type="application/json" set:html={jsonScriptText(bootstrap)} />
+  </head>
+  <body class="min-h-screen bg-cream text-obsidian antialiased">
+    <a
+      href="#admin-main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-obsidian focus:px-4 focus:py-2 focus:text-ivory"
+    >
+      Skip to content
+    </a>
+
+    <div class="mx-auto flex max-w-[1440px] flex-col gap-8 px-4 py-6 lg:flex-row lg:px-8">
+      {
+        role !== null && (
+          <aside class="lg:w-60 lg:shrink-0" aria-label="Admin sections">
+            <AdminNav
+              client:load
+              role={role}
+              currentPath={Astro.url.pathname}
+              csrfToken={bootstrap.csrfToken ?? ''}
+            />
+          </aside>
+        )
+      }
+      <main id="admin-main" class="min-w-0 flex-1">
+        <h1 class="font-display text-h2 leading-tight text-espresso">{heading ?? title}</h1>
+        <div class="mt-6"><slot /></div>
+      </main>
+    </div>
+  </body>
+</html>

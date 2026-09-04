@@ -1,0 +1,107 @@
+---
+/**
+ * New arrivals — the **horizontal scroll rail**.
+ *
+ * Composition (Requirement 7.2): 4 items per row at 1280 px, a 3/4 item ratio, **inline** scroll
+ * axis. It is the only one of the four that scrolls sideways, which is what makes it structurally
+ * distinct from every other combination, and it is the mobile-first pattern the design's responsive
+ * strategy names for product groups.
+ *
+ * The rail is real overflow with CSS scroll snapping, not a JavaScript carousel: no island, no
+ * autoplay, no hidden items, and a keyboard visitor tabs through the cards in DOM order while the
+ * browser scrolls each one into view for free. `scroll-behavior` is inherited from the global rule,
+ * so the reduce-motion clamp already applies to it.
+ *
+ * **Zero qualifying products means the whole section is absent** (Requirement 7.9), with nothing
+ * substituted from another section.
+ *
+ * Requirements: 7.1, 7.2, 7.9, 15.17, 24.3.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import ProductCard from '@/components/product/ProductCard.astro';
+import { compositionFor } from '@/lib/site/homepage-sections';
+import type { HomepageSection } from '@/schemas/homepage';
+import type { Product } from '@/schemas/product';
+
+interface Props {
+  section: HomepageSection;
+  products: readonly Product[];
+  categoryNames?: Record<string, string>;
+}
+
+const { section, products, categoryNames = {} } = Astro.props;
+const composition = compositionFor('newArrivals');
+---
+
+{
+  products.length > 0 && (
+    <section
+      class="ngf-home-section ngf-home-arrivals"
+      aria-labelledby="ngf-arrivals-heading"
+      data-ngf-section="newArrivals"
+      data-layout={composition.layout}
+      data-items-per-row={composition.itemsPerRowAt1280}
+      data-scroll-axis={composition.scrollAxis}
+      style={`--ngf-card-ratio: ${composition.aspectRatio};`}
+    >
+      <SectionHeader
+        eyebrow={section.eyebrow}
+        heading={section.heading ?? 'New arrivals'}
+        subheading={section.subheading}
+        headingId="ngf-arrivals-heading"
+      />
+
+      {/*
+        `tabindex="0"` plus an `aria-label` makes the scroll container itself reachable, so a keyboard
+        visitor can scroll the rail with the arrow keys instead of only tabbing card to card.
+
+        It carried `role="group"` as well, which was the defect: an explicit role *replaces* the
+        implicit one, so the `ul` stopped being a list and its `li` children stopped being list items —
+        which is an axe `listitem` violation and, more to the point, costs a screen-reader user the
+        item count and position they would otherwise be given. A `ul` takes `aria-label` directly, so
+        the name and the keyboard reachability both survive without the role.
+      */}
+      <ul
+        class="ngf-arrivals-rail"
+        tabindex="0"
+        aria-label={section.heading ?? 'New arrivals'}
+        data-reveal
+        data-motion-group
+      >
+        {products.map((product) => (
+          <li>
+            <ProductCard product={product} categoryName={categoryNames[product.category]} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .ngf-arrivals-rail {
+    display: grid;
+    grid-auto-flow: column;
+    /* 4 items per row at 1280 px: the container is 1280 − 2×2rem padding, so 21rem tracks show
+       four across with the fifth peeking, which is what tells the visitor the rail scrolls. */
+    grid-auto-columns: minmax(min(78vw, 15rem), 1fr);
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0 0 0.75rem;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: thin;
+  }
+
+  @media (min-width: 1280px) {
+    .ngf-arrivals-rail {
+      grid-auto-columns: minmax(0, calc((100% - 3 * 1.25rem) / 4));
+    }
+  }
+
+  .ngf-arrivals-rail > li {
+    scroll-snap-align: start;
+  }
+</style>

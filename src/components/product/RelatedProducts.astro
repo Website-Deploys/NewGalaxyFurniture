@@ -1,0 +1,41 @@
+---
+/**
+ * The related products section.
+ *
+ * It renders nothing at all — no heading, no container, no rule — when the set is empty.
+ * Requirement 4.9 is explicit that this is the correct outcome and not a degradation: an empty
+ * related section is preferable to a rail of unrelated furniture, and a heading with nothing under
+ * it is the visual equivalent of the unrelated rail.
+ *
+ * The cards are `ProductCard`, not a bespoke variant, so a related product looks and behaves
+ * exactly as it does everywhere else — including its own Quick Enquire target. None of these
+ * images is eager: the PDP's one eager image is the gallery primary.
+ *
+ * Requirements: 4.8, 4.9, 15.17.
+ */
+import ProductCard from '@/components/product/ProductCard.astro';
+import type { Product } from '@/schemas/product';
+
+interface Props {
+  products: readonly Product[];
+  categoryNames?: Record<string, string>;
+  heading?: string;
+}
+
+const { products, categoryNames = {}, heading = 'You may also like' } = Astro.props;
+---
+
+{
+  products.length > 0 && (
+    <section class="ngf-pdp-section" aria-labelledby="ngf-related-heading" data-ngf-related>
+      <h2 id="ngf-related-heading">{heading}</h2>
+      <ul class="ngf-grid" data-reveal data-motion-group>
+        {products.map((product) => (
+          <li>
+            <ProductCard product={product} categoryName={categoryNames[product.category]} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

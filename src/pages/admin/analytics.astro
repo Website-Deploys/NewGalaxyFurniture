@@ -1,0 +1,51 @@
+---
+/**
+ * /admin/analytics — measured interest, with its limits stated.
+ *
+ * Rendered on the server so the operator's first read needs no JavaScript, and so a store
+ * failure is reported as a failure rather than as a page that quietly shows nothing.
+ *
+ * Requirements: 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.12, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import AnalyticsView from '@/components/admin/AnalyticsView';
+import {
+  analyticsSummary,
+  HONEST_LIMITS,
+  parseRange,
+  type AnalyticsSummary,
+} from '@/lib/analytics/queries';
+import { getD1 } from '@/lib/env';
+
+export const prerender = false;
+
+const range = parseRange(Astro.url.searchParams);
+
+let summary: AnalyticsSummary | null = null;
+let unavailable: string | null = null;
+
+try {
+  summary = await analyticsSummary(getD1(Astro), range);
+} catch (error) {
+  console.error('[admin/analytics] could not read the rollups', error);
+  unavailable =
+    'The analytics store could not be read in this environment. This is a configuration or connectivity problem — it does not mean no activity was recorded. No figures are shown rather than incorrect ones.';
+}
+---
+
+<AdminLayout title="Analytics">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    Every figure below is a count of something that was actually recorded, over the range you
+    choose. Nothing is sampled, projected, extrapolated or illustrated, and no example numbers
+    appear anywhere on this screen. Each figure is labelled with where it came from, and the limits
+    of what it can prove are stated alongside it rather than left implied.
+  </p>
+
+  {
+    summary !== null && unavailable === null ? (
+      <AnalyticsView client:load summary={summary} limits={HONEST_LIMITS} />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>

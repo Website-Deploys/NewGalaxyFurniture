@@ -1,0 +1,186 @@
+---
+/**
+ * Trending — the **numbered editorial list**.
+ *
+ * Composition (Requirement 7.2): 1 item per row at 1280 px, a 1/1 square item ratio, block scroll
+ * axis. One item per row is the sharpest possible contrast with the other three sections: it is a
+ * list, not a grid, and it cannot be mistaken for one at any width.
+ *
+ * The ordinal is decoration in the accessibility sense — the list is already an ordered list, so the
+ * number is `aria-hidden` and a screen reader hears "1 of 5" from the list semantics rather than the
+ * digit twice.
+ *
+ * **The ordering's basis is stated, not implied.** With no analytics snapshot, "trending" is the
+ * operator's curated list (Requirements 3.15, 3.16), and the note says so. When a snapshot exists,
+ * task 21's rollup supplies a measured ordering and the note carries its date — the same honest
+ * distinction the catalogue's sort control makes.
+ *
+ * **Zero qualifying products means the whole section is absent** (Requirement 7.9).
+ *
+ * Requirements: 3.15, 3.16, 7.1, 7.2, 7.9, 15.17.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
+import { formatPriceOrLabel } from '@/lib/money';
+import { stockLabel } from '@/lib/products/labels';
+import { compositionFor } from '@/lib/site/homepage-sections';
+import type { HomepageSection } from '@/schemas/homepage';
+import { primaryImageOf, type Product } from '@/schemas/product';
+
+interface Props {
+  section: HomepageSection;
+  products: readonly Product[];
+  /** The snapshot date when the ordering is measured; absent means curated. */
+  measuredAsOf?: string;
+}
+
+const { section, products, measuredAsOf } = Astro.props;
+const composition = compositionFor('trending');
+
+const basisNote =
+  measuredAsOf === undefined
+    ? 'Curated by us — this ordering is our own, not a measurement.'
+    : `Measured from site activity as of ${measuredAsOf}.`;
+---
+
+{
+  products.length > 0 && (
+    <section
+      class="ngf-home-section ngf-home-trending"
+      aria-labelledby="ngf-trending-heading"
+      data-ngf-section="trending"
+      data-layout={composition.layout}
+      data-items-per-row={composition.itemsPerRowAt1280}
+      data-scroll-axis={composition.scrollAxis}
+      style={`--ngf-card-ratio: ${composition.aspectRatio};`}
+    >
+      <SectionHeader
+        eyebrow={section.eyebrow}
+        heading={section.heading ?? 'Trending'}
+        subheading={section.subheading ?? basisNote}
+        headingId="ngf-trending-heading"
+      />
+
+      <ol class="ngf-trending-list">
+        {products.map((product, index) => {
+          const primary = primaryImageOf(product);
+          return (
+            <li>
+              <a href={`/product/${product.slug}`} class="ngf-trending-row">
+                <span class="ngf-trending-ordinal" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span class="ngf-trending-media">
+                  {primary === null ? (
+                    <span class="ngf-trending-noimage">Photograph coming soon</span>
+                  ) : (
+                    <ResponsiveImage
+                      productId={product.id}
+                      image={primary}
+                      context="galleryThumb"
+                      widths={[320, 480]}
+                    />
+                  )}
+                </span>
+                <span class="ngf-trending-text">
+                  <span class="ngf-trending-name">{product.name}</span>
+                  <span class="ngf-trending-meta">
+                    {formatPriceOrLabel(product.price, product.priceOnEnquiry)} ·{' '}
+                    {stockLabel(product.stockStatus)}
+                  </span>
+                </span>
+                <span class="ngf-trending-arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  .ngf-trending-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-taupe);
+  }
+
+  .ngf-trending-list > li {
+    border-bottom: 1px solid var(--color-taupe);
+  }
+
+  /* 1 item per row at every width — a list, not a grid. */
+  .ngf-trending-row {
+    display: grid;
+    grid-template-columns: auto 5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    min-height: 88px;
+    padding-block: 1rem;
+    color: var(--color-obsidian);
+    text-decoration: none;
+  }
+
+  /*
+   * Walnut, not champagne.
+   *
+   * The ordinal is *text* — "1", "2", "3" beside each row — and champagne on a light background is
+   * 2.79:1. The project's own palette test already says so: `tokens.contrast.test.ts` lists
+   * champagne-on-ivory and champagne-on-cream as decorative-only pairings and asserts they fail both
+   * the body and the UI-stroke thresholds. Using one to colour a number was a rule this codebase had
+   * already written down. Walnut on ivory is 6.5:1 and is the palette's warm accent for exactly this.
+   */
+  .ngf-trending-ordinal {
+    color: var(--color-walnut);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ngf-trending-media {
+    display: block;
+    width: 5rem;
+    aspect-ratio: var(--ngf-card-ratio, 1 / 1);
+    overflow: hidden;
+    background-color: var(--color-cream);
+  }
+
+  .ngf-trending-media > :global(*) {
+    height: 100%;
+  }
+
+  .ngf-trending-noimage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0.25rem;
+    color: var(--color-walnut);
+    font-size: 0.6875rem;
+    text-align: center;
+  }
+
+  .ngf-trending-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .ngf-trending-name {
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+  }
+
+  .ngf-trending-meta {
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+  }
+
+  .ngf-trending-arrow {
+    color: var(--color-champagne);
+  }
+</style>

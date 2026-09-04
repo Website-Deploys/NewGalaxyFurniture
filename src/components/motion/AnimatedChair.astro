@@ -1,0 +1,30 @@
+---
+/**
+ * `AnimatedChair` — a dining chair contour.
+ *
+ * Signature motion (design's component table): "legs draw upward, then seat, then back —
+ * staggered". The order is expressed as three `--ngf-draw-delay` values, so the stagger is the
+ * stylesheet's single transition per path rather than a timeline anyone has to sequence.
+ *
+ * Requirements: 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs(Astro.props, 'chair', 620);
+---
+
+<svg {...svg} viewBox="0 0 120 160" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+  {
+    /* 1. The legs, drawn from the floor up. Stretchers included — they are what make it read
+       as joinery rather than as a stool. */
+  }
+  <path class="ngf-draw" d="M28 152V92M92 152V92M28 136h64"></path>
+  {/* 2. The seat: front rail, seat plane, side rails. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:220ms" d="M20 92h80M20 92l8-8h64l8 8"></path>
+  {/* 3. The back: stiles, top rail, and one splat. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:440ms" d="M30 84V16h60v68M30 24h60M60 24v60"
+  ></path>
+</svg>

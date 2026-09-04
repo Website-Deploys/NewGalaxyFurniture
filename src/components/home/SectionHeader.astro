@@ -1,0 +1,73 @@
+---
+/**
+ * A homepage section's heading block: eyebrow, heading, subheading.
+ *
+ * All three come from `data/site/homepage.json`, so an operator changes them in Admin → Homepage
+ * and the public page renders the change after the next deploy with no code change and with the
+ * section's position untouched (Requirements 7.7, 7.13).
+ *
+ * An absent field renders nothing — not an empty element. A section whose heading the operator
+ * cleared should read as one without a heading, not as one with a blank line where a heading used
+ * to be (the same discipline as Requirement 4.3 on the PDP).
+ *
+ * Requirements: 7.7, 7.13.
+ */
+
+interface Props {
+  eyebrow?: string;
+  heading?: string;
+  subheading?: string;
+  /** The heading's id, so the section can be `aria-labelledby` it. */
+  headingId?: string;
+  align?: 'start' | 'center';
+  class?: string;
+}
+
+const { eyebrow, heading, subheading, headingId, align = 'start', class: className } = Astro.props;
+---
+
+{
+  (eyebrow !== undefined || heading !== undefined || subheading !== undefined) && (
+    <header class:list={['ngf-section-head', className]} data-align={align}>
+      {eyebrow !== undefined && <p class="ngf-section-eyebrow">{eyebrow}</p>}
+      {heading !== undefined && (
+        <h2 class="ngf-section-heading" id={headingId}>
+          {heading}
+        </h2>
+      )}
+      {subheading !== undefined && <p class="ngf-section-sub">{subheading}</p>}
+    </header>
+  )
+}
+
+<style>
+  .ngf-section-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .ngf-section-head[data-align='center'] {
+    align-items: center;
+    text-align: center;
+  }
+
+  .ngf-section-eyebrow {
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .ngf-section-heading {
+    margin: 0;
+    font-size: var(--text-h2);
+  }
+
+  .ngf-section-sub {
+    margin: 0;
+    color: var(--color-espresso);
+  }
+</style>

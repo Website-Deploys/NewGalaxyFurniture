@@ -1,0 +1,140 @@
+---
+/**
+ * The 404 page.
+ *
+ * It answers two requirements that describe the same page from different directions:
+ *
+ * - **Requirement 26.1** — a request for a product that is not published gets a 404 offering the
+ *   relevant category, search, and a WhatsApp enquiry. `/product/[slug]` generates pages only for
+ *   Catalogue products, so every other `/product/*` path lands here with a genuine 404 status. It is
+ *   never a 200 with an apology and never a redirect (Requirement 4.13).
+ * - **Requirement 1.4** — a `/collection/{slug}` path matching none of the nine category slugs must
+ *   state that the requested category does not exist, offer search, and link to the nine category
+ *   routes, and must never render an empty product listing.
+ *
+ * The page is static, so the requested path is not known at build time. The composition therefore
+ * covers every case in its static copy, and a short inline script *sharpens* the heading and the
+ * suggested category when the path tells it something specific. Progressive enhancement in the strict
+ * sense: with scripting off the generic copy is already correct and complete, and the script only ever
+ * replaces text — it never reveals a control that was hidden.
+ *
+ * Task 16.4 rebuilt the composition on the shared `EmptyState` primitive, so the seven empty states
+ * Requirement 26.14 lists — including this one — share one composition rather than four similar ones.
+ * The category chips are the nine real routes from `CATEGORY_NAV`, so a new category file appears here
+ * with no edit.
+ *
+ * Requirements: 1.4, 4.13, 26.1, 26.14, 26.15 (no internal path or identifier is disclosed).
+ */
+import EmptyState from '@/components/ui/EmptyState.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { pageMeta } from '@/lib/seo/page';
+import { CATEGORY_NAV } from '@/lib/site/navigation';
+import '@/styles/editorial.css';
+
+const meta = pageMeta(Astro, {
+  path: '/404',
+  title: 'Page not found',
+  description:
+    'The page you requested does not exist. Search the catalogue or start from a category.',
+  // A 404 body is not a page anyone should land on from a search result.
+  noindex: true,
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">404</p>
+      <h1 data-ngf-404-heading>Page not found</h1>
+      <p class="ngf-page-lead" data-ngf-404-message>
+        The page you requested does not exist. Search the catalogue from the control in the header,
+        or start from one of the nine categories below.
+      </p>
+    </div>
+
+    <EmptyState
+      heading="Let us point you at the right piece"
+      message="Tell us what you are looking for — a room, a size, a timber — and we will send options and prices. Both numbers are for orders and enquiries."
+    >
+      <WhatsAppLink slot="action" context={{ kind: 'general' }} label="Ask on WhatsApp" />
+      <CallLink slot="action" variant="outline" />
+
+      <nav aria-label="Categories" class="ngf-404-categories">
+        <ul>
+          {
+            CATEGORY_NAV.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))
+          }
+          <li><a href="/collection">Everything</a></li>
+        </ul>
+      </nav>
+    </EmptyState>
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-404-categories ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ngf-404-categories a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 0.875rem;
+    border: 1px solid var(--color-taupe);
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    text-decoration: none;
+  }
+
+  .ngf-404-categories a:hover {
+    background-color: var(--color-ivory);
+  }
+</style>
+
+<script>
+  /*
+   * Sharpen the copy for the two paths that have something specific to say. Text only: no control is
+   * revealed, nothing is fetched, and no internal path or identifier is shown (Requirement 26.15).
+   * The requested slug is inserted with `textContent`, never as markup, so a crafted URL cannot
+   * inject anything.
+   */
+  const heading = document.querySelector<HTMLElement>('[data-ngf-404-heading]');
+  const message = document.querySelector<HTMLElement>('[data-ngf-404-message]');
+
+  const category = /^\/collection\/([^/]+)\/?$/.exec(window.location.pathname);
+  const product = /^\/product\/([^/]+)\/?$/.exec(window.location.pathname);
+
+  function decode(value: string | undefined): string {
+    try {
+      return decodeURIComponent(value ?? '');
+    } catch {
+      return value ?? '';
+    }
+  }
+
+  if (category !== null && heading !== null && message !== null) {
+    // Requirement 1.4: name the missing category explicitly.
+    heading.textContent = 'That category does not exist';
+    message.textContent =
+      `There is no “${decode(category[1])}” category. ` +
+      'Search the catalogue from the control in the header, or choose one of the nine categories below.';
+  } else if (product !== null && heading !== null && message !== null) {
+    // Requirement 26.1: a product that is not published.
+    heading.textContent = 'That piece is not available';
+    message.textContent =
+      'This product is not in our published catalogue. It may have been renamed or withdrawn — ' +
+      'search for it, browse a category, or message us and we will tell you whether we still make it.';
+  }
+</script>

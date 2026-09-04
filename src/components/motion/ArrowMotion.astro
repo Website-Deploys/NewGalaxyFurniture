@@ -1,0 +1,46 @@
+---
+/**
+ * The shared animated arrow.
+ *
+ * The design specifies one: "a shared `<ArrowMotion/>` with a 4 px slide plus a drawing tail". One,
+ * because a site that draws its own arrow in six places has six arrows that drift apart, and because
+ * the hover treatment is a rule in `motion.css` keyed on the class names below — so every arrow on
+ * the site moves identically and a change is one edit.
+ *
+ * It is always decorative. An arrow next to "Explore Collection" adds nothing a screen reader needs,
+ * and announcing "right arrow" after the link text is noise — so it is unconditionally
+ * `aria-hidden`, with no prop to make it otherwise.
+ *
+ * The motion is on hover **and** on `:focus-visible` (see `motion.css`), so it is not a
+ * mouse-only affordance, and it stays at `--dur-fast` under reduced motion because interaction
+ * feedback must keep working (Requirement 21.12).
+ *
+ * Requirements: 21.6, 21.7, 21.8, 21.12.
+ */
+interface Props {
+  /** 12, 16 or 20 px. The three sizes the type scale needs; nothing else is offered. */
+  size?: 12 | 16 | 20;
+  class?: string;
+}
+
+const { size = 16, class: className } = Astro.props;
+---
+
+<svg
+  class:list={['ngf-arrow', className]}
+  width={size}
+  height={size}
+  viewBox="0 0 16 16"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  {/* The tail. `stroke-dasharray` is set in `motion.css` so the shaft can draw on hover. */}
+  <path class="ngf-arrow-shaft" d="M2 8h10"></path>
+  {/* The head, which is the part that slides 4 px. */}
+  <path class="ngf-arrow-head" d="M9 4.5 12.5 8 9 11.5"></path>
+</svg>

@@ -1,0 +1,229 @@
+---
+/**
+ * The craftsmanship, direct-manufacturer, and showroom/workshop sections.
+ *
+ * One component for all three because Requirement 7.10 says the identical thing about all three, and
+ * three copies of that rule would mean three places for it to be got wrong:
+ *
+ * > WHERE the craftsmanship, direct manufacturer, or showroom and workshop copy has not been supplied
+ * > by the operator, THE NGF_Site SHALL render in that section a placeholder that is visually
+ * > distinguished from supplied copy and labelled as awaiting content, SHALL include that section's
+ * > unsupplied content key in the admin content checklist, and SHALL NOT state any manufacturing
+ * > process, timeline, capability, or business achievement that the operator has not supplied.
+ *
+ * The last clause is the one that shapes this file. **There is no prose in it.** Every word a visitor
+ * reads in these three sections comes from `data/site/homepage.json`; the component contributes
+ * structure, a hairline rule, and an ornament. So there is no sentence here that *could* describe a
+ * joinery method, a lead time, a workshop size, or a number of years in business — not as a default,
+ * not as a fallback, not as placeholder filler. The operator's own `[PLACEHOLDER — …]` marker is what
+ * shows until they replace it, printed verbatim through `PlaceholderCopy`.
+ *
+ * `awaitingCopy` on the section record is derived from the body by the schema and the admin patch
+ * function, and `getPlaceholderKeys()` turns it into the checklist entry — so this component reads
+ * one flag and cannot disagree with the checklist about what is outstanding.
+ *
+ * The three variants differ only in which side the ornament sits, so the page reads as alternating
+ * bands rather than three identical slabs.
+ *
+ * Requirements: 7.1, 7.7, 7.10, 7.13, 8.8.
+ */
+import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
+import FurnitureAssembly from '@/components/motion/FurnitureAssembly.astro';
+import Hairline from '@/components/motion/Hairline.astro';
+import type { HomepageSection } from '@/schemas/homepage';
+
+interface Props {
+  section: HomepageSection;
+  /** A fallback heading, used only when the operator has cleared theirs. */
+  fallbackHeading: string;
+  /** `left` or `right` — which side the hairline ornament sits on. */
+  ornament?: 'left' | 'right';
+  /** An extra call to action, where the section record supplies one. */
+  showCta?: boolean;
+  /**
+   * Which animated primitive stands in the ornament column, if any.
+   *
+   * Defaulting to `none` — a hairline rule — is not timidity: Requirement 21.15 allows four
+   * primitives per page, the homepage spends its four on the hero's room, the craftsmanship
+   * detail, the category glyphs and the assembly, and a fifth here would break the budget for a
+   * decoration. The two sections that carry a primitive are the two whose *subject* is what the
+   * primitive draws.
+   */
+  primitive?: 'craftsmanship' | 'assembly' | 'none';
+}
+
+const {
+  section,
+  fallbackHeading,
+  ornament = 'left',
+  showCta = true,
+  primitive = 'none',
+} = Astro.props;
+
+const headingId = `ngf-${section.key}-heading`;
+const contentKey = `homepage.${section.key}.body`;
+const body = section.body;
+const cta =
+  showCta && section.ctaLabel !== undefined && section.ctaHref !== undefined
+    ? { label: section.ctaLabel, href: section.ctaHref }
+    : null;
+---
+
+<section
+  class="ngf-home-section ngf-home-story"
+  aria-labelledby={headingId}
+  data-ngf-section={section.key}
+  data-ornament={ornament}
+  data-awaiting-copy={section.awaitingCopy ? 'true' : 'false'}
+  data-motion-section
+  data-reveal
+>
+  <div class="ngf-story-inner">
+    <div class="ngf-story-ornament">
+      {primitive === 'craftsmanship' && <CraftsmanshipLines strokeWidth={1} />}
+      {primitive === 'assembly' && <FurnitureAssembly strokeWidth={1} />}
+      {
+        /*
+        No primitive: five hairlines that scale from 0 on the X axis as the band arrives. Cheap,
+        on-language, and it does not spend one of the page's four primitives.
+      */
+        primitive === 'none' && (
+          <div class="ngf-story-rules">
+            <Hairline />
+            <Hairline />
+            <Hairline tone="champagne" />
+            <Hairline />
+            <Hairline />
+          </div>
+        )
+      }
+    </div>
+
+    <div class="ngf-story-copy">
+      <SectionHeader
+        eyebrow={section.eyebrow}
+        heading={section.heading ?? fallbackHeading}
+        subheading={section.subheading}
+        headingId={headingId}
+      />
+
+      {
+        body === undefined ? (
+          /*
+            No body at all. The checklist still names the key, and the section still says nothing
+            about the business — an honest "not written yet" rather than an invented paragraph.
+          */
+          <PlaceholderCopy
+            body="[PLACEHOLDER — no copy has been supplied for this section yet.]"
+            contentKey={contentKey}
+          />
+        ) : section.awaitingCopy ? (
+          <PlaceholderCopy body={body} contentKey={contentKey} />
+        ) : (
+          <div class="ngf-story-body">
+            {body.split(/\n{2,}/).map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+        )
+      }
+
+      {
+        cta !== null && (
+          <a class="ngf-story-cta" href={cta.href}>
+            {cta.label}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .ngf-story-inner {
+    display: grid;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (min-width: 768px) {
+    .ngf-story-inner {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .ngf-home-story[data-ornament='right'] .ngf-story-inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .ngf-home-story[data-ornament='right'] .ngf-story-ornament {
+      order: 2;
+    }
+  }
+
+  .ngf-story-ornament {
+    color: var(--color-taupe);
+  }
+
+  .ngf-story-ornament :global(svg) {
+    display: block;
+    height: auto;
+    max-width: 120px;
+  }
+
+  /*
+   * The five rules, at increasing indents so they read as a plan drawing rather than a barcode.
+   * Requirement 21.2: exactly one of them is champagne, and it is a 1 px stroke, not a fill.
+   */
+  .ngf-story-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 120px;
+  }
+
+  .ngf-story-rules > :global(*:nth-child(2)) {
+    width: 84%;
+  }
+
+  .ngf-story-rules > :global(*:nth-child(3)) {
+    width: 68%;
+  }
+
+  .ngf-story-rules > :global(*:nth-child(4)) {
+    width: 52%;
+  }
+
+  .ngf-story-rules > :global(*:nth-child(5)) {
+    width: 36%;
+  }
+
+  .ngf-story-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .ngf-story-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .ngf-story-body p {
+    margin: 0;
+    color: var(--color-espresso);
+  }
+
+  .ngf-story-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 1.25rem;
+    border: 1px solid var(--color-obsidian);
+    color: var(--color-obsidian);
+    text-decoration: none;
+  }
+</style>

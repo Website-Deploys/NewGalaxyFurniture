@@ -1,0 +1,51 @@
+---
+/**
+ * The stock status label.
+ *
+ * The text comes from the shared table in `src/lib/products/labels.ts`, never from a local
+ * string, so a product cannot read "Limited stock" on a card and something else on its own page
+ * (Requirements 1.5, 4.2).
+ *
+ * `OUT_OF_STOCK` gets a distinct visual treatment and nothing else: Requirement 4.12 is explicit
+ * that an out-of-stock product keeps its page and its conversion controls, so this badge states
+ * a fact and never gates anything.
+ *
+ * Requirements: 1.5, 4.2, 4.12.
+ */
+import { stockLabel } from '@/lib/products/labels';
+import type { StockStatusValue } from '@/schemas/product';
+
+interface Props {
+  status: StockStatusValue;
+  class?: string;
+}
+
+const { status, class: className } = Astro.props;
+---
+
+<span
+  class:list={['ngf-stock-badge', className]}
+  data-stock={status}
+  data-out-of-stock={status === 'OUT_OF_STOCK' ? 'true' : 'false'}
+>
+  {stockLabel(status)}
+</span>
+
+<style>
+  .ngf-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding-inline: 0.625rem;
+    border: 1px solid var(--color-taupe);
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    white-space: nowrap;
+  }
+
+  .ngf-stock-badge[data-out-of-stock='true'] {
+    border-color: var(--color-walnut);
+    background-color: var(--color-cream);
+    color: var(--color-walnut);
+  }
+</style>

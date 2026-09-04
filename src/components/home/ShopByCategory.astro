@@ -1,0 +1,164 @@
+---
+/**
+ * Shop by category — the second homepage section.
+ *
+ * The nine categories come from `data/categories/*.json` through `getPublishedCategories()`, so a
+ * new category file appears here with no code change, and an unpublished one disappears. The tiles
+ * are type-led hairline panels rather than photographic ones because there are no category
+ * photographs (Open Items item 5) and a grey box captioned "Sofas" is worse than a confident
+ * typographic tile.
+ *
+ * The count under each name excludes drafts and unpublished products, because it is derived from
+ * `getCatalogue()` — the count on this page and the count on `/collection/{slug}` are the same
+ * number from the same source (Requirement 1.16).
+ *
+ * Requirements: 1.16, 7.1, 9.7.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import ArrowMotion from '@/components/motion/ArrowMotion.astro';
+import CategoryIllustration from '@/components/motion/CategoryIllustration.astro';
+import type { CategoryIllustrationValue } from '@/schemas/category';
+import type { HomepageSection } from '@/schemas/homepage';
+
+export interface CategoryTile {
+  slug: string;
+  name: string;
+  count: number;
+  /** The schema's illustration key, which selects the tile's glyph. */
+  illustration: CategoryIllustrationValue;
+}
+
+interface Props {
+  section: HomepageSection;
+  categories: readonly CategoryTile[];
+}
+
+const { section, categories } = Astro.props;
+---
+
+{
+  categories.length > 0 && (
+    <section
+      class="ngf-home-section ngf-home-categories"
+      aria-labelledby="ngf-categories-heading"
+      data-ngf-section="shopByCategory"
+      data-motion-section
+      data-reveal
+    >
+      <SectionHeader
+        eyebrow={section.eyebrow}
+        heading={section.heading ?? 'Shop by category'}
+        subheading={section.subheading}
+        headingId="ngf-categories-heading"
+      />
+      {/*
+        One reveal for the whole grid, not one per tile. `data-motion-group` on the `<ul>` means the
+        nine tiles share a single parent animation and stagger from it — so the grid counts as one
+        animating element against Requirement 21.9's ceiling of twelve rather than nine.
+      */}
+      <ul class="ngf-category-grid" data-reveal data-motion-group>
+        {categories.map((category) => (
+          <li>
+            <a href={`/collection/${category.slug}`} class="ngf-category-tile" data-motion-lift>
+              <span class="ngf-category-glyph">
+                {/*
+                  `trigger="none"`: the glyph renders its final drawn state and the tile's own
+                  reveal — inherited from the grid's single group animation — carries the motion.
+                  Nine glyphs each drawing themselves would be nine simultaneously animating
+                  elements, which is most of Requirement 21.9's budget spent on decoration.
+                */}
+                <CategoryIllustration
+                  illustration={category.illustration}
+                  strokeWidth={1}
+                  trigger="none"
+                />
+              </span>
+              <span class="ngf-category-name">{category.name}</span>
+              <span class="ngf-category-count">
+                {category.count === 1 ? '1 piece' : `${category.count} pieces`}
+              </span>
+              <span class="ngf-category-arrow">
+                <ArrowMotion size={16} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .ngf-category-grid {
+    display: grid;
+    gap: 1px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background-color: var(--color-taupe);
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  @media (min-width: 480px) {
+    .ngf-category-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-category-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-category-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-height: 96px;
+    padding: 1.5rem;
+    background-color: var(--color-white);
+    color: var(--color-obsidian);
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-category-tile:hover {
+    background-color: var(--color-ivory);
+  }
+
+  .ngf-category-name {
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+  }
+
+  .ngf-category-count {
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+  }
+
+  /*
+   * The one champagne element in this band (Requirement 21.2): a 16 px arrow stroke. Not a fill,
+   * not body text, and the tile's name and count are both obsidian/walnut.
+   */
+  .ngf-category-arrow {
+    display: inline-flex;
+    margin-top: auto;
+    color: var(--color-champagne);
+  }
+
+  .ngf-category-glyph {
+    display: block;
+    width: 72px;
+    margin-bottom: 0.75rem;
+    color: var(--color-taupe);
+  }
+
+  /* The glyph darkens with the tile, so the hover reads as one movement. */
+  @media (hover: hover) {
+    .ngf-category-tile:hover .ngf-category-glyph,
+    .ngf-category-tile:focus-visible .ngf-category-glyph {
+      color: var(--color-walnut);
+    }
+  }
+</style>

@@ -1,0 +1,123 @@
+---
+/**
+ * `/reviews`.
+ *
+ * Requirement 8.6: only reviews whose status is published appear here. That filter lives in
+ * `getPublishedReviews()` and nowhere else, so this page cannot get it wrong — it has no filter of its
+ * own to get wrong.
+ *
+ * **No aggregate rating, and that is deliberate rather than pending.** These are operator-entered
+ * testimonials, not verified purchase reviews (design Open Items item 11), so no average is computed,
+ * no star summary is drawn, and no `aggregateRating` structured data is emitted from this page. The
+ * note at the foot says so in plain words, because a visitor is entitled to know what kind of review
+ * they are reading.
+ *
+ * With no reviews the page renders its designed empty state (Requirement 26.14) rather than an empty
+ * list — and the empty state does not invite the operator to write their own.
+ *
+ * Requirements: 8.1, 8.6, 18.8, 18.10, 26.14.
+ */
+import CallLink from '@/components/ui/CallLink.astro';
+import EmptyState from '@/components/ui/EmptyState.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getPublishedReviews } from '@/lib/content/reviews';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const reviews = await getPublishedReviews();
+
+const meta = pageMeta(Astro, {
+  title: 'Reviews',
+  description: 'What customers say about New Galaxy Furniture, published as they wrote it.',
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">In their words</p>
+      <h1>Customer reviews</h1>
+      <p class="ngf-page-lead">
+        {
+          reviews.length === 0
+            ? 'We publish reviews as customers give them to us. None has been published yet.'
+            : 'Published as customers gave them to us.'
+        }
+      </p>
+    </div>
+
+    {
+      reviews.length === 0 ? (
+        <EmptyState
+          heading="No reviews published yet"
+          message="We would rather show none than write our own. Ask us for references and we will put you in touch with customers who agreed to be contacted."
+        >
+          <WhatsAppLink slot="action" context={{ kind: 'general' }} label="Ask for references" />
+          <CallLink slot="action" variant="outline" />
+        </EmptyState>
+      ) : (
+        <ul class="ngf-reviewlist">
+          {reviews.map((review) => (
+            <li>
+              <p class="ngf-reviewlist-rating">{review.rating} out of 5</p>
+              <blockquote>{review.text}</blockquote>
+              <p class="ngf-reviewlist-by">
+                {review.customerName}
+                {review.date === undefined ? '' : ` · ${review.date}`}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <p class="ngf-policy-outstanding" style="margin-top: 2.5rem;">
+      These reviews are collected by us from customers and published with their words unchanged. We
+      publish no overall rating and emit no rating markup to search engines, because these are
+      testimonials rather than verified purchase reviews.
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-reviewlist {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  }
+
+  .ngf-reviewlist > li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-taupe);
+    background-color: var(--color-white);
+  }
+
+  .ngf-reviewlist-rating {
+    margin: 0;
+    color: var(--color-champagne);
+    font-size: var(--text-small);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ngf-reviewlist blockquote {
+    margin: 0;
+    color: var(--color-espresso);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1.35;
+  }
+
+  .ngf-reviewlist-by {
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+  }
+</style>

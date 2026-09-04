@@ -1,0 +1,200 @@
+---
+/**
+ * The one `<img>` in this codebase.
+ *
+ * Every rule the delivery budget depends on lives here, so no surface can get one of them
+ * wrong:
+ *
+ * - **Intrinsic `width`/`height` always.** They come from the schema, which requires them, so
+ *   the browser reserves the right box before a byte of image arrives and CLS stays near zero
+ *   (Requirement 15.10).
+ * - **`srcset` and `sizes` from the shared builders**, so the candidates are exactly the
+ *   derivatives that were written, never wider than the original (15.8, 15.12).
+ * - **LQIP behind the image**, painted in the same frame as the HTML, so the slot never appears
+ *   empty (15.11). With no LQIP the slot still has a designed background rather than nothing.
+ * - **`loading` and `fetchpriority` per surface**, matching the design's staging table: the
+ *   caller declares what the image *is* (a card, the gallery's primary) and this component
+ *   decides how it loads, rather than each page choosing (15.17). The attribute triple comes from
+ *   `loadingAttributes`, which is also what makes "at most one high-priority image per page" a rule
+ *   a caller has to opt into rather than one it can trip over: `eager` means "above the fold" and
+ *   only `priority` means "before everything else".
+ * - **Card candidates stop below full resolution** (Requirement 22.9). `cardWidths` caps the
+ *   ladder, so a card cannot advertise the original's intrinsic width or the zoom-only 2000 px
+ *   derivative even if a caller passes no `widths`.
+ * - **A styled alt-text fallback on load failure**, inside the reserved box, so a missing image
+ *   never shifts the layout or shows a broken-image glyph (15.18).
+ *
+ * While derivatives are still being generated `fallbackSrc` points at the stored original, so
+ * an image is viewable the moment it is accepted (15.13).
+ *
+ * Requirements: 15.10, 15.11, 15.12, 15.13, 15.17, 15.18, 22.9, 22.10.
+ */
+import { buildSrcSet, derivativeWidthsFor, fallbackSrc, pickSizes } from '@/lib/images/srcset';
+import type { ImageContext } from '@/lib/images/srcset';
+import { cardWidths, loadingAttributes } from '@/lib/images/staging';
+import type { ProductImageValue } from '@/schemas/product';
+import { safeText } from '@/lib/security/sanitize';
+
+interface Props {
+  productId: string;
+  image: ProductImageValue;
+  context: ImageContext;
+  /**
+   * This is the page's largest contentful image: `loading="eager"`, `fetchpriority="high"`, and
+   * the one image the page preloads. At most one per page — see `scripts/audit-image-loading.ts`,
+   * which fails the build on a second one.
+   */
+  priority?: boolean;
+  /**
+   * Above the fold: fetched without deferral, but at normal priority so it does not compete with
+   * the priority image. The catalogue grids pass this for the first six cards.
+   */
+  eager?: boolean;
+  /** Candidate widths. Defaults to the capped card ladder, or the full ladder off a card. */
+  widths?: readonly number[];
+  class?: string;
+}
+
+const { productId, image, context, priority, eager, widths, class: className } = Astro.props;
+
+const ref = { productId, image };
+/*
+ * A card's candidates stop below the intrinsic width; every other surface may use the whole ladder.
+ * The default is chosen from the context rather than left to the caller, because "pass the narrow
+ * ladder on a card" is a rule that holds only where someone remembered it.
+ */
+const candidates =
+  widths ?? (context === 'card' ? cardWidths(image.width) : derivativeWidthsFor(image.width));
+const srcset = buildSrcSet(ref, candidates);
+const sizes = pickSizes(context);
+const src = fallbackSrc(ref);
+
+/*
+ * The gallery's primary image and the hero are their page's largest contentful paint, so they are
+ * the priority image by default. A grid's first six cards are `eager` and *not* priority: six
+ * competing high-priority fetches delay whichever of them LCP is measured against.
+ */
+const attributes = loadingAttributes({
+  priority: priority === true || context === 'galleryPrimary' || context === 'hero',
+  eager,
+});
+/*
+ * Alt text is operator- or AI-supplied and is rendered twice — as the `alt` attribute and as the
+ * visible text of the load-failure tile. Sanitized here, which is the one place every image on the
+ * site passes through (Requirement 25.2, Property 55).
+ */
+const alt = safeText(image.alt);
+const ratio = `${image.width} / ${image.height}`;
+---
+
+<div
+  class:list={['ngf-image', className]}
+  style={`aspect-ratio: ${ratio}; ${image.lqip === undefined ? '' : `background-image:url(${image.lqip});background-size:cover;background-position:center;`}`}
+  data-has-lqip={image.lqip === undefined ? 'false' : 'true'}
+>
+  <img
+    src={src}
+    srcset={srcset}
+    sizes={sizes}
+    width={image.width}
+    height={image.height}
+    alt={alt}
+    loading={attributes.loading}
+    decoding={attributes.decoding}
+    fetchpriority={attributes.fetchpriority}
+  />
+  {
+    /*
+    The fallback tile. Present in the markup rather than injected on error, so it needs no
+    script to appear and occupies the reserved box exactly. It carries the alt text, which is
+    the only honest thing to show when the photograph will not load.
+  */
+  }
+  <p class="ngf-image-fallback" aria-hidden="true">
+    {alt === '' ? 'Photograph unavailable' : alt}
+  </p>
+</div>
+
+{
+  /*
+  Why this is a script and not an `onerror` attribute.
+
+  It used to be `onerror="this.closest('.ngf-image')?.setAttribute('data-failed','true')"`, which is
+  an inline event handler — and the deployed policy is `script-src 'self'` plus four hashes, with no
+  `'unsafe-inline'`. The browser refuses to run it. The failure was invisible for as long as the
+  catalogue was empty, because no `ResponsiveImage` was ever rendered: the moment a product exists,
+  every product image on the site loses its fallback tile and `scripts/audit-csp.ts` fails the build
+  with one violation per image. Both were true and neither was observable until the end-to-end suite
+  built the fixture catalogue.
+
+  Astro hoists this once per page however many images are on it, and `assetsInlineLimit: 0` emits it
+  as an external module — which the policy allows.
+
+  Two halves, because a deferred module can miss an image that has already failed:
+
+  - a capturing listener on the document, since `error` does not bubble. It covers images added later
+    by a hydrating island, which is how every gallery and card rail arrives.
+  - a sweep of the images already in the document, because one that failed while the parser was still
+    working would never fire an event this listener could hear. `complete` with a zero
+    `naturalWidth` is exactly the "finished, and there is nothing there" state.
+*/
+}
+<script>
+  const FAILED = 'data-failed';
+
+  function markFailed(image: HTMLImageElement): void {
+    image.closest('.ngf-image')?.setAttribute(FAILED, 'true');
+  }
+
+  document.addEventListener(
+    'error',
+    (event) => {
+      const target = event.target;
+      if (target instanceof HTMLImageElement) markFailed(target);
+    },
+    true,
+  );
+
+  for (const image of document.querySelectorAll<HTMLImageElement>('.ngf-image img')) {
+    if (image.complete && image.naturalWidth === 0) markFailed(image);
+  }
+</script>
+
+<style>
+  .ngf-image {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background-color: var(--color-cream);
+  }
+
+  .ngf-image > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ngf-image-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 1rem;
+    background-color: var(--color-cream);
+    color: var(--color-walnut);
+    font-size: var(--text-small, 0.875rem);
+    text-align: center;
+  }
+
+  /* On failure the image is hidden and the tile takes its place — same box, no reflow. */
+  .ngf-image[data-failed='true'] > img {
+    visibility: hidden;
+  }
+
+  .ngf-image[data-failed='true'] .ngf-image-fallback {
+    display: flex;
+  }
+</style>

@@ -1,0 +1,30 @@
+---
+/**
+ * `AnimatedFurnitureLine` — the generic architectural contour.
+ *
+ * Signature motion (design's component table): a stroke-dashoffset draw at `--dur-story` on
+ * `--ease-draw`. It is the plainest of the nine and the one used as a section rule or a margin
+ * ornament: a floor line, a wall return, and the silhouette of a low piece against it.
+ *
+ * Requirements: 21.5, 21.7, 21.8, 21.11.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+
+type Props = MotionPrimitiveProps;
+
+const { svg, title } = primitiveAttrs(Astro.props, 'furniture-line', 760);
+---
+
+<svg {...svg} viewBox="0 0 240 96" preserveAspectRatio="xMidYMax meet">
+  {title !== null && <title>{title}</title>}
+  {/* The ground and the wall return: the two lines every one of these compositions shares. */}
+  <path class="ngf-draw" d="M4 88h232"></path>
+  <path class="ngf-draw" style="--ngf-draw-delay:120ms" d="M4 88V20"></path>
+  {/* A low piece in profile — seat plane, back, two legs. */}
+  <path
+    class="ngf-draw"
+    style="--ngf-draw-delay:240ms"
+    d="M52 66h84v-8H52zM60 66v14M128 66v14M136 58V34h-8"></path>
+  {/* A tall element to the right, for asymmetry. */}
+  <path class="ngf-draw" style="--ngf-draw-delay:360ms" d="M186 88V44h20v44M186 56h20"></path>
+</svg>

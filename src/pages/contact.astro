@@ -1,0 +1,166 @@
+---
+/**
+ * `/contact`.
+ *
+ * Requirement 8.5 is a rule about absence: the business location details, both numbers, and a map link
+ * appear "each only where the operator has supplied it". So every block on this page is conditional on
+ * its own settings value, and there is no fallback copy for any of them — an unsupplied address renders
+ * *nothing*, not "Address coming soon" dressed as content and not a plausible Bengaluru address.
+ *
+ * What is supplied today: both numbers, and the service area. What is not: the address lines, the city,
+ * the postal code, the map link, the geo coordinates, and the opening hours. All six are in
+ * `SiteSettings.placeholders`, so they are on the admin content checklist (Requirement 8.8), and the
+ * visible notice below tells a visitor plainly that the address is not published yet rather than
+ * leaving them to wonder.
+ *
+ * Opening hours deserve their own note: there is no `openingHours` field in `SiteSettingsSchema`, the
+ * checklist tracks `site.location.openingHours`, and this page therefore states no hours at all. A
+ * furniture showroom's hours are exactly the kind of fact a visitor acts on, so guessing them would
+ * send someone to a closed door.
+ *
+ * Requirements: 8.1, 8.5, 8.8, 19.6, 19.7, 23.17.
+ */
+import EnquiryIsland from '@/components/forms/EnquiryIsland.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import ContactNumbers from '@/components/ui/ContactNumbers.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { localBusinessJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta, siteOrigin } from '@/lib/seo/page';
+import { NUMBERS_CAPTION } from '@/lib/site/contact';
+import '@/styles/editorial.css';
+
+const settings = getSiteSettings();
+const { location, serviceArea, social } = settings;
+
+const addressLines = location.addressLines.filter((line) => line.trim() !== '');
+const localityLine = [location.city, location.state, location.postalCode ?? '']
+  .map((part) => part.trim())
+  .filter((part) => part !== '')
+  .join(', ');
+const hasAddress = addressLines.length > 0 || localityLine !== '';
+
+/** Requirement 19.6: only non-null social links, so there is never a dead icon. */
+const socialLinks = Object.entries(social).filter(
+  (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim() !== '',
+);
+
+/** `FurnitureStore` on `/contact` as well as `/` — the two pages a visitor looks for it on. */
+const meta = pageMeta(Astro, {
+  title: 'Contact a Bengaluru Furniture Maker',
+  description:
+    'Contact New Galaxy Furniture, a furniture manufacturer in Bengaluru serving Karnataka. Both numbers are for orders and enquiries — message on WhatsApp or call.',
+  jsonLd: [localBusinessJsonLd(settings, siteOrigin(Astro))],
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">Contact</p>
+      <h1>Talk to us</h1>
+      <p class="ngf-page-lead">
+        Both numbers reach the same people, for orders and for enquiries. Message us with a
+        photograph or a size and we will come back with a price and an honest date.
+      </p>
+    </div>
+
+    <div class="ngf-page-columns">
+      <div class="ngf-page-body">
+        <h2>Numbers</h2>
+        <ContactNumbers layout="stack" showCaption={false} />
+        <p>{NUMBERS_CAPTION}</p>
+
+        <div class="ngf-page-actions" style="margin-top: 0;">
+          <WhatsAppLink context={{ kind: 'general' }} />
+          <CallLink variant="outline" />
+        </div>
+
+        {
+          /*
+          The Contact form (Requirement 6.1). It sits *below* the two controls above rather than
+          above them: the numbers reach a person immediately and the form does not, and putting
+          the slower path first would be a design that flattered the form over the customer.
+        */
+        }
+        <h2 id="ngf-contact-form-heading">Send an enquiry</h2>
+        <EnquiryIsland form="contact" context={{ kind: 'general' }} />
+
+        <h2 id="ngf-callback-form-heading">Or ask us to call you</h2>
+        <EnquiryIsland form="callback" context={{ kind: 'general' }} />
+      </div>
+
+      <div class="ngf-page-body">
+        <h2>Where we are</h2>
+        {
+          /* Requirement 8.5: rendered only where supplied. Nothing is substituted when it is not. */
+          hasAddress ? (
+            <address class="ngf-contact-lines">
+              {addressLines.map((line) => (
+                <span>{line}</span>
+              ))}
+              {localityLine !== '' && <span>{localityLine}</span>}
+            </address>
+          ) : (
+            <div class="ngf-policy-notice" role="note" aria-label="Address status">
+              <span class="ngf-policy-notice-label">Address not published yet</span>
+              <p>
+                Our showroom address, opening hours and map link are not published on this site yet.
+                Call or message either number and we will give you the address and a time that suits
+                you.
+              </p>
+            </div>
+          )
+        }
+
+        {
+          location.mapUrl !== null && (
+            <p>
+              <a href={location.mapUrl} target="_blank" rel="noopener">
+                Open in maps
+              </a>
+            </p>
+          )
+        }
+
+        {
+          serviceArea.length > 0 && (
+            <>
+              <h2>Where we deliver</h2>
+              <p>
+                We manufacture in Bengaluru and deliver and install across {serviceArea.join(', ')}.
+              </p>
+            </>
+          )
+        }
+
+        {
+          socialLinks.length > 0 && (
+            <>
+              <h2>Elsewhere</h2>
+              <ul>
+                {socialLinks.map(([name, href]) => (
+                  <li>
+                    <a href={href} target="_blank" rel="noopener">
+                      {name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-contact-lines {
+    display: flex;
+    flex-direction: column;
+    font-style: normal;
+    color: var(--color-espresso);
+  }
+</style>

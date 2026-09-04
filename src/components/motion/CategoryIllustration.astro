@@ -1,0 +1,82 @@
+---
+/**
+ * `CategoryIllustration` — one glyph per category, dispatched on the schema's `illustration` key.
+ *
+ * Signature motion (design's component table): "draw on in-view, subtle lift on hover". The draw is
+ * the shared `.ngf-draw` transition; the lift is `[data-motion-lift]` on the tile that contains it,
+ * so hovering the whole tile lifts the whole tile rather than the glyph sliding inside it.
+ *
+ * **Why its own nine glyphs rather than delegating to `AnimatedSofa` and friends.** Two reasons,
+ * and the second is the load-bearing one:
+ *
+ * 1. **Scale.** These render at 64–96 px inside a category tile. `AnimatedSofa`'s cushion stack and
+ *    `AnimatedChair`'s splat are drawn for a 160 px composition and turn to mush at a third of it.
+ *    A glyph drawn for its size is a different drawing, not a smaller one.
+ * 2. **The per-page primitive budget.** Requirement 21.15 allows four primitives per page, and the
+ *    homepage already spends its four on the room, the craftsmanship lines, this, and the assembly.
+ *    If this component delegated, a homepage with nine category tiles would report *eight* distinct
+ *    primitives to the budget check — sofa, bed, table, chair and the rest — and the budget would be
+ *    unmeetable for reasons that have nothing to do with page weight. Delegation would make the
+ *    number the requirement counts depend on which categories the operator happens to have
+ *    published, which is not a property anyone can design against.
+ *
+ * The dispatch is exhaustive over the schema's nine keys, so adding a tenth to `CategoryIllustration`
+ * in `src/schemas/category.ts` is a TypeScript error here rather than a tile that silently renders
+ * nothing.
+ *
+ * Requirements: 18.1, 21.5, 21.7, 21.8, 21.11, 24.10.
+ */
+import { primitiveAttrs, type MotionPrimitiveProps } from './primitive';
+import type { CategoryIllustrationValue } from '@/schemas/category';
+
+interface Props extends MotionPrimitiveProps {
+  illustration: CategoryIllustrationValue;
+}
+
+const { illustration, ...rest } = Astro.props;
+const { svg, title } = primitiveAttrs(rest, 'category', 360);
+
+/**
+ * The nine glyphs, as path data.
+ *
+ * A table rather than a switch of markup blocks: nine `<Fragment>`s would be nine copies of the
+ * same `<path class="ngf-draw">` wrapper, and the whole set is under a kilobyte this way.
+ * Each entry is two or three paths, drawn in the same 72 × 56 field so the tiles align optically.
+ */
+const GLYPHS: Record<CategoryIllustrationValue, readonly string[]> = {
+  // A three-seater in profile: base, arms, back.
+  sofa: ['M4 44h64M4 44V28h64v16', 'M4 28h10v16M58 28h10v16', 'M14 28V14h44v14'],
+  // A bed: headboard, mattress, legs.
+  bed: ['M6 42V12h12v30', 'M18 30h48v12H18z', 'M22 26h16v4H22M42 26h16v4H42'],
+  // A dining table: top, apron, four legs.
+  diningTable: ['M4 22h64v6H4z', 'M12 28v18M60 28v18M20 28v20M52 28v20', 'M4 48h64'],
+  // A dining chair: back, seat, legs.
+  diningChair: ['M22 26V6h28v20', 'M18 26h36l-4 6H22z', 'M22 32v16M50 32v16M22 42h28'],
+  // An accent chair: a low curved back and splayed legs.
+  accentChair: ['M18 30q0-20 18-20t18 20', 'M14 30h44v8H14z', 'M18 38l-4 12M54 38l4 12'],
+  // A round coffee table, seen slightly from above.
+  coffeeTable: ['M10 24h52v5H10z', 'M20 29v14M52 29v14', 'M14 43h44'],
+  // A storage unit: carcass, two shelves, two doors.
+  storage: ['M12 8h48v40H12z', 'M12 22h48M12 34h48', 'M36 8v40'],
+  // A desk with a drawer bank.
+  office: ['M6 22h60v5H6z', 'M10 27v20M62 27v20', 'M36 27h26v14H36zM40 34h8'],
+  // A garden bench and a slatted back.
+  outdoor: ['M8 34h56v5H8z', 'M14 39v9M58 39v9', 'M14 30h44M14 24h44M14 18h44'],
+};
+
+const paths = GLYPHS[illustration];
+---
+
+<svg
+  {...svg}
+  viewBox="0 0 72 56"
+  preserveAspectRatio="xMidYMid meet"
+  data-illustration={illustration}
+>
+  {title !== null && <title>{title}</title>}
+  {
+    paths.map((d, index) => (
+      <path class="ngf-draw" style={`--ngf-draw-delay:${String(index * 120)}ms`} d={d} />
+    ))
+  }
+</svg>

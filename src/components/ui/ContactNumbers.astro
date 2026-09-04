@@ -1,0 +1,126 @@
+---
+/**
+ * Both business numbers, with one label.
+ *
+ * This component exists so that the header, the footer, every PDP, and the contact page
+ * cannot drift apart on the one piece of copy Requirement 5.10 constrains. Each row renders
+ * the identical label text (`NUMBER_LABEL`) and the numbers are distinguished only by the
+ * digits — no "Sales", no "Support", no trailing index.
+ *
+ * Both channels are offered per number: a WhatsApp link and a `tel:` link, both real `<a>`
+ * elements built by the shared URL helpers.
+ *
+ * Requirements: 5.9, 5.10, 5.11, 5.13, 19.3, 24.3.
+ */
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import {
+  channelAriaLabel,
+  contactChannels,
+  NUMBER_LABEL,
+  NUMBERS_CAPTION,
+} from '@/lib/site/contact';
+import type { EnquiryContext } from '@/lib/whatsapp';
+
+interface Props {
+  /** The enquiry the WhatsApp links should pre-fill. Defaults to a general enquiry. */
+  context?: EnquiryContext;
+  /** `stack` for footer/contact columns, `inline` for a single row of chips. */
+  layout?: 'stack' | 'inline';
+  /** Suppresses the shared caption where the surrounding copy already carries it. */
+  showCaption?: boolean;
+  class?: string;
+}
+
+const {
+  context = { kind: 'general' } satisfies EnquiryContext,
+  layout = 'stack',
+  showCaption = true,
+  class: className,
+} = Astro.props;
+
+const channels = contactChannels(getSiteSettings());
+---
+
+<div class:list={['ngf-numbers', `ngf-numbers-${layout}`, className]}>
+  {showCaption && <p class="ngf-numbers-caption">{NUMBERS_CAPTION}</p>}
+  <ul class="ngf-numbers-list">
+    {
+      channels.map((channel) => (
+        <li class="ngf-numbers-item">
+          {/* The identical label on every row — the distinction is the number. */}
+          <span class="ngf-numbers-label">{NUMBER_LABEL}</span>
+          <span class="ngf-numbers-value">{channel.display}</span>
+          <span class="ngf-numbers-actions">
+            {channel.whatsapp && (
+              <WhatsAppLink
+                context={context}
+                number={channel.entry}
+                variant="bare"
+                label="WhatsApp"
+                ariaLabel={channelAriaLabel(channel, 'whatsapp')}
+              />
+            )}
+            {channel.phone && (
+              <CallLink
+                number={channel.entry}
+                variant="bare"
+                label="Call"
+                ariaLabel={channelAriaLabel(channel, 'call')}
+              />
+            )}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .ngf-numbers-caption {
+    margin: 0 0 0.75rem;
+    font-size: var(--text-small);
+    opacity: 0.8;
+  }
+
+  .ngf-numbers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ngf-numbers-inline .ngf-numbers-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .ngf-numbers-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .ngf-numbers-label {
+    font-size: var(--text-small);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .ngf-numbers-value {
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+
+  .ngf-numbers-actions {
+    display: flex;
+    gap: 1.25rem;
+  }
+</style>

@@ -1,0 +1,105 @@
+{
+  "sections": [
+    {
+      "key": "hero",
+      "enabled": true,
+      "tagline": "Furniture made to outlast the trend",
+      "ctaLabel": "Explore Collection",
+      "ctaHref": "/collection",
+      "awaitingCopy": false
+    },
+    {
+      "key": "shopByCategory",
+      "enabled": true,
+      "heading": "Shop by category",
+      "awaitingCopy": false
+    },
+    {
+      "key": "featuredProducts",
+      "enabled": true,
+      "heading": "Featured",
+      "awaitingCopy": false
+    },
+    {
+      "key": "newArrivals",
+      "enabled": true,
+      "heading": "New arrivals",
+      "awaitingCopy": false
+    },
+    {
+      "key": "bestSellers",
+      "enabled": true,
+      "heading": "Best sellers",
+      "subheading": "Curated by us — the site records no online transactions.",
+      "awaitingCopy": false
+    },
+    {
+      "key": "trending",
+      "enabled": true,
+      "heading": "Trending",
+      "awaitingCopy": false
+    },
+    {
+      "key": "craftsmanship",
+      "enabled": true,
+      "heading": "Craftsmanship",
+      "body": "[PLACEHOLDER — describe your timber selection, joinery, and finishing process in your own words. Nothing about how the furniture is made has been supplied, and nothing will be invented here.]",
+      "awaitingCopy": true
+    },
+    {
+      "key": "directManufacturer",
+      "enabled": true,
+      "heading": "Direct from the manufacturer",
+      "body": "[PLACEHOLDER — describe what buying direct from you means for the customer. No pricing claim, margin claim, or comparison has been supplied.]",
+      "awaitingCopy": true
+    },
+    {
+      "key": "customFurniture",
+      "enabled": true,
+      "heading": "Custom furniture",
+      "body": "[PLACEHOLDER — describe what can be customised (size, timber, finish, upholstery) and how the enquiry-to-delivery process works. No timeline has been supplied.]",
+      "ctaLabel": "Start a custom enquiry",
+      "ctaHref": "/custom-furniture",
+      "awaitingCopy": true
+    },
+    {
+      "key": "workshopStory",
+      "enabled": true,
+      "heading": "Showroom & workshop",
+      "body": "[PLACEHOLDER — describe the showroom and the workshop, and what a visitor can see there. No location, size, capacity, or history has been supplied.]",
+      "awaitingCopy": true
+    },
+    {
+      "key": "customerReviews",
+      "enabled": true,
+      "heading": "Customer reviews",
+      "awaitingCopy": false
+    },
+    {
+      "key": "gallery",
+      "enabled": true,
+      "heading": "Gallery",
+      "awaitingCopy": false
+    },
+    {
+      "key": "whatsappCta",
+      "enabled": true,
+      "heading": "Order or enquire on WhatsApp",
+      "subheading": "Both numbers are for orders and enquiries.",
+      "ctaLabel": "Message on WhatsApp",
+      "awaitingCopy": false
+    },
+    {
+      "key": "contactLocation",
+      "enabled": true,
+      "heading": "Contact",
+      "body": "[PLACEHOLDER — address, opening hours, and map link are not yet supplied. Until they are, this section shows the two contact numbers only.]",
+      "awaitingCopy": true
+    },
+    {
+      "key": "footer",
+      "enabled": true,
+      "awaitingCopy": false
+    }
+  ]
+}

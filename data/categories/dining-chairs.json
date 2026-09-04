@@ -1,0 +1,10 @@
+{
+  "slug": "dining-chairs",
+  "name": "Dining Chairs",
+  "shortDescription": "Chairs and benches to pair with a dining table.",
+  "intro": "Chairs and benches are made in the same workshop as the tables they sit at, so a set can be matched in timber and finish rather than approximated. Order them with a table or on their own to replace what a set is missing.",
+  "order": 4,
+  "illustration": "diningChair",
+  "subcategories": [],
+  "published": true
+}

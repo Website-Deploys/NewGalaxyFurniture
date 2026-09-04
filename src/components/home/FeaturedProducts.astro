@@ -1,0 +1,104 @@
+---
+/**
+ * Featured products — the **large-left editorial pair**.
+ *
+ * Composition (Requirement 7.2, declared in `src/lib/site/homepage-sections.ts`): 2 items per row at
+ * 1280 px, a 4/5 item ratio, block scroll axis. The first product occupies a full-height panel on
+ * the left with its name set large; the rest sit in a narrow column beside it. That asymmetry is the
+ * point — it must not read as the same grid as the other three sections.
+ *
+ * **Zero qualifying products means the whole section is absent** (Requirement 7.9): no heading, no
+ * container, no controls, and — because the component emits nothing at all rather than an empty
+ * `<section>` — no residual vertical gap either. Nothing is substituted from another section; there
+ * is no branch here that could.
+ *
+ * Requirements: 7.1, 7.2, 7.9, 15.17.
+ */
+import SectionHeader from '@/components/home/SectionHeader.astro';
+import ProductCard from '@/components/product/ProductCard.astro';
+import { compositionFor } from '@/lib/site/homepage-sections';
+import type { HomepageSection } from '@/schemas/homepage';
+import type { Product } from '@/schemas/product';
+
+interface Props {
+  section: HomepageSection;
+  products: readonly Product[];
+  categoryNames?: Record<string, string>;
+}
+
+const { section, products, categoryNames = {} } = Astro.props;
+const composition = compositionFor('featuredProducts');
+
+const [lead, ...rest] = products;
+---
+
+{
+  lead !== undefined && (
+    <section
+      class="ngf-home-section ngf-home-featured"
+      aria-labelledby="ngf-featured-heading"
+      data-ngf-section="featuredProducts"
+      data-layout={composition.layout}
+      data-items-per-row={composition.itemsPerRowAt1280}
+      data-scroll-axis={composition.scrollAxis}
+      style={`--ngf-card-ratio: ${composition.aspectRatio};`}
+    >
+      <SectionHeader
+        eyebrow={section.eyebrow}
+        heading={section.heading ?? 'Featured'}
+        subheading={section.subheading}
+        headingId="ngf-featured-heading"
+      />
+
+      <div class="ngf-featured-pair">
+        <div class="ngf-featured-lead">
+          <ProductCard product={lead} categoryName={categoryNames[lead.category]} eager />
+        </div>
+        {rest.length > 0 && (
+          <ul class="ngf-featured-rest" data-reveal data-motion-group>
+            {rest.map((product) => (
+              <li>
+                <ProductCard product={product} categoryName={categoryNames[product.category]} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  /* One column below 1024 px — the mobile rhythm is single-column editorial, not a squeezed pair. */
+  .ngf-featured-pair {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-featured-pair {
+      /* 2 items per row at 1280 px: the lead panel and the column beside it. */
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .ngf-featured-lead :global(.ngf-card-name) {
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+  }
+
+  .ngf-featured-rest {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .ngf-featured-rest {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

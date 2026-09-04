@@ -1,0 +1,74 @@
+---
+/**
+ * One mount point for the four page-level enquiry forms.
+ *
+ * A wrapper per form would be four files whose only difference is an import, and four places
+ * for the hydration directive or the fallback numbers to drift. Astro resolves the component
+ * from a value, so the choice is a prop and the contract is written once.
+ *
+ * **`client:visible`, deliberately.** An enquiry form is below the fold on every page that
+ * carries one, and it is not the page's primary conversion path — the WhatsApp and Call
+ * controls are, and they are static markup that needs no JavaScript at all. Hydrating the form
+ * when it scrolls into view keeps it off the critical path (Requirement 22.7) while still
+ * having it ready by the time anyone reaches it.
+ *
+ * The `<noscript>` block is not decoration: without JavaScript this island never hydrates, so
+ * the section would otherwise be empty. It names the two controls that do work.
+ *
+ * Requirements: 6.1, 6.2, 22.7, 26.2.
+ */
+import CallbackForm from '@/components/forms/CallbackForm';
+import ContactForm from '@/components/forms/ContactForm';
+import CustomFurnitureForm from '@/components/forms/CustomFurnitureForm';
+import QuoteForm from '@/components/forms/QuoteForm';
+import CallLink from '@/components/ui/CallLink.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { fallbackNumbers } from '@/lib/leads/fallback';
+import { getSiteSettings } from '@/lib/content/site';
+import type { EnquiryContext } from '@/lib/whatsapp';
+import '@/styles/forms.css';
+
+interface Props {
+  form: 'contact' | 'callback' | 'quote' | 'custom';
+  /** Rendered as the form's own `<h2>`. Omit when the surrounding section supplies one. */
+  heading?: string;
+  /** Pre-fills the WhatsApp fallback message; does not change what the form submits. */
+  context?: EnquiryContext;
+  /** The product this form is placed against. The server resolves it; this is only a slug. */
+  productSlug?: string;
+  productName?: string;
+}
+
+const { form, heading, context, productSlug, productName } = Astro.props;
+
+const settings = getSiteSettings();
+const numbers = fallbackNumbers(settings, context ?? { kind: 'general' });
+
+/**
+ * The four branches are written out rather than resolved to a variable.
+ *
+ * `<Component client:visible />` where `Component` is chosen at runtime *builds* and then fails at
+ * prerender with "No matching import has been found for `Component`" — the client directive needs
+ * a statically analysable import to know which component to hydrate, and a conditional expression
+ * gives it nothing to resolve. That was a real defect, caught by building the contact page. Four
+ * explicit branches are longer and cannot be wrong about it.
+ */
+const shared = { numbers, heading, productSlug, productName };
+---
+
+<div class="ngf-form-slot" data-ngf-enquiry-island={form}>
+  {form === 'contact' && <ContactForm client:visible {...shared} />}
+  {form === 'callback' && <CallbackForm client:visible {...shared} />}
+  {form === 'quote' && <QuoteForm client:visible {...shared} />}
+  {form === 'custom' && <CustomFurnitureForm client:visible {...shared} />}
+
+  <noscript>
+    <p class="ngf-form-noscript">
+      This form needs JavaScript. Both controls below reach the same people, and neither does.
+    </p>
+    <div class="ngf-form-noscript-actions">
+      <WhatsAppLink context={context ?? { kind: 'general' }} />
+      <CallLink variant="outline" />
+    </div>
+  </noscript>
+</div>

@@ -1,0 +1,6 @@
+# Copied to dist/ at build time and read by Wrangler when it uploads the static
+# asset store. Without this, `dist/_worker.js/` — the server bundle, which holds
+# the admin logic and reads the GitHub token binding — would be uploaded as a
+# publicly fetchable asset.
+_worker.js
+_routes.json

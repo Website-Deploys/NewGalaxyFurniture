@@ -1,0 +1,148 @@
+---
+/**
+ * `/custom-furniture`.
+ *
+ * Requirement 8.7: the page presents the Custom Furniture Enquiry form **and** both conversion
+ * controls. All three are here. The form occupies the slot marked `data-ngf-custom-enquiry-slot`,
+ * which this page has reserved since it was built, and the WhatsApp and Call controls remain
+ * immediately below it — they are not a fallback for the form, they are the other half of
+ * Requirement 8.7 and for many visitors the faster route.
+ *
+ * The descriptive copy comes from the homepage's `customFurniture` section rather than a second copy
+ * of the same paragraph, so an operator editing it in Admin → Homepage changes both surfaces at once.
+ * It is currently a placeholder, and no customisation capability, material range, or lead time is
+ * asserted anywhere on this page (Requirement 8.4).
+ *
+ * Requirements: 6.2, 8.1, 8.4, 8.7, 8.8, 24.3.
+ */
+import EnquiryIsland from '@/components/forms/EnquiryIsland.astro';
+import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import BeforeAfterRoom from '@/components/motion/BeforeAfterRoom.astro';
+import CallLink from '@/components/ui/CallLink.astro';
+import ContactNumbers from '@/components/ui/ContactNumbers.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getHomepage } from '@/lib/content/site';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const section = getHomepage().sections.find((entry) => entry.key === 'customFurniture');
+const body = section?.body;
+const awaiting = section?.awaitingCopy ?? true;
+/** Split in the frontmatter rather than in the template: one expression, no nested closure. */
+const paragraphs = body === undefined ? [] : body.split(/\n{2,}/);
+
+const meta = pageMeta(Astro, {
+  title: 'Custom Furniture',
+  description:
+    'Furniture built to your size, timber and finish. Tell New Galaxy Furniture what the room needs and we will quote it.',
+});
+---
+
+<BaseLayout meta={meta}>
+  <div class="ngf-page">
+    <div class="ngf-page-head">
+      <p class="ngf-page-eyebrow">Made to your specification</p>
+      <h1>Custom furniture</h1>
+      <p class="ngf-page-lead">
+        Send us the size, the timber, the finish, or a photograph of what you have in mind. We will
+        tell you what is possible and what it costs.
+      </p>
+    </div>
+
+    <div class="ngf-page-columns">
+      <div class="ngf-page-body">
+        <h2>What we can change</h2>
+        {
+          body === undefined || awaiting ? (
+            <PlaceholderCopy
+              body={
+                body ??
+                '[PLACEHOLDER — describe what can be customised and how the enquiry-to-delivery process works.]'
+              }
+              contentKey="homepage.customFurniture.body"
+            />
+          ) : (
+            <Fragment>
+              {paragraphs.map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+            </Fragment>
+          )
+        }
+
+        {
+          /*
+          The before/after room comparison (Requirement 21.6). It belongs on this page rather than
+          the homepage for two reasons: the homepage has already spent its four primitives, and a
+          "before and after" is literally what a custom commission is. Both layers are the project's
+          own line drawings — no photograph is implied, and no claim is made about a specific room
+          (Requirement 8.4).
+
+          It is a draggable control that works with a keyboard, and it stays one under reduced
+          motion — only its easing is switched off (Requirement 21.11).
+        */
+        }
+        <h2 id="ngf-custom-compare-heading">Empty room, furnished room</h2>
+        <p>
+          Drag the divider — or focus it and use the arrow keys — to compare a bare room with one
+          furnished to fit it.
+        </p>
+        <BeforeAfterRoom class="ngf-custom-compare" />
+
+        <h2>What to send us</h2>
+        <p>
+          The more of this you can tell us, the more useful our first reply will be: the room and
+          where the piece will sit, the maximum size that will fit, the timber or finish you prefer,
+          and a photograph or sketch if you have one.
+        </p>
+        <p>
+          We will come back with what is possible, what it costs, and an honest date. Nothing is
+          committed until you say so.
+        </p>
+      </div>
+
+      <div>
+        {
+          /*
+          The Custom Furniture Enquiry form (Requirement 8.7), in the slot this page has reserved for
+          it since task 16. It collects exactly Requirement 6.2's seven fields, including the one
+          optional image, and it sits alongside — never instead of — the WhatsApp and Call controls:
+          both still reach the same people, and for many visitors they are the faster path.
+        */
+        }
+        <section data-ngf-custom-enquiry-slot aria-labelledby="ngf-custom-enquiry-heading">
+          <h2 id="ngf-custom-enquiry-heading">Start a custom enquiry</h2>
+          <EnquiryIsland form="custom" context={{ kind: 'custom' }} />
+
+          <p class="ngf-custom-alt-label">Or reach us directly — both are quicker than a form.</p>
+          <div class="ngf-page-actions">
+            <WhatsAppLink context={{ kind: 'custom' }} label="Start on WhatsApp" />
+            <CallLink variant="outline" />
+          </div>
+        </section>
+
+        <div class="ngf-custom-numbers">
+          <ContactNumbers context={{ kind: 'custom' }} layout="stack" />
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .ngf-custom-alt-label {
+    margin-top: 2rem;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+  }
+
+  .ngf-custom-numbers {
+    margin-top: 2rem;
+  }
+
+  .ngf-custom-compare {
+    max-width: 40rem;
+    margin-block: 1.5rem 2.5rem;
+  }
+</style>

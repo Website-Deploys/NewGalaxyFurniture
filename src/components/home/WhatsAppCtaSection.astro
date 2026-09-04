@@ -1,0 +1,65 @@
+---
+/**
+ * The WhatsApp call-to-action band.
+ *
+ * Both numbers, both channels, one label. Requirement 5.10 forbids characterising either number as a
+ * different department, function, or team, so the rows are told apart by the number itself and carry
+ * the identical `NUMBER_LABEL` — which is why this band renders `ContactNumbers` rather than writing
+ * its own two rows.
+ *
+ * The band is dark (`data-surface="dark"`), which is why the focus ring inverts to ivory: the global
+ * stylesheet keys that off the same attribute, so a keyboard visitor's focus stays visible here
+ * without this component declaring a ring of its own.
+ *
+ * Requirements: 5.9, 5.10, 5.11, 5.13, 7.1, 24.3, 24.12.
+ */
+import ContactNumbers from '@/components/ui/ContactNumbers.astro';
+import type { HomepageSection } from '@/schemas/homepage';
+
+interface Props {
+  section: HomepageSection;
+}
+
+const { section } = Astro.props;
+---
+
+<section
+  class="ngf-home-section ngf-home-whatsapp"
+  aria-labelledby="ngf-whatsapp-heading"
+  data-ngf-section="whatsappCta"
+  data-surface="dark"
+>
+  <div class="ngf-whatsapp-inner">
+    <h2 id="ngf-whatsapp-heading" class="ngf-whatsapp-heading">
+      {section.heading ?? 'Order or enquire on WhatsApp'}
+    </h2>
+    {section.subheading !== undefined && <p class="ngf-whatsapp-sub">{section.subheading}</p>}
+    <ContactNumbers layout="stack" />
+  </div>
+</section>
+
+<style>
+  .ngf-home-whatsapp {
+    background-color: var(--color-obsidian);
+    color: var(--color-ivory);
+  }
+
+  .ngf-whatsapp-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding-block: clamp(2.5rem, 6vh, 4rem);
+  }
+
+  .ngf-whatsapp-heading {
+    margin: 0;
+    color: var(--color-ivory);
+    font-size: var(--text-h2);
+  }
+
+  .ngf-whatsapp-sub {
+    margin: 0;
+    color: var(--color-cream);
+  }
+</style>

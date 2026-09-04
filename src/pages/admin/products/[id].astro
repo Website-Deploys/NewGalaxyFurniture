@@ -1,0 +1,106 @@
+---
+/**
+ * /admin/products/:id — the editor.
+ *
+ * The record is resolved server-side, draft first, so what the form loads is what a preview
+ * would render. A missing product is a real not-found state offering the list, never an empty
+ * form that would silently create nothing on save.
+ *
+ * Requirements: 10.17, 12.1, 12.4, 13.1–13.13, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import ProductForm from '@/components/admin/ProductForm';
+import { can } from '@/lib/auth/permissions';
+import { createGitHubClient } from '@/lib/github/factory';
+import { getKV } from '@/lib/env';
+import { getPublishedCategories } from '@/lib/content/catalogue';
+import { resolveProduct } from '@/lib/github/drafts';
+import type { Product } from '@/schemas/product';
+
+export const prerender = false;
+
+const session = Astro.locals.adminSession;
+const role = session?.role ?? 'viewer';
+const id = Astro.params.id ?? '';
+
+let product: Product | null = null;
+let source: 'draft' | 'repo' | null = null;
+let failure: string | null = null;
+
+try {
+  const resolved = await resolveProduct(
+    { drafts: getKV(Astro, 'DRAFTS'), client: createGitHubClient(Astro) },
+    id,
+  );
+  if (resolved !== null) {
+    product = resolved.product;
+    source = resolved.source;
+  }
+} catch (error) {
+  console.error('[admin/products/:id] could not resolve the product', error);
+  failure =
+    'This product could not be loaded. The content repository is unreachable or not configured for this environment.';
+}
+
+const categories = (await getPublishedCategories()).map((category) => ({
+  slug: category.slug,
+  name: category.name,
+  subcategories: category.subcategories,
+}));
+
+const created = Astro.url.searchParams.get('created') === '1';
+const duplicated = Astro.url.searchParams.get('duplicated') === '1';
+---
+
+<AdminLayout title={product?.name === undefined || product.name === '' ? 'Product' : product.name}>
+  {
+    failure !== null ? (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{failure}</p>
+    ) : product === null ? (
+      <div class="border border-dashed border-taupe bg-white px-6 py-10">
+        <h2 class="font-display text-h3 text-espresso">That product could not be found</h2>
+        <p class="mt-2 max-w-[56ch] text-body text-walnut">
+          It may have been deleted, or the address may be wrong. Nothing has been changed.
+        </p>
+        <a href="/admin/products" class="mt-4 inline-block underline">
+          Back to all products
+        </a>
+      </div>
+    ) : (
+      <>
+        {created && (
+          <p class="mb-4 border border-taupe bg-white px-4 py-3 text-small" role="status">
+            Draft created. It is invisible to customers until you publish it.
+          </p>
+        )}
+        {duplicated && (
+          <p class="mb-4 border border-taupe bg-white px-4 py-3 text-small" role="status">
+            This is a new draft copied from another product. It has its own SKU and web address, and
+            the product it was copied from is unchanged.
+          </p>
+        )}
+
+        <div class="mb-6 flex flex-wrap items-center gap-4 text-small text-walnut">
+          <span>SKU {product.sku}</span>
+          <span>Web address /product/{product.slug}</span>
+          <span>
+            {source === 'draft' ? 'Unpublished working copy' : 'Loaded from the repository'}
+          </span>
+          <a href={`/admin/preview/${product.id}`} class="underline">
+            Preview this product
+          </a>
+        </div>
+
+        <ProductForm
+          client:load
+          mode="edit"
+          product={product}
+          categories={categories}
+          canWrite={can(role, 'product.write')}
+          canPublish={can(role, 'product.publish')}
+          canDelete={can(role, 'product.delete')}
+        />
+      </>
+    )
+  }
+</AdminLayout>

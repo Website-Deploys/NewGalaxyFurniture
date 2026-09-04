@@ -1,0 +1,526 @@
+/**
+ * The motion system's stylesheet: tier one, and every from-state the other two tiers move out of.
+ *
+ * Read the reveal rules in this order, because the inversion is the safety property of the whole
+ * system:
+ *
+ * 1. The **final** state is the default. An element with `[data-reveal]` and no JavaScript at all
+ *    is fully visible, unmoved, and readable.
+ * 2. The **from** state is applied only under `@media (prefers-reduced-motion: no-preference)`,
+ *    only when `[data-motion='off']` is absent, and only while `[data-revealed]` is absent.
+ *
+ * So every way the system can fail — a blocked script, an observer that never fires, a browser
+ * with no IntersectionObserver, a visitor who asked for less motion — fails to *visible*. The
+ * common bug in scroll-reveal implementations is the opposite: `opacity: 0` in the base rule and a
+ * class that removes it, which turns any script failure into a blank page.
+ *
+ * **Tier one** is the `@supports (animation-timeline: view())` block. Where it is supported the
+ * reveal is a scroll-driven CSS animation and no JavaScript runs at all; the `[data-revealed]`
+ * attribute is still set by the observer where there is one, and the two agree because both end at
+ * the same final state.
+ *
+ * **Animated properties.** `transform`, `opacity`, `clip-path`, `stroke-dashoffset` — and nothing
+ * else, anywhere in this file. `scripts/lint-motion.ts` enforces that across every stylesheet in
+ * the project (Requirement 21.8).
+ *
+ * **Durations** come from the four tokens and are used for what the design assigns them to:
+ * `--dur-fast` for interaction feedback, `--dur-normal` for structural change, `--dur-reveal` for
+ * section and product reveals, `--dur-story` for the line-drawing sequences and nothing shorter
+ * (Requirement 21.7).
+ *
+ * Design: Motion System.
+ * Requirements: 21.5–21.14.
+ */
+
+/* ------------------------------------------------------------------------- *
+ * The gate
+ *
+ * `--ngf-motion` is 1 when motion is permitted and 0 otherwise. Declaring it once
+ * means a component's own rules can be written against a single condition instead
+ * of repeating the media query and the attribute selector.
+ * ------------------------------------------------------------------------- */
+
+@property --ngf-reveal-progress {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+
+:root {
+  --ngf-motion: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --ngf-motion: 1;
+  }
+}
+
+[data-motion='off'] {
+  --ngf-motion: 0;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Reveals (tier two's from-state)
+ * ------------------------------------------------------------------------- */
+
+/*
+ * The final state, unconditionally. Note there is no `opacity` or `transform` here at all: the
+ * final state is simply the element's own layout, so nothing has to be reset correctly.
+ */
+[data-reveal] {
+  --ngf-reveal-shift: 16px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+    transform: translate3d(0, var(--ngf-reveal-shift), 0);
+  }
+
+  :where(:not([data-motion='off'])) [data-reveal] {
+    transition:
+      opacity var(--dur-reveal) var(--ease-entrance),
+      transform var(--dur-reveal) var(--ease-entrance);
+    transition-delay: var(--ngf-reveal-delay, 0ms);
+  }
+
+  /* A reveal that comes in from the side rather than from below — used sparingly. */
+  :where(:not([data-motion='off'])) [data-reveal='left']:not([data-revealed]) {
+    transform: translate3d(calc(-1 * var(--ngf-reveal-shift)), 0, 0);
+  }
+
+  :where(:not([data-motion='off'])) [data-reveal='right']:not([data-revealed]) {
+    transform: translate3d(var(--ngf-reveal-shift), 0, 0);
+  }
+
+  /* A mask wipe, for images: `clip-path` only, so the box never changes size. */
+  :where(:not([data-motion='off'])) [data-reveal='mask']:not([data-revealed]) {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 100% 0);
+  }
+
+  :where(:not([data-motion='off'])) [data-reveal='mask'] {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path var(--dur-reveal) var(--ease-entrance);
+  }
+}
+
+/*
+ * Staggered groups. The children share the parent's single reveal, and their delay is a multiple
+ * of a token — so the whole group counts as **one** animating element against Requirement 21.9's
+ * ceiling of twelve, which is exactly the design's "staggered groups count as one only if they
+ * share a parent animation".
+ */
+[data-motion-group] > * {
+  --ngf-reveal-delay: 0ms;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-motion-group][data-revealed] > *:nth-child(1) {
+    --ngf-reveal-delay: 0ms;
+  }
+
+  :where(:not([data-motion='off'])) [data-motion-group][data-revealed] > *:nth-child(2) {
+    --ngf-reveal-delay: var(--stagger-tight);
+  }
+
+  :where(:not([data-motion='off'])) [data-motion-group][data-revealed] > *:nth-child(3) {
+    --ngf-reveal-delay: calc(2 * var(--stagger-tight));
+  }
+
+  :where(:not([data-motion='off'])) [data-motion-group][data-revealed] > *:nth-child(4) {
+    --ngf-reveal-delay: calc(3 * var(--stagger-tight));
+  }
+
+  :where(:not([data-motion='off'])) [data-motion-group][data-revealed] > *:nth-child(n + 5) {
+    --ngf-reveal-delay: calc(4 * var(--stagger-tight));
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Tier one: scroll-driven CSS, where the browser supports it
+ *
+ * Zero JavaScript. The observer still runs as the fallback in browsers without
+ * this, and both paths end at the same final state, so an element cannot be
+ * revealed twice or left half-revealed by disagreement between them.
+ * ------------------------------------------------------------------------- */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) {
+      /* The from-state is now the animation's first keyframe, not a standing style. */
+      opacity: 1;
+      transform: none;
+      animation: ngf-reveal-in var(--dur-reveal) var(--ease-entrance) both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 60%;
+    }
+
+    :where(:not([data-motion='off'])) [data-reveal='mask']:not([data-revealed]) {
+      clip-path: inset(0 0 0 0);
+      animation: ngf-mask-in var(--dur-reveal) var(--ease-entrance) both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 70%;
+    }
+  }
+}
+
+@keyframes ngf-reveal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--ngf-reveal-shift), 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes ngf-mask-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Per-line text reveal
+ *
+ * A `clip-path` wipe per line, driven by the registered `--ngf-reveal-progress`
+ * custom property. Registration is what makes a custom property animatable at
+ * all; without the `@property` block at the top of this file the wipe would jump.
+ *
+ * Lines are marked up as elements by the author — one `<span class="ngf-line">`
+ * per line — rather than split by JavaScript per character. The design is explicit
+ * about that: "per-line clip-path wipe using CSS `@property`, not per-character
+ * JS". Per-character splitting also destroys the text for a screen reader.
+ * ------------------------------------------------------------------------- */
+
+.ngf-line {
+  display: block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-reveal='lines']:not([data-revealed]) .ngf-line {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  :where(:not([data-motion='off'])) [data-reveal='lines'] .ngf-line {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path var(--dur-reveal) var(--ease-entrance);
+  }
+
+  :where(:not([data-motion='off'])) [data-reveal='lines'][data-revealed] .ngf-line:nth-child(2) {
+    transition-delay: var(--stagger-loose);
+  }
+
+  :where(:not([data-motion='off'])) [data-reveal='lines'][data-revealed] .ngf-line:nth-child(3) {
+    transition-delay: calc(2 * var(--stagger-loose));
+  }
+
+  :where(:not([data-motion='off']))
+    [data-reveal='lines'][data-revealed]
+    .ngf-line:nth-child(n + 4) {
+    transition-delay: calc(3 * var(--stagger-loose));
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Architectural hairlines — scale from 0 on X
+ * ------------------------------------------------------------------------- */
+
+/*
+ * A hairline does **not** carry its own `data-reveal`, and that is a budget decision as much as a
+ * design one. Requirement 21.9 caps simultaneously animating elements at twelve, and a section with
+ * five decorative rules would spend five of them on ornament. So a hairline animates as part of its
+ * nearest revealing ancestor — the section or the group — which means five rules cost one
+ * animating element between them, staggered by the group rules above.
+ */
+.ngf-hairline {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-taupe);
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-hairline {
+    transform: scale3d(0, 1, 1);
+  }
+
+  :where(:not([data-motion='off'])) .ngf-hairline {
+    transform: scale3d(1, 1, 1);
+    transition: transform var(--dur-reveal) var(--ease-entrance);
+    transition-delay: var(--ngf-reveal-delay, 0ms);
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * SVG primitives: the line draw
+ *
+ * `stroke-dasharray` is set to the path's own length through a custom property the
+ * component declares, so the draw is one animated property (`stroke-dashoffset`)
+ * with no per-frame JavaScript and no path measurement at runtime.
+ *
+ * The **final drawn state is the default** (`stroke-dashoffset: 0`), for the same
+ * reason the reveal's final state is: under reduced motion, with no script, or in a
+ * browser that ignores the animation, the illustration is fully drawn rather than
+ * invisible (Requirement 21.11).
+ * ------------------------------------------------------------------------- */
+
+[data-ngf-primitive] {
+  /* Every primitive strokes in `currentColor` and inherits its size from its box. */
+  display: block;
+  width: 100%;
+  height: auto;
+  color: inherit;
+}
+
+[data-ngf-primitive] .ngf-draw {
+  stroke-dasharray: var(--ngf-path-length, 1000);
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off']))
+    [data-ngf-primitive][data-reveal]:not([data-revealed])
+    .ngf-draw {
+    stroke-dashoffset: var(--ngf-path-length, 1000);
+  }
+
+  :where(:not([data-motion='off'])) [data-ngf-primitive][data-reveal] .ngf-draw {
+    transition: stroke-dashoffset var(--dur-story) var(--ease-draw);
+    transition-delay: var(--ngf-draw-delay, 0ms);
+  }
+
+  /* The assembly variant: parts translate in from their own offsets and fade. */
+  :where(:not([data-motion='off']))
+    [data-ngf-primitive][data-reveal]:not([data-revealed])
+    .ngf-part {
+    opacity: 0;
+    transform: translate3d(var(--ngf-part-x, 0), var(--ngf-part-y, 12px), 0);
+  }
+
+  :where(:not([data-motion='off'])) [data-ngf-primitive][data-reveal] .ngf-part {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition:
+      opacity var(--dur-reveal) var(--ease-entrance),
+      transform var(--dur-story) var(--ease-entrance);
+    transition-delay: var(--ngf-part-delay, 0ms);
+  }
+
+  /*
+   * The one continuous animation in the system: a 6 s drift on the craftsmanship
+   * measurement lines. It is a `transform` of ±2 px, it exists on one component, and
+   * it is removed entirely under reduced motion — not slowed (Requirement 21.11).
+   */
+  :where(:not([data-motion='off'])) [data-ngf-primitive] .ngf-drift {
+    animation: ngf-drift 6s var(--ease-standard) infinite alternate;
+  }
+}
+
+@keyframes ngf-drift {
+  from {
+    transform: translate3d(0, -2px, 0);
+  }
+
+  to {
+    transform: translate3d(0, 2px, 0);
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Hover micro-interactions and the shared animated arrow
+ *
+ * All at `--dur-fast`, and all kept alive under reduced motion: Requirement 21.12
+ * wants interaction feedback to stay responsive, and a control that does not
+ * acknowledge a press reads as broken rather than as calm.
+ * ------------------------------------------------------------------------- */
+
+.ngf-arrow {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: inherit;
+}
+
+.ngf-arrow-shaft,
+.ngf-arrow-head {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-arrow-shaft {
+  stroke-dasharray: 12;
+  stroke-dashoffset: 0;
+  transition:
+    stroke-dashoffset var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  :where(a, button):hover .ngf-arrow-head,
+  :where(a, button):focus-visible .ngf-arrow-head {
+    /* The design's "4 px slide plus a drawing tail". */
+    transform: translate3d(4px, 0, 0);
+  }
+
+  :where(a, button):hover .ngf-arrow-shaft,
+  :where(a, button):focus-visible .ngf-arrow-shaft {
+    transform: translate3d(1px, 0, 0);
+  }
+}
+
+/*
+ * A card or tile lift. `transform` only — never `box-shadow`, which Requirement 21.8
+ * forbids animating and which is the usual way this effect is (expensively) built.
+ */
+@media (hover: hover) and (min-width: 768px) {
+  :where(:not([data-motion='off'])) [data-motion-lift] {
+    transition: transform var(--dur-fast) var(--ease-standard);
+  }
+
+  :where(:not([data-motion='off'])) [data-motion-lift]:hover,
+  :where(:not([data-motion='off'])) [data-motion-lift]:focus-within {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Section transitions
+ *
+ * A band's own reveal, one step slower than the content inside it, so the section
+ * arrives and then fills rather than everything moving at once.
+ * ------------------------------------------------------------------------- */
+
+[data-motion-section] {
+  --ngf-reveal-shift: 24px;
+}
+
+/* ------------------------------------------------------------------------- *
+ * The hero
+ *
+ * The planes' transforms are written by the rAF loop; what is declared here is the
+ * neutral state and the LCP image's reveal.
+ * ------------------------------------------------------------------------- */
+
+[data-parallax-root] [data-parallax-plane] {
+  transform: translate3d(0, 0, 0);
+}
+
+/*
+ * Requirement 21.14 / 22.14: the hero image must not be gated behind a sequence.
+ *
+ * Its reveal is a `clip-path` wipe that starts at frame one — `both` fill with no delay, running
+ * on the animation timeline rather than waiting for an observer, a script, or an intersection. The
+ * element is painted from the first frame the bytes allow; the wipe only uncovers what is already
+ * there, so the largest contentful paint is never later than the image's own decode.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-ngf-hero-image] {
+    animation: ngf-hero-wipe var(--dur-reveal) var(--ease-entrance) both;
+  }
+}
+
+@keyframes ngf-hero-wipe {
+  from {
+    clip-path: inset(0 0 6% 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * The before/after room slider
+ *
+ * Fully operable with no JavaScript and under reduced motion. The only thing the
+ * `[data-eased]` attribute controls is whether the divider's `clip-path` eases —
+ * the control itself never depends on it.
+ * ------------------------------------------------------------------------- */
+
+.ngf-ba {
+  position: relative;
+  display: grid;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--color-cream);
+}
+
+.ngf-ba-layer {
+  grid-area: 1 / 1;
+  display: block;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  /*
+   * `min-width: 0`, because a grid item's default is `min-width: auto` — it refuses to shrink below
+   * its content's min-content width. The content here is an `svg` with `viewBox="0 0 320 200"` and
+   * no width attribute, whose min-content width is therefore its intrinsic 320 px. Added to this
+   * layer's own padding that made the figure 358 px wide inside a 320 px viewport, and `/custom-
+   * furniture` scrolled sideways on every phone narrower than about 400 px. The SVG is already
+   * `width: 100%; height: auto`; this is what lets that take effect.
+   */
+  min-width: 0;
+}
+
+.ngf-ba-after {
+  clip-path: inset(0 50% 0 0);
+}
+
+.ngf-ba[data-eased] .ngf-ba-after {
+  transition: clip-path var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-ba-slider {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* A bare region, not a visible control: the handle below is what is seen. */
+  background: none;
+  border: 0;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.ngf-ba-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 3;
+  width: 2px;
+  margin-left: -1px;
+  background-color: var(--color-champagne);
+  pointer-events: none;
+}
+
+.ngf-ba-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 1px solid var(--color-champagne);
+  border-radius: 50%;
+  background-color: var(--color-ivory);
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+}
+
+.ngf-ba-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}

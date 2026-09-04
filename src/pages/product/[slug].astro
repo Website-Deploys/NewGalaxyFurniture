@@ -1,0 +1,267 @@
+---
+/**
+ * `/product/{slug}` — the public product detail page.
+ *
+ * **Every Catalogue product gets one, with no manual authoring.** `getStaticPaths` folds over
+ * `getCatalogue()`, which is the single place the `PUBLISHED`/`OUT_OF_STOCK` decision lives, so
+ * adding a product file is the whole of "make a detail page available" (Requirements 4.1, 27.10).
+ * There is no per-product page, no route table, and nothing to remember.
+ *
+ * **An unknown slug is a real 404.** Astro generates a page for each path this function returns
+ * and nothing else, so any other `/product/*` request falls through to `src/pages/404.astro` with
+ * a genuine 404 status — not a 200 with an apology, and not a redirect to the catalogue or the
+ * homepage, both of which Requirement 4.13 forbids by name.
+ *
+ * **`OUT_OF_STOCK` is a first-class page, not a degraded one** (4.12). It is in `getStaticPaths`,
+ * it returns 200, its stock status reads as out of stock, and both conversion controls are present
+ * and relabelled as an availability enquiry by `ProductDetail`. Nothing is removed, hidden, or
+ * disabled.
+ *
+ * **This page wraps `ProductDetail`; it does not restate it.** The shared component renders the
+ * breadcrumbs, name, SKU, price, stock, description, specifications, variants, customization,
+ * delivery, made-to-order note, and both conversion controls — exactly as the admin preview sees
+ * them. This page adds what only the public page has: the shell, the interactive gallery island
+ * passed into the component's `gallery` slot, related products, and recently viewed.
+ *
+ * **One eager image.** The gallery's first image is the LCP element: it is preloaded in the head
+ * with `fetchpriority="high"`, it is the only `loading="eager"` image on the page, and every other
+ * image here — the rail, the related cards, the recently-viewed thumbnails — is lazy.
+ *
+ * Requirements: 4.1, 4.2, 4.3, 4.9, 4.10, 4.11, 4.12, 4.13, 5.20, 15.17, 22.10, 26.1.
+ */
+import EnquiryIsland from '@/components/forms/EnquiryIsland.astro';
+import QuickEnquireHost from '@/components/forms/QuickEnquireHost.astro';
+import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
+import Gallery from '@/components/product/Gallery';
+import ProductDetail from '@/components/product/ProductDetail.astro';
+import RecentlyViewed from '@/components/product/RecentlyViewed';
+import RelatedProducts from '@/components/product/RelatedProducts.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
+import { aggregateRatingFor, getPublishedReviews } from '@/lib/content/reviews';
+import { getSiteSettings } from '@/lib/content/site';
+import { formatPriceOrLabel } from '@/lib/money';
+import { galleryImagesOf } from '@/lib/products/gallery-images';
+import { manualRelatedSlugs, relatedProducts } from '@/lib/products/related';
+import { breadcrumbJsonLd, productJsonLd } from '@/lib/seo/jsonld';
+import { absoluteUrl, productDescriptionFallback, productTitleFallback } from '@/lib/seo/meta';
+import { pageMeta, siteOrigin } from '@/lib/seo/page';
+import { productCrumbs } from '@/lib/site/breadcrumbs';
+import { toSearchDoc } from '@/lib/search/build-index';
+import type { Product } from '@/schemas/product';
+import type { Review } from '@/schemas/review';
+
+export async function getStaticPaths() {
+  const [catalogue, categories, reviews] = await Promise.all([
+    getCatalogue(),
+    getPublishedCategories(),
+    getPublishedReviews(),
+  ]);
+  const categoryNames = Object.fromEntries(
+    categories.map((category) => [category.slug, category.name]),
+  );
+  return catalogue.map((product) => ({
+    params: { slug: product.slug },
+    props: { product, catalogue, categoryNames, reviews },
+  }));
+}
+
+interface PageProps {
+  product: Product;
+  catalogue: Product[];
+  categoryNames: Record<string, string>;
+  reviews: Review[];
+}
+
+const { product, catalogue, categoryNames, reviews } = Astro.props as PageProps;
+
+const settings = getSiteSettings();
+const origin = siteOrigin(Astro);
+const canonical = absoluteUrl(origin, `/product/${product.slug}`);
+
+/* -------------------------------------------------------------------------- */
+/* Related products                                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Selection runs over `SearchDoc`s, which is what `relatedProducts` is specified against, and the
+ * chosen slugs are mapped back to product records for rendering. Building the documents here
+ * rather than fetching the client index keeps this a build-time computation with no runtime cost
+ * and no dependency on the index asset.
+ */
+const docs = catalogue.map(toSearchDoc);
+const bySlug = new Map(catalogue.map((entry) => [entry.slug, entry]));
+const related = relatedProducts(
+  {
+    ...toSearchDoc(product),
+    r: manualRelatedSlugs(product, catalogue),
+  },
+  docs,
+)
+  .map((doc) => bySlug.get(doc.i))
+  .filter((entry): entry is Product => entry !== undefined);
+
+/* -------------------------------------------------------------------------- */
+/* Gallery and recently viewed                                                */
+/* -------------------------------------------------------------------------- */
+
+const galleryImages = galleryImagesOf(product);
+const primary = galleryImages[0];
+
+const recentCard = {
+  name: product.name,
+  price: formatPriceOrLabel(product.price, product.priceOnEnquiry),
+  href: `/product/${product.slug}`,
+  ...(primary === undefined ? {} : { thumb: primary.thumbSrc, alt: primary.alt }),
+  ...(primary?.lqip === undefined ? {} : { lqip: primary.lqip }),
+};
+
+/* -------------------------------------------------------------------------- */
+/* Metadata and structured data                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Both fallback chains come from `@/lib/seo/meta`, so the title and description a PDP emits are
+ * produced by the same code the unit tests exercise — not by an expression written here
+ * (Requirements 23.5, 23.6).
+ *
+ * The `Product` block is the one place on the site where a wrong value would be a lie told to a
+ * search engine, so three things are withheld rather than guessed:
+ *
+ * - **`offers`** is omitted entirely for a price-on-enquiry product. There is no price on the page,
+ *   so there is no price to publish (Requirement 23.8).
+ * - **`aggregateRating`** comes from `aggregateRatingFor`, which returns `null` unless approved
+ *   reviews are linked to *this* product. A site-wide testimonial is not product review data
+ *   (Requirement 18.10).
+ * - **`image`** carries only the derivatives that exist, absolutised — never a full-resolution
+ *   original and never a URL for an image that was never generated.
+ */
+const description = productDescriptionFallback(product);
+const crumbs = productCrumbs(product, categoryNames[product.category]);
+
+const meta = pageMeta(Astro, {
+  path: `/product/${product.slug}`,
+  title: productTitleFallback(product, categoryNames[product.category]),
+  description,
+  ogType: 'product',
+  ...(primary === undefined
+    ? {}
+    : {
+        ogImage: {
+          url: absoluteUrl(origin, primary.src),
+          alt: primary.alt,
+          width: primary.width,
+          height: primary.height,
+        },
+      }),
+  jsonLd: [
+    productJsonLd({
+      product,
+      canonical,
+      images: galleryImages.map((image) => absoluteUrl(origin, image.src)),
+      description,
+      businessName: settings.businessName,
+      aggregateRating: aggregateRatingFor(reviews, product.id),
+    }),
+    breadcrumbJsonLd(crumbs, origin),
+  ],
+});
+---
+
+<BaseLayout meta={meta} analytics={{ event: { type: 'product_view', entity: product.slug } }}>
+  {
+    /*
+    The LCP preload. `imagesrcset`/`imagesizes` mirror the gallery's own attributes exactly, so the
+    preload and the element resolve to the same candidate rather than fetching two.
+  */
+  }
+  <ImagePreload
+    slot="head"
+    hint={primary === undefined
+      ? null
+      : { href: primary.src, srcset: primary.srcSet, sizes: primary.sizes }}
+  />
+
+  <div class="ngf-pdp">
+    <ProductDetail
+      product={product}
+      categoryName={categoryNames[product.category]}
+      productUrl={canonical}
+      gallerySlot={galleryImages.length > 0}
+    >
+      {
+        /*
+        The interactive gallery, in the shared component's slot. `client:visible` per the plan: the
+        primary image and the rail are server-rendered markup, so the page is complete and
+        readable before the island hydrates — hydration only adds stepping, swiping, and zoom.
+      */
+        galleryImages.length > 0 && (
+          <Gallery
+            slot="gallery"
+            client:visible
+            images={galleryImages}
+            productName={product.name}
+            productSlug={product.slug}
+          />
+        )
+      }
+    </ProductDetail>
+
+    {
+      /*
+      Get a Quote, against this piece. Placed after the detail rather than inside it, because
+      `ProductDetail` is shared with `/admin/preview/:id` and an operator approving a photograph has
+      no use for a live lead form. The product reference travels as a slug only; the server
+      re-resolves the name, SKU and canonical URL when the enquiry arrives (Requirement 6.6).
+    */
+    }
+    <section class="ngf-pdp-enquiry" aria-labelledby="ngf-pdp-quote-heading" data-reveal>
+      {
+        /*
+        The one primitive on a product page. Decorative — the specifications above it are the real
+        statement about how the piece is made, and this is the visual language they sit in rather
+        than a second source of that information.
+      */
+      }
+      <span class="ngf-pdp-detail">
+        <CraftsmanshipLines strokeWidth={1} trigger="none" />
+      </span>
+      <EnquiryIsland
+        form="quote"
+        heading="Get a quote for this piece"
+        context={{ kind: 'product', productName: product.name, sku: product.sku }}
+        productSlug={product.slug}
+        productName={product.name}
+      />
+    </section>
+
+    <RelatedProducts products={related} categoryNames={categoryNames} />
+
+    <RecentlyViewed client:idle slug={product.slug} card={recentCard} />
+  </div>
+
+  {/* The page's single Quick Enquire dialog host — for this PDP and for the related cards. */}
+  <QuickEnquireHost />
+</BaseLayout>
+
+<style>
+  .ngf-pdp-enquiry {
+    display: grid;
+    gap: 2rem;
+    padding-block: clamp(2rem, 6vh, 4rem);
+    border-top: 1px solid var(--color-taupe);
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-pdp-enquiry {
+      grid-template-columns: 220px minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .ngf-pdp-detail {
+    display: block;
+    color: var(--color-taupe);
+  }
+</style>

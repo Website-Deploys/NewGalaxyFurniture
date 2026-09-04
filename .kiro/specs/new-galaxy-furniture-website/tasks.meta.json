@@ -1,0 +1,37 @@
+{
+  "pbtResults": {
+    "2.2 Write property tests for the product schema": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374196375
+    },
+    "2.4 Write property tests for the publish gate": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374199518
+    },
+    "3.2 Write property tests for slug and SKU generation": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374202355
+    },
+    "3.4 Write property tests for enquiry URL construction": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374204986
+    },
+    "3.6 Write property tests for INR formatting": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374207723
+    },
+    "3.8 Write property tests for phone normalization": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374210299
+    },
+    "3.10 Write property tests for product duplication": {
+      "status": "passed",
+      "lastRunTimestamp": 1788374212911
+    },
+    "21.5 Write property tests for output sanitization": {
+      "status": "passed",
+      "lastRunTimestamp": 1788452599242
+    }
+  },
+  "executionHistory": {}
+}

@@ -1,0 +1,94 @@
+name: CI
+
+# Gate order is the design's, and it is deliberate: the cheapest gate that can
+# reject a change runs first, and nothing deploys behind a failed gate. Deployment
+# itself is Cloudflare Workers Builds, which runs on push to the default branch —
+# this workflow is what makes a red build visible before that happens.
+#
+# Design: Testing Strategy → CI gates; Deployment.
+# Requirements: 27.12, 28.3, 28.4, 28.6.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: 'true'
+
+jobs:
+  gates:
+    name: Content, types, lint, tests, build, budgets, secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # 1. install
+      - name: Install dependencies
+        run: npm ci
+
+      # 2. content schema gate — a malformed content file fails before anything else
+      - name: Validate content
+        run: npm run validate:content
+
+      # 3. typecheck
+      - name: Check types
+        run: npm run check
+
+      # 4. lint
+      - name: Lint
+        run: npm run lint
+
+      # 5. unit + property tests
+      - name: Test (unit + property)
+        run: npm test
+
+      # 6. build
+      - name: Build
+        run: npm run build
+        env:
+          PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL || 'http://localhost:4321' }}
+
+      # 7. asset budgets
+      - name: Size budgets
+        run: npm run size-limit
+
+      # 8. secret scan of the build output — the last gate before any deploy
+      - name: Scan build output for credentials
+        run: npm run scan:secrets
+
+      # 9. Core Web Vitals, against the built output.
+      #
+      # After the budgets and the secret scan, because it is the slowest gate and the least
+      # specific: a size regression or a leaked credential should be reported in seconds, not
+      # after three Lighthouse runs across four URLs. `staticDistDir` in lighthouserc.json means
+      # this needs no server and no deployment — it measures the artifact this build produced.
+      - name: Lighthouse CI (Core Web Vitals)
+        run: npx --yes @lhci/cli@0.15.x autorun
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          if-no-files-found: ignore

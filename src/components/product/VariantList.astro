@@ -1,0 +1,56 @@
+---
+/**
+ * The variant list.
+ *
+ * Variants are presented as information, not as a selector, and that is a deliberate reading of
+ * the requirements rather than an omission: the site records no transactions (Requirement 5.x —
+ * every conversion is a WhatsApp or telephone enquiry), so a radio group whose only effect is to
+ * change a number on screen would imply a cart that does not exist. What a customer needs is to
+ * see which options exist and what each one changes, and then to say which one they want in the
+ * enquiry.
+ *
+ * A `priceDelta` is rendered as a signed difference because that is what it is; the absolute
+ * price of a variant is not stored and is therefore not stated. A variant's own stock status is
+ * shown only when it differs from nothing — that is, only when it was supplied (Requirement 4.3).
+ *
+ * The whole block is omitted when there are no variants.
+ *
+ * Requirements: 4.2, 4.3.
+ */
+import { formatINR } from '@/lib/money';
+import { stockLabel } from '@/lib/products/labels';
+import type { ProductVariantValue } from '@/schemas/product';
+
+interface Props {
+  variants: readonly ProductVariantValue[];
+  class?: string;
+}
+
+const { variants, class: className } = Astro.props;
+
+function deltaLabel(delta: number | undefined): string {
+  if (delta === undefined || delta === 0) return '';
+  return delta > 0 ? `+${formatINR(delta)}` : `−${formatINR(Math.abs(delta))}`;
+}
+---
+
+{
+  variants.length > 0 && (
+    <section class:list={className} data-ngf-variants>
+      <h2 class="font-display text-h3 text-espresso">Options</h2>
+      <ul class="mt-2 grid list-none gap-2 p-0 sm:grid-cols-2">
+        {variants.map((variant) => (
+          <li class="flex flex-wrap items-baseline gap-2 border border-taupe px-3 py-2">
+            <span class="text-body">{variant.label}</span>
+            {deltaLabel(variant.priceDelta) !== '' && (
+              <span class="text-small text-walnut">{deltaLabel(variant.priceDelta)}</span>
+            )}
+            {variant.stockStatus !== undefined && (
+              <span class="text-small text-walnut">{stockLabel(variant.stockStatus)}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

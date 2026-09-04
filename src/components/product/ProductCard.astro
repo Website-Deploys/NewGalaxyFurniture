@@ -1,0 +1,180 @@
+---
+/**
+ * The product card.
+ *
+ * Three structural decisions, each one a requirement rather than a preference:
+ *
+ * 1. **A stretched link, not a wrapping `<a>`.** The whole card must navigate to the PDP by
+ *    pointer *and* by keyboard (Requirement 1.9) while Quick Enquire must be a separate target
+ *    that does not navigate (1.10). Wrapping the card in an `<a>` and nesting the enquiry link
+ *    inside it is invalid HTML and browsers resolve it unpredictably. So the card is an
+ *    `<article>`, a single absolutely-positioned link covers it, and Quick Enquire sits above
+ *    that link on a higher `z-index` — no JavaScript, no `stopPropagation`, no event handlers to
+ *    get wrong.
+ * 2. **The hover treatment is entirely CSS, gated on `(hover: hover) and (min-width: 768px)`.**
+ *    That is how Requirement 1.14's "SHALL NOT request the second card image" is satisfied
+ *    without sniffing the user agent: the second image is a `background-image` declared only
+ *    inside that media query and only under `:hover`/`:focus-within`, and a background image in
+ *    a rule that never matches is never fetched. Under reduced motion the global stylesheet
+ *    clamps the transitions, so both states render instantly and both stay readable and operable
+ *    (1.13).
+ * 3. **The media slot never paints empty.** `ResponsiveImage` renders the LQIP behind the image
+ *    and a styled alt-text tile on load failure, inside a reserved aspect box (1.8). A product
+ *    with no photograph at all gets a designed placeholder rather than a collapsed box.
+ *
+ * Exactly one classification label is shown — the category name, or the first tag when no
+ * category name is available (Requirement 1.5 says "exactly one category or tag label", so a
+ * row of chips would be wrong).
+ *
+ * Requirements: 1.5–1.14, 15.17, 15.18, 24.3.
+ * Design: Catalogue → Product cards.
+ */
+import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
+import { getSiteSettings } from '@/lib/content/site';
+import { derivativeUrl } from '@/lib/images/srcset';
+import { formatPriceOrLabel } from '@/lib/money';
+import { stockLabel } from '@/lib/products/labels';
+import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
+import { safeText } from '@/lib/security/sanitize';
+import { primaryImageOf } from '@/schemas/product';
+import type { Product } from '@/schemas/product';
+
+interface Props {
+  product: Product;
+  /** The category's display name. Falls back to the first tag, then the slug. */
+  categoryName?: string;
+  /**
+   * Eager-load this card's primary image. The catalogue routes pass `true` for the first six
+   * cards only; everything below the fold stays lazy (Requirement 15.17).
+   */
+  eager?: boolean;
+  /**
+   * This card's image is the page's largest contentful element — the first card of a listing. At
+   * most one card on a page may set it, and it is the one the page preloads. Eager and priority are
+   * deliberately separate: six eager cards are six fetches that must not all claim high priority.
+   */
+  priority?: boolean;
+}
+
+const { product, categoryName, eager = false, priority = false } = Astro.props;
+
+const settings = getSiteSettings();
+const primary = primaryImageOf(product);
+const ordered = [...product.images].sort((a, b) => a.order - b.order);
+const second = ordered.find((image) => image.id !== primary?.id);
+
+const price = formatPriceOrLabel(product.price, product.priceOnEnquiry);
+
+/*
+ * Operator-supplied strings, sanitized once here rather than at each of the six places the name is
+ * interpolated below (Requirement 25.2, Property 55). Two of those places are not text nodes —
+ * `data-ngf-product-name` and the `aria-label` — and one of them is read back by an island, so
+ * "Astro escapes it" is not the whole story.
+ */
+const name = safeText(product.name);
+const classification = safeText(categoryName ?? product.tags[0] ?? product.category);
+
+/**
+ * Quick Enquire is a real link to WhatsApp that the page's `QuickEnquireHost` island upgrades
+ * into the enquiry form.
+ *
+ * The link is the base layer and it is not vestigial: with the island unhydrated — no
+ * JavaScript, a slow connection, an error in an unrelated island — activating this control still
+ * reaches a human on WhatsApp, with the product name and SKU already in the message. Once the
+ * host is listening it calls `preventDefault()` and opens the form in place, so nothing
+ * navigates and the listing keeps its scroll position, its applied filters and its search text
+ * (Requirement 1.10).
+ *
+ * The `data-ngf-quick-enquire` marker plus the slug and name are all the host needs; the server
+ * re-resolves the product from the slug when the enquiry is submitted, so these attributes are
+ * a convenience for the dialog's own heading and never a source of stored truth
+ * (Requirement 6.6).
+ */
+const enquiryHref = (() => {
+  const number = settings.whatsapp[0];
+  if (number === undefined) return null;
+  const message = buildEnquiryMessage(
+    { kind: 'product', productName: product.name, sku: product.sku },
+    settings,
+  );
+  return buildWhatsAppUrl(number.e164, message);
+})();
+
+// The hover image, at a card-sized derivative. Only ever read by the hover media query.
+const hoverSrc = second === undefined ? null : derivativeUrl(product.id, second.id, 640, 'webp');
+---
+
+<article
+  class="ngf-card"
+  data-product-card
+  data-motion-lift
+  data-slug={product.slug}
+  style={hoverSrc === null ? undefined : `--ngf-card-hover-src: url(${hoverSrc});`}
+>
+  <div class="ngf-card-media">
+    {
+      primary === null ? (
+        <p class="ngf-card-placeholder">Photograph coming soon — {name}</p>
+      ) : (
+        <ResponsiveImage
+          productId={product.id}
+          image={primary}
+          context="card"
+          eager={eager}
+          priority={priority}
+        />
+      )
+    }
+    {
+      /*
+        The cross-fade layer. Rendered only when a second image exists, and left empty: its
+        `background-image` comes from the custom property above, applied by the hover media
+        query alone.
+      */
+      hoverSrc !== null && <span class="ngf-card-hover" aria-hidden="true" />
+    }
+    <span class="ngf-card-arrow" aria-hidden="true">
+      <svg
+        viewBox="0 0 16 16"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <path d="M2 8h11M9 4l4 4-4 4"></path>
+      </svg>
+    </span>
+  </div>
+
+  <div class="ngf-card-body">
+    <span class="ngf-card-tag">{classification}</span>
+    <h3 class="ngf-card-name">{name}</h3>
+    <p class="ngf-card-price">{price}</p>
+    <span class="ngf-card-stock" data-stock={product.stockStatus}>
+      {stockLabel(product.stockStatus)}
+    </span>
+
+    {
+      enquiryHref !== null && (
+        <a
+          href={enquiryHref}
+          target="_blank"
+          rel="noopener"
+          class="ngf-card-enquire"
+          data-ngf-quick-enquire
+          data-ngf-product-slug={product.slug}
+          data-ngf-product-name={name}
+          aria-label={`Quick enquire about ${name}`}
+        >
+          Quick Enquire
+        </a>
+      )
+    }
+  </div>
+
+  {/* The stretched link. Last in DOM order, so it does not precede the card's own content. */}
+  <a class="ngf-card-link" href={`/product/${product.slug}`}>
+    {name} — {price}
+  </a>
+</article>

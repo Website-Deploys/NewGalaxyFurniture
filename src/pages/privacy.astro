@@ -1,0 +1,67 @@
+---
+/**
+ * `/privacy`.
+ *
+ * Structure only. Every section below names what the finished policy will state and states none of
+ * it, because no data-handling commitment has been supplied and inventing one would be both a false
+ * claim and, for a privacy policy, a legal exposure (Requirements 8.3, 8.4).
+ *
+ * Requirements: 8.2, 8.3, 8.4, 8.8.
+ */
+import PolicyPage from '@/components/ui/PolicyPage.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { pageMeta } from '@/lib/seo/page';
+import '@/styles/editorial.css';
+
+const meta = pageMeta(Astro, {
+  title: 'Privacy Policy',
+  description:
+    'How New Galaxy Furniture handles the information you share when you enquire. This policy is being finalised — contact us for current terms.',
+  ogType: 'article',
+});
+---
+
+<BaseLayout meta={meta}>
+  <PolicyPage
+    title="Privacy Policy"
+    lead="What we do with the information you give us when you enquire, and what we will never do with it."
+    contentKey="page.privacy.body"
+    sections={[
+      {
+        heading: 'What we collect',
+        prompt:
+          'This section will list exactly which details an enquiry records — your name, your phone number, and what you asked about — and nothing beyond what the finished policy names.',
+      },
+      {
+        heading: 'Why we collect it',
+        prompt:
+          'This section will state the purposes the information is used for, and confirm that it is used for no other purpose.',
+      },
+      {
+        heading: 'How long we keep it',
+        prompt:
+          'This section will state the retention period once it has been agreed. No period is stated here yet.',
+      },
+      {
+        heading: 'Who we share it with',
+        prompt:
+          'This section will name every third party that receives any part of an enquiry, or confirm that none does.',
+      },
+      {
+        heading: 'Cookies and site measurement',
+        prompt:
+          'This section will describe what the site stores on your device and what it measures. The site uses no advertising tracker today.',
+      },
+      {
+        heading: 'Your choices',
+        prompt:
+          'This section will explain how to ask us what we hold about you, and how to ask us to delete it.',
+      },
+      {
+        heading: 'Contacting us about privacy',
+        prompt:
+          'Until this policy is published, ask us directly on either number and we will tell you exactly what we hold and why.',
+      },
+    ]}
+  />
+</BaseLayout>

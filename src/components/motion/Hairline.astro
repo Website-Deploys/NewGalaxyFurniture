@@ -1,0 +1,42 @@
+---
+/**
+ * A decorative architectural rule that scales from 0 on the X axis.
+ *
+ * The design's list includes "animated decorative architectural rules (hairlines that scale from 0
+ * on the X axis)", and the reason it is `scaleX` rather than an animated `width` is Requirement 21.8:
+ * `width` is on the forbidden list because animating it relayouts the line's container on every
+ * frame. `transform: scale3d(n, 1, 1)` from a left origin looks identical and is composited.
+ *
+ * It is a `<span>`, not an `<hr>`. An `<hr>` is a semantic thematic break and screen readers announce
+ * it; this is an ornament, and the pages that want a real separator use `<hr>` directly.
+ *
+ * Requirements: 21.6, 21.8, 21.11.
+ */
+interface Props {
+  /** `champagne` is the accent case — see the usage rule note below. */
+  tone?: 'taupe' | 'champagne';
+  class?: string;
+}
+
+const { tone = 'taupe', class: className } = Astro.props;
+
+/**
+ * Requirement 21.2 allows at most one champagne-gold element per viewport height of scroll and
+ * forbids large fills. A 1 px rule is the smallest possible fill, and callers that pass
+ * `champagne` are responsible for it being the only gold element in that band — which in practice
+ * means one per section, and the sections that use it do not also carry a gold arrow or chip.
+ */
+const color = tone === 'champagne' ? 'var(--color-champagne)' : 'var(--color-taupe)';
+---
+
+{
+  /*
+   * No `data-reveal` of its own: it animates with its nearest revealing ancestor. See the note in
+   * `motion.css` — five ornamental rules must not spend five of the page's twelve animating
+   * elements (Requirement 21.9).
+   */
+}
+<span
+  class:list={['ngf-hairline', className]}
+  style={`background-color:${color}`}
+  aria-hidden="true"></span>

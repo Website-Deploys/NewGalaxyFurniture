@@ -1,0 +1,67 @@
+---
+/**
+ * The specification list: material, colour, available colours, size, dimensions.
+ *
+ * Requirement 4.3 is the whole design of this component — "WHERE a product field holds no value,
+ * omit that field's display block rather than rendering an empty label or a placeholder value".
+ * So the rows are built as data first and the empty ones are filtered out before anything is
+ * rendered, rather than each row testing itself in the template. That way the `<dl>` itself
+ * disappears when every row is empty, instead of rendering an empty definition list.
+ *
+ * The dimension line prefers the operator's own `display` string when they supplied one, because
+ * "7 ft × 3 ft" is how a customer in India describes a dining table and a centimetre triple is
+ * not. The component composes the triple only as a fallback, and states no unit it was not given.
+ *
+ * Requirements: 4.2, 4.3.
+ */
+import type { Product } from '@/schemas/product';
+import { safeText } from '@/lib/security/sanitize';
+
+interface Props {
+  product: Product;
+  class?: string;
+}
+
+const { product, class: className } = Astro.props;
+
+/** Composed from whichever dimension fields exist. Empty when none do. */
+function dimensionLine(dimensions: Product['dimensions']): string {
+  if (dimensions === undefined) return '';
+  if (dimensions.display !== undefined && dimensions.display.trim() !== '') {
+    return dimensions.display.trim();
+  }
+  const axes: [string, number | undefined][] = [
+    ['L', dimensions.lengthCm],
+    ['W', dimensions.widthCm],
+    ['H', dimensions.heightCm],
+    ['D', dimensions.depthCm],
+  ];
+  return axes
+    .flatMap(([axis, value]) => (value === undefined ? [] : [`${axis} ${value} cm`]))
+    .join(' · ');
+}
+
+/* Operator-supplied values, sanitized before display (Requirement 25.2, Property 55). */
+const rows: { term: string; value: string }[] = [
+  { term: 'Material', value: product.material ?? '' },
+  { term: 'Colour', value: product.color ?? '' },
+  { term: 'Available colours', value: product.availableColors.join(', ') },
+  { term: 'Size', value: product.size ?? '' },
+  { term: 'Dimensions', value: dimensionLine(product.dimensions) },
+]
+  .map((row) => ({ term: row.term, value: safeText(row.value) }))
+  .filter((row) => row.value !== '');
+---
+
+{
+  rows.length > 0 && (
+    <dl class:list={['grid gap-x-6 gap-y-3 text-body sm:grid-cols-2', className]} data-ngf-specs>
+      {rows.map((row) => (
+        <div>
+          <dt class="text-small text-walnut">{row.term}</dt>
+          <dd class="m-0">{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}

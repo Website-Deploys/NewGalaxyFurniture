@@ -1,0 +1,50 @@
+---
+/**
+ * /admin/homepage — the fifteen sections' copy and visibility.
+ *
+ * Requirements: 7.1, 7.7, 7.10, 7.13, 8.8, 26.14.
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import HomepageEditor from '@/components/admin/HomepageEditor';
+import { can } from '@/lib/auth/permissions';
+import { createGitHubClient } from '@/lib/github/factory';
+import { HomepageSchema, type Homepage } from '@/schemas/homepage';
+import { readContentRecord } from '@/lib/github/content-writer';
+import { siteContentPath } from '@/lib/github/paths';
+
+export const prerender = false;
+
+const role = Astro.locals.adminSession?.role ?? 'viewer';
+
+let homepage: Homepage | null = null;
+let unavailable: string | null = null;
+
+try {
+  const path = siteContentPath('homepage');
+  if (path === null) throw new Error('path not allowlisted');
+  const record = await readContentRecord(createGitHubClient(Astro), path, HomepageSchema);
+  if (record === null) throw new Error('homepage.json is missing from the repository');
+  homepage = record.value;
+} catch (error) {
+  console.error('[admin/homepage] could not read the homepage', error);
+  unavailable =
+    'The homepage composition could not be read from the content repository just now. This is a configuration or connectivity problem — the stored copy is unaffected.';
+}
+---
+
+<AdminLayout title="Homepage">
+  <p class="mb-6 max-w-[70ch] text-body text-walnut">
+    The homepage is these fifteen sections, in this order. You control what each one says and
+    whether it appears; the order itself is fixed by the site’s design, so a section you switch off
+    and back on returns to the same place. Sections still holding placeholder text are flagged below
+    and listed on the Content screen.
+  </p>
+
+  {
+    homepage !== null && unavailable === null ? (
+      <HomepageEditor client:load homepage={homepage} canWrite={can(role, 'settings.write')} />
+    ) : (
+      <p class="border border-espresso bg-white px-4 py-3 text-body">{unavailable}</p>
+    )
+  }
+</AdminLayout>

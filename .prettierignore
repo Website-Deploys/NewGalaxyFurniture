@@ -1,0 +1,15 @@
+dist/
+.astro/
+.wrangler/
+node_modules/
+playwright-report/
+test-results/
+coverage/
+package-lock.json
+public/fonts/
+.kiro/
+
+# Verbatim transcription of the design's token blocks. Prettier lowercases hex
+# digits (#3B2A21 → #3b2a21) and trims 0.30 → 0.3 in the easing curves, and these
+# values are specified character for character. Reviewed by eye instead.
+src/styles/tokens.css

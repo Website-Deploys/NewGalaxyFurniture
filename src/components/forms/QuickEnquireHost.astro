@@ -1,0 +1,23 @@
+---
+/**
+ * The page's single Quick Enquire dialog host.
+ *
+ * Mounted once by any page that renders product cards or a PDP. It renders nothing until a
+ * `[data-ngf-quick-enquire]` control is activated, so its cost on a catalogue page is one
+ * island rather than one per card — see `QuickEnquire.tsx` for why that matters.
+ *
+ * **`client:idle`, not `client:visible`.** The host has no visible box for an observer to watch;
+ * it has to be listening before the first click, and a click on a card is plausible within a
+ * second of the page settling. Idle is the earliest point that is not the critical path.
+ *
+ * Requirements: 1.10, 6.1, 22.7.
+ */
+import QuickEnquire from '@/components/forms/QuickEnquire';
+import { fallbackNumbers } from '@/lib/leads/fallback';
+import { getSiteSettings } from '@/lib/content/site';
+import '@/styles/forms.css';
+
+const numbers = fallbackNumbers(getSiteSettings(), { kind: 'general' });
+---
+
+<QuickEnquire client:idle numbers={numbers} />

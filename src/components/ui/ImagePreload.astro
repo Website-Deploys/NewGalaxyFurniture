@@ -1,0 +1,36 @@
+---
+/**
+ * The LCP image hint, as one element rather than as a `<link>` written out per page.
+ *
+ * Rendered into `BaseLayout`'s `head` slot by the page that knows which image is its largest
+ * contentful one. `fetchpriority="high"` is on the hint as well as on the element, so the two agree
+ * about ordering; `imagesrcset`/`imagesizes` mirror the element's own attributes exactly, which is
+ * what keeps the preload and the element resolving to the same candidate instead of fetching two.
+ *
+ * A `null` hint renders nothing. That is the normal case for a page with no contentful image, so
+ * every page can mount this unconditionally and no page grows a second code path.
+ *
+ * Requirements: 22.10.
+ * Design: Performance Budgets → Techniques.
+ */
+import type { ImagePreloadHint } from '@/lib/images/preload';
+
+interface Props {
+  hint: ImagePreloadHint | null;
+}
+
+const { hint } = Astro.props;
+const attributes =
+  hint === null
+    ? null
+    : {
+        rel: 'preload',
+        as: 'image',
+        href: hint.href,
+        fetchpriority: 'high' as const,
+        ...(hint.srcset === undefined ? {} : { imagesrcset: hint.srcset }),
+        ...(hint.sizes === undefined ? {} : { imagesizes: hint.sizes }),
+      };
+---
+
+{attributes !== null && <link {...attributes} />}

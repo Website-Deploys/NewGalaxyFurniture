@@ -1,0 +1,192 @@
+---
+/**
+ * `/collection/{category}` — one route per published category.
+ *
+ * `getStaticPaths` reads the published categories, so the nine required routes exist because
+ * nine category **files** exist (Requirement 1.2) and a tenth category file would add a tenth
+ * route with no code change. A product assigned to more than one category appears on each of
+ * those routes, which follows from matching on the product's category rather than partitioning
+ * the catalogue (Requirement 1.3).
+ *
+ * A slug that matches no category file produces no page at all, so the request reaches
+ * `src/pages/404.astro` — which renders the "this category does not exist" composition with
+ * search and all nine category routes, never an empty listing (Requirement 1.4).
+ *
+ * Requirements: 1.2, 1.3, 1.4, 1.15, 1.16, 15.17, 22.10.
+ */
+import QuickEnquireHost from '@/components/forms/QuickEnquireHost.astro';
+import CatalogueControls from '@/components/product/CatalogueControls';
+import CatalogueEmpty from '@/components/product/CatalogueEmpty.astro';
+import CategoryIllustration from '@/components/motion/CategoryIllustration.astro';
+import Breadcrumbs from '@/components/product/Breadcrumbs.astro';
+import ProductCard from '@/components/product/ProductCard.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getAnalyticsSnapshot } from '@/lib/content/analytics-snapshot';
+import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
+import { getRankings } from '@/lib/content/site';
+import { cardImagePreload } from '@/lib/images/preload';
+import { isEagerCard } from '@/lib/images/staging';
+import { primaryImageOf } from '@/schemas/product';
+import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo/jsonld';
+import { pageMeta, siteOrigin } from '@/lib/seo/page';
+import { categoryCrumbs } from '@/lib/site/breadcrumbs';
+import { getSearchIndexUrl } from '@/lib/search/index-asset';
+import type { Category } from '@/schemas/category';
+import type { Product } from '@/schemas/product';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const categories = await getPublishedCategories();
+  const products = await getCatalogue();
+  const names = Object.fromEntries(categories.map((entry) => [entry.slug, entry.name]));
+  return categories.map((category) => ({
+    params: { category: category.slug },
+    props: {
+      category,
+      products: products.filter((product) => product.category === category.slug),
+      categoryNames: names,
+    },
+  }));
+};
+
+// Astro types `Astro.props` from a frontmatter-local `Props` interface, so the props
+// `getStaticPaths` attaches are checked rather than cast.
+interface Props {
+  category: Category;
+  products: Product[];
+  categoryNames: Record<string, string>;
+}
+
+const { category, products, categoryNames } = Astro.props;
+
+const rankings = getRankings();
+const manualRankings = {
+  trending: rankings.trending,
+  bestSeller: rankings.bestSeller,
+  mostViewed: rankings.mostViewed,
+};
+const indexUrl = await getSearchIndexUrl();
+const snapshot = getAnalyticsSnapshot();
+
+const count = products.length;
+
+/**
+ * The one preloaded image: the first card's photograph, which is this listing's largest contentful
+ * element. `null` with an empty catalogue, so a page with no cards hints nothing (Requirement 22.10).
+ */
+const leadImage = products[0] === undefined ? null : primaryImageOf(products[0]);
+const leadPreload = products[0] === undefined ? null : cardImagePreload(products[0].id, leadImage);
+
+/**
+ * Metadata and structured data.
+ *
+ * `crumbs` is built once and used twice — rendered by `Breadcrumbs` and serialised as
+ * `BreadcrumbList` — which is how Requirement 23.10's "matching the visible breadcrumb exactly"
+ * is guaranteed rather than asserted. `ItemList` lists the products this page lists, in order.
+ */
+const origin = siteOrigin(Astro);
+const crumbs = categoryCrumbs(category);
+const meta = pageMeta(Astro, {
+  title: category.seoTitle ?? category.name,
+  description: category.seoDescription ?? category.shortDescription,
+  jsonLd: [
+    breadcrumbJsonLd(crumbs, origin),
+    itemListJsonLd(
+      products.map((product) => ({ name: product.name, url: `/product/${product.slug}` })),
+      origin,
+      { name: category.name },
+    ),
+  ],
+});
+---
+
+<BaseLayout meta={meta} analytics={{ event: { type: 'category_view', entity: category.slug } }}>
+  <ImagePreload slot="head" hint={leadPreload} />
+  <div class="ngf-catalogue">
+    <div class="ngf-catalogue-head" data-reveal data-motion-group>
+      {
+        /*
+        The category's own glyph, from the schema's `illustration` key — the same drawing the
+        homepage tile uses, at the head of the category it names. `trigger="none"`: it draws as part
+        of the header's single group reveal.
+      */
+      }
+      <span class="ngf-catalogue-glyph">
+        <CategoryIllustration illustration={category.illustration} strokeWidth={1} trigger="none" />
+      </span>
+      <Breadcrumbs items={crumbs} class="ngf-catalogue-breadcrumbs" />
+      <h1>{category.name}</h1>
+      <p class="ngf-catalogue-intro">{category.shortDescription}</p>
+      {
+        /*
+        The category's location paragraph, when the content file carries one (Requirement 23.17).
+        Genuine sentences about where the furniture is made and where it is delivered — one natural
+        placement of a target phrase, no repetition, and the keyword-density lint holds the page to
+        2%. Absent on a category whose file has no `intro`, rather than filled with boilerplate.
+      */
+      }
+      {category.intro !== undefined && <p class="ngf-catalogue-intro">{category.intro}</p>}
+      <p class="ngf-catalogue-count">
+        {count === 1 ? '1 product' : `${count} products`}
+        {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
+      </p>
+    </div>
+
+    <CatalogueControls
+      client:visible
+      indexUrl={indexUrl}
+      categoryNames={categoryNames}
+      manualRankings={manualRankings}
+      scopeCategory={category.slug}
+      gridId="ngf-category-grid"
+      noMatchId="ngf-category-nomatch"
+    />
+
+    <div>
+      {
+        count === 0 ? (
+          <CatalogueEmpty
+            heading={`${category.name} is being photographed`}
+            message="Nothing is published in this category yet. Tell us the size, material and finish you have in mind and we will send options and prices."
+            categoryName={category.name}
+          />
+        ) : (
+          <>
+            {/*
+            A heading for the grid, announced but not drawn.
+
+            Every `ProductCard` titles itself with an `h3`, which is right on the homepage where each
+            rail sits under its own `h2`. Here the grid follows the `h1` directly, so the page jumped
+            from `h1` to `h3` — a skipped level, and for anyone navigating by heading the list of
+            products had no heading at all. Visually hidden rather than shown because the `h1` and the
+            count above it already say this in the design.
+          */}
+            <h2 class="sr-only">{category.name} products</h2>
+            <ul class="ngf-grid" id="ngf-category-grid" data-reveal data-motion-group>
+              {products.map((product, position) => (
+                <li>
+                  <ProductCard
+                    product={product}
+                    categoryName={categoryNames[product.category]}
+                    eager={isEagerCard(position)}
+                    priority={position === 0}
+                  />
+                </li>
+              ))}
+            </ul>
+            <div id="ngf-category-nomatch" hidden>
+              <CatalogueEmpty
+                heading="No products match these filters"
+                message="Clear the filters to see everything in this category, or start from another one."
+                categoryName={category.name}
+              />
+            </div>
+          </>
+        )
+      }
+    </div>
+  </div>
+  {/* One Quick Enquire dialog host for every card on this page. */}
+  <QuickEnquireHost />
+</BaseLayout>

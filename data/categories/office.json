@@ -1,0 +1,10 @@
+{
+  "slug": "office",
+  "name": "Office",
+  "shortDescription": "Desks, office chairs, and workspace storage.",
+  "intro": "Desks, chairs and workspace storage are made to order, so a desk can be sized to a room rather than to a catalogue. Tell us the depth you have to work with and what has to fit under it.",
+  "order": 8,
+  "illustration": "office",
+  "subcategories": [],
+  "published": true
+}

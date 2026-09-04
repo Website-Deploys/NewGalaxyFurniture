@@ -1,0 +1,35 @@
+---
+/**
+ * The analytics boot script and the two meta tags it reads.
+ *
+ * A component rather than a line in the layout so the meta tags and the script that consumes
+ * them cannot drift apart, and so a page that wants no measurement simply does not render it.
+ *
+ * The script is a module `<script>` with no `is:inline`, so Astro bundles and hashes it and it
+ * loads from `/_astro/**` — which is what lets the content security policy stay at
+ * `script-src 'self'` with no nonce and no hash exemption (Requirement 25.10). It is deferred by
+ * default, so it never blocks paint.
+ *
+ * Requirements: 20.1, 20.2, 25.10.
+ */
+import { PAGE_ENTITY_META, PAGE_EVENT_META } from '@/lib/analytics/page';
+
+interface Props {
+  /** `product_view` or `category_view` plus its slug. Omitted on pages with neither. */
+  event?: { type: 'product_view' | 'category_view'; entity: string };
+  /** What a conversion click on this page is about. Defaults to the event's entity. */
+  entity?: string;
+}
+
+const { event, entity } = Astro.props;
+const subject = entity ?? event?.entity;
+---
+
+{event !== undefined && <meta name={PAGE_EVENT_META} content={`${event.type}:${event.entity}`} />}
+{subject !== undefined && subject !== '' && <meta name={PAGE_ENTITY_META} content={subject} />}
+
+<script>
+  import { bootAnalytics } from '@/lib/analytics/page';
+
+  bootAnalytics();
+</script>
