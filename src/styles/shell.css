@@ -1127,7 +1127,11 @@
   flex-direction: column;
   gap: 0.625rem;
   height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
   background-color: var(--color-white);
+  box-shadow: var(--shadow-level1);
   transition:
     transform var(--dur-fast) var(--ease-standard),
     box-shadow var(--dur-fast) var(--ease-standard);
@@ -1150,6 +1154,16 @@
 
 .ngf-card-media > * {
   height: 100%;
+}
+
+/*
+ * The base image's own transition, so a scale on hover eases rather than snaps. Declared outside
+ * the hover media query on `transform` only, but the transform itself is set solely inside the
+ * hover query below, so a touch device never animates and the LQIP/photograph pair scale together
+ * as one layer clipped by the media box's `overflow: hidden`.
+ */
+.ngf-card-media > .ngf-image {
+  transition: transform var(--dur-normal) var(--ease-standard);
 }
 
 /* The designed placeholder for a product with no photograph yet. */
@@ -1205,6 +1219,17 @@
   .ngf-card:focus-within {
     transform: translateY(-2px);
     box-shadow: var(--shadow-level2);
+  }
+
+  /*
+   * A subtle image scale on the base layer. When a second image exists it sits beneath the
+   * cross-fade layer, so the scale reads as a gentle push behind the reveal; with only one image
+   * it is the whole of the hover motion. Transform only, so it composites cheaply and the global
+   * reduced-motion clamp switches it off with everything else.
+   */
+  .ngf-card:hover .ngf-card-media > .ngf-image,
+  .ngf-card:focus-within .ngf-card-media > .ngf-image {
+    transform: scale(1.03);
   }
 
   .ngf-card:hover .ngf-card-hover,
@@ -1566,6 +1591,278 @@
   font-size: var(--text-h2);
 }
 
+/* PDP showroom composition ------------------------------------------------ *
+ *
+ * The premium two-column product layout (Milestone 3, Checkpoint B). Image-first everywhere: a
+ * single column below 1024 px with the gallery on top, then the information card; a gallery column
+ * beside a rounded white information card at 1024 px and up. The light-showroom card language — a
+ * white card with a 1 px taupe hairline, `--radius-xl`, and `--shadow-level1` — carries the whole
+ * panel, and the specification area sits on the same cream drawing-board ground as the catalogue
+ * heroes.
+ */
+.ngf-pdp-showroom {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .ngf-pdp-showroom {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+
+/* The gallery column. A mask-wipe reveal on first view; visible by default without motion. */
+.ngf-pdp-media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  /* The gallery holds its own column height while the info card scrolls past it. */
+  .ngf-pdp-media {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+.ngf-pdp-media-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-cream);
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}
+
+/* The static-fallback thumbnails (admin preview only; the public page mounts the island). */
+.ngf-pdp-media-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ngf-pdp-media-thumbs > li {
+  width: 6rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+/* The information card. */
+.ngf-pdp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-level1);
+}
+
+.ngf-pdp-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* The name: Fraunces, balanced, with the slight negative tracking the display face is set with. */
+.ngf-pdp-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: var(--color-obsidian);
+}
+
+.ngf-pdp-sku {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+}
+
+.ngf-pdp-priceline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.ngf-pdp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ngf-pdp-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Pill CTAs with the reduced-motion-safe lift-on-hover the light layout uses everywhere. */
+.ngf-pdp-cta,
+.ngf-pdp-quick {
+  border-radius: var(--radius-pill);
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-pdp-quick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--color-taupe);
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .ngf-pdp-cta:hover,
+  .ngf-pdp-quick:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-pdp-quick:hover {
+    background-color: var(--color-cream);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-pdp-cta,
+  .ngf-pdp-quick {
+    transition: none;
+  }
+
+  .ngf-pdp-cta:hover,
+  .ngf-pdp-quick:hover {
+    transform: none;
+  }
+}
+
+.ngf-pdp-numbers {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}
+
+.ngf-pdp-description {
+  max-width: var(--measure-prose);
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+}
+
+/*
+ * The specification drawing-board panel. The same cream ground and faint 24 px hairline grid as
+ * the catalogue heroes' `.ngf-cathero-panel`, with the architect's corner ticks — the technical
+ * treatment the brief asks for, drawn entirely in CSS. It frames only the specification values the
+ * product actually carries; `SpecList` renders nothing when a product has none, and the panel is
+ * then a quiet decorative frame that states no measurement it was not given.
+ */
+.ngf-pdp-specpanel {
+  position: relative;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+  background-position: center;
+  background-size: 24px 24px;
+}
+
+.ngf-pdp-specpanel::before,
+.ngf-pdp-specpanel::after {
+  position: absolute;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 0 solid var(--color-taupe);
+  content: '';
+  pointer-events: none;
+}
+
+.ngf-pdp-specpanel::before {
+  top: 0.55rem;
+  left: 0.55rem;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.ngf-pdp-specpanel::after {
+  right: 0.55rem;
+  bottom: 0.55rem;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+
+/* The shared eyebrow: small-caps letterspaced walnut with a leading hairline dash. */
+.ngf-pdp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ngf-pdp-eyebrow::before {
+  display: block;
+  width: 1.5rem;
+  height: 1px;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+.ngf-pdp-specs {
+  position: relative;
+}
+
+.ngf-pdp-note {
+  display: flex;
+  flex-direction: column;
+}
+
+.ngf-pdp-note-body {
+  margin: 0;
+  max-width: var(--measure-prose);
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+}
+
+.ngf-pdp-mto {
+  margin: 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--color-champagne);
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+}
+
 /* Gallery ----------------------------------------------------------------- */
 
 .ngf-gallery {
@@ -1583,6 +1880,8 @@
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
   background-color: var(--color-cream);
 }
 
@@ -1653,11 +1952,13 @@
   min-width: 44px;
   min-height: 44px;
   border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-pill);
   background-color: rgb(255 255 255 / 0.92);
   color: var(--color-obsidian);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
+  box-shadow: var(--shadow-level1);
 }
 
 .ngf-gallery-zoom-open {
@@ -1748,9 +2049,12 @@
   display: block;
   width: 96px;
   padding: 0;
+  overflow: hidden;
   border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-md);
   background: none;
   cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard);
 }
 
 .ngf-gallery-thumb > img {

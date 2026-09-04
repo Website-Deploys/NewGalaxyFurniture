@@ -123,25 +123,30 @@ const quickEnquireHref = (() => {
 ---
 
 <article
-  class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+  class="ngf-pdp-showroom"
   data-product={product.slug}
   data-stock={product.stockStatus}
 >
-  <div class="flex flex-col gap-3">
+  {
+    /*
+    The gallery column. The interactive island fills the `gallery` slot on the public page; the
+    admin-preview caller supplies no slot and gets the static sequence below — the same images in
+    the same order, framed by the same drawing-board panel so the two callers read alike.
+  */
+  }
+  <div class="ngf-pdp-media" data-reveal="mask">
     {
       hasGallerySlot ? (
         <slot name="gallery" />
       ) : primary === null ? (
-        <div class="flex aspect-[4/3] items-center justify-center border border-dashed border-taupe bg-cream text-small text-walnut">
-          No photograph yet
-        </div>
+        <div class="ngf-pdp-media-empty">No photograph yet</div>
       ) : (
         <>
           <ResponsiveImage productId={product.id} image={primary} context="galleryPrimary" />
           {rest.length > 0 && (
-            <ul class="flex list-none flex-wrap gap-2 p-0">
+            <ul class="ngf-pdp-media-thumbs">
               {rest.map((image) => (
-                <li class="w-24">
+                <li>
                   <ResponsiveImage
                     productId={product.id}
                     image={image}
@@ -157,18 +162,25 @@ const quickEnquireHref = (() => {
     }
   </div>
 
-  <div class="flex flex-col gap-5">
+  {
+    /*
+    The information panel: a large rounded white card, the light-showroom card language. Every
+    block below renders only when the field it names holds a value — the omit-when-empty rule
+    (Requirement 4.3) lives in the decomposed components, not restated here.
+  */
+  }
+  <div class="ngf-pdp-info" data-reveal data-motion-group>
     {
       /* The one trail: the same array the PDP serialises as `BreadcrumbList` (Requirement 23.10). */
     }
     <Breadcrumbs items={productCrumbs(product, categoryName)} />
 
-    <header class="flex flex-col gap-2">
-      <h1 class="font-display text-h1 leading-tight text-espresso">{name}</h1>
-      <p class="text-small text-walnut">SKU {sku}</p>
+    <header class="ngf-pdp-head">
+      <h1 class="ngf-pdp-name">{name}</h1>
+      <p class="ngf-pdp-sku">SKU {sku}</p>
     </header>
 
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="ngf-pdp-priceline">
       <PriceBlock
         price={product.price}
         priceOnEnquiry={product.priceOnEnquiry}
@@ -185,17 +197,27 @@ const quickEnquireHref = (() => {
       and copy-link all resolve to what activation resolves to (Requirement 5.11).
     */
     }
-    <div class="flex flex-col gap-2">
-      <div class="flex flex-wrap gap-3">
-        <WhatsAppLink context={enquiryContext} label={whatsappLabel} variant="solid" />
-        <CallLink label={callLabel} variant="outline" number={settings.phone[0]} />
+    <div class="ngf-pdp-actions">
+      <div class="ngf-pdp-cta-row">
+        <WhatsAppLink
+          context={enquiryContext}
+          label={whatsappLabel}
+          variant="solid"
+          class="ngf-pdp-cta"
+        />
+        <CallLink
+          label={callLabel}
+          variant="outline"
+          number={settings.phone[0]}
+          class="ngf-pdp-cta"
+        />
         {
           quickEnquireHref !== null && (
             <a
               href={quickEnquireHref}
               target="_blank"
               rel="noopener"
-              class="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-taupe px-4 py-2 text-small font-semibold tracking-wide text-espresso no-underline"
+              class="ngf-pdp-quick"
               data-ngf-quick-enquire
               data-ngf-product-slug={product.slug}
               data-ngf-product-name={name}
@@ -206,43 +228,50 @@ const quickEnquireHref = (() => {
           )
         }
       </div>
-      <p class="text-small text-walnut">{NUMBERS_CAPTION}</p>
+      <p class="ngf-pdp-numbers">{NUMBERS_CAPTION}</p>
     </div>
 
-    <div class="max-w-[var(--measure-prose)] whitespace-pre-line text-body">
-      {description}
-    </div>
+    {
+      description.trim() !== '' && (
+        <div class="ngf-pdp-description whitespace-pre-line">{description}</div>
+      )
+    }
 
-    <SpecList product={product} />
+    {
+      /*
+      The specification area, framed as a drawing-board panel — the same cream ground and faint
+      hairline grid the catalogue heroes use. The dimension annotation only ever states the values
+      the product actually carries; a piece with no dimensions gets the panel's decorative grid and
+      corner ticks and no invented numbers.
+    */
+    }
+    <section class="ngf-pdp-specpanel" aria-label="Specifications">
+      <p class="ngf-pdp-eyebrow">Specifications</p>
+      <SpecList product={product} class="ngf-pdp-specs" />
+    </section>
 
-    <VariantList variants={product.variants} />
+    <VariantList variants={product.variants} class="ngf-pdp-variants" />
 
     {
       product.madeToOrder && (
-        <p class="border-l-2 border-champagne pl-3 text-body">
-          Made to order. Ask about timelines when you enquire.
-        </p>
+        <p class="ngf-pdp-mto">Made to order. Ask about timelines when you enquire.</p>
       )
     }
 
     {
       customization !== undefined && (
-        <section>
-          <h2 class="font-display text-h3 text-espresso">Customization</h2>
-          <p class="mt-1 max-w-[var(--measure-prose)] whitespace-pre-line text-body">
-            {customization}
-          </p>
+        <section class="ngf-pdp-note">
+          <p class="ngf-pdp-eyebrow">Customization</p>
+          <p class="ngf-pdp-note-body whitespace-pre-line">{customization}</p>
         </section>
       )
     }
 
     {
       deliveryInformation !== undefined && (
-        <section>
-          <h2 class="font-display text-h3 text-espresso">Delivery</h2>
-          <p class="mt-1 max-w-[var(--measure-prose)] whitespace-pre-line text-body">
-            {deliveryInformation}
-          </p>
+        <section class="ngf-pdp-note">
+          <p class="ngf-pdp-eyebrow">Delivery</p>
+          <p class="ngf-pdp-note-body whitespace-pre-line">{deliveryInformation}</p>
         </section>
       )
     }

@@ -39,6 +39,7 @@ import { contactChannels, NUMBER_LABEL } from '@/lib/site/contact';
 import { jsonLdText } from '@/lib/seo/meta';
 import type { PageMeta } from '@/lib/seo/meta';
 import { buildEnquiryMessage, buildTelUrl, buildWhatsAppUrl } from '@/lib/whatsapp';
+import type { EnquiryContext } from '@/lib/whatsapp';
 import '@/styles/global.css';
 import '@/styles/shell.css';
 
@@ -60,9 +61,20 @@ interface Props {
     event?: { type: 'product_view' | 'category_view'; entity: string };
     entity?: string;
   };
+  /**
+   * The enquiry the sticky mobile action bar should carry.
+   *
+   * Absent on almost every page, where the bar is a general enquiry. The product detail page
+   * passes `{ kind: 'product', productName, sku, productUrl }` so the bar's WhatsApp message names
+   * the exact piece and its SKU — the same `EnquiryContext` the in-page controls use, so a
+   * long-press on the sticky bar reaches WhatsApp with the identical, product-specific message.
+   * This is set here rather than by rendering a second bar inside `ProductDetail`, which is shared
+   * with `/admin/preview/:id` and must gain no sticky chrome.
+   */
+  actionBar?: EnquiryContext;
 }
 
-const { meta, heroHeader = false, mainClass, analytics } = Astro.props;
+const { meta, heroHeader = false, mainClass, analytics, actionBar } = Astro.props;
 
 const settings = getSiteSettings();
 const categories = (await getPublishedCategories()).map((category) => ({
@@ -73,8 +85,14 @@ const indexUrl = await getSearchIndexUrl();
 
 const channels = contactChannels(settings);
 const primary = channels[0];
-const generalMessage = buildEnquiryMessage({ kind: 'general' }, settings);
-const whatsappHref = primary === undefined ? '#' : buildWhatsAppUrl(primary.e164, generalMessage);
+/*
+ * The sticky bar's message. `actionBar` when a page supplied a context — the PDP's product
+ * enquiry, carrying the exact name and SKU — otherwise the general enquiry. Built through
+ * `buildEnquiryMessage`/`buildWhatsAppUrl` like every other conversion surface, so no bar
+ * hand-rolls a `wa.me` URL or a message.
+ */
+const actionBarMessage = buildEnquiryMessage(actionBar ?? { kind: 'general' }, settings);
+const whatsappHref = primary === undefined ? '#' : buildWhatsAppUrl(primary.e164, actionBarMessage);
 const telHref = primary === undefined ? '#' : buildTelUrl(primary.e164);
 ---
 
