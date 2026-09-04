@@ -269,11 +269,21 @@ const headingLines =
     transition: none;
   }
 
-  /* Plane 0 is a hairline wash, not media: it paints a rule, not an area. */
+  /*
+   * Plane 0 is a hairline wash, not media: it paints a rule, not an area.
+   *
+   * `overflow: clip` contains the decorative room ornament to the hero's own box. The ornament is
+   * anchored near the right edge (`right: -1%`, `width: 26vw`) and at some viewport widths its box
+   * extends a few pixels past the viewport — enough to add a horizontal scrollbar even though it is
+   * `aria-hidden` and `pointer-events: none`. Clipping the plane means the ornament can never widen
+   * the page at any width, which is cheaper and more robust than hand-tuning its offset per
+   * breakpoint. `clip` (not `hidden`) so no scroll container is created on this decorative layer.
+   */
   .ngf-hero-plane[data-parallax-plane='0'] {
     position: absolute;
     inset: 0;
     z-index: -1;
+    overflow: clip;
     pointer-events: none;
   }
 
