@@ -7,13 +7,22 @@
  * the identical `NUMBER_LABEL` — which is why this band renders `ContactNumbers` rather than writing
  * its own two rows.
  *
- * The band is dark (`data-surface="dark"`), which is why the focus ring inverts to ivory: the global
- * stylesheet keys that off the same attribute, so a keyboard visitor's focus stays visible here
- * without this component declaring a ring of its own.
+ * **The band used to be obsidian.** A near-black slab two thirds of the way down a warm, light page
+ * is the single heaviest thing on the homepage, and it arrived immediately after two empty states —
+ * so the page read as "nothing to show you, here is a black wall". It is now a full-bleed cream band
+ * with the numbers on a white card, which keeps the section clearly separated from the editorial
+ * bands above it without going dark. `data-surface="tint"` is what tells the homepage's band rhythm
+ * to run this section full width; the focus ring stays the default dark one, because the ground is
+ * light.
+ *
+ * `showCaption={false}` on `ContactNumbers`: the section's own subheading already speaks to the
+ * visitor, and the shared caption underneath it repeated the same sentence twice in eighty pixels.
+ * The caption is not lost — it still renders everywhere the surrounding copy does not carry it.
  *
  * Requirements: 5.9, 5.10, 5.11, 5.13, 7.1, 24.3, 24.12.
  */
 import ContactNumbers from '@/components/ui/ContactNumbers.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import type { HomepageSection } from '@/schemas/homepage';
 
 interface Props {
@@ -27,39 +36,129 @@ const { section } = Astro.props;
   class="ngf-home-section ngf-home-whatsapp"
   aria-labelledby="ngf-whatsapp-heading"
   data-ngf-section="whatsappCta"
-  data-surface="dark"
+  data-surface="tint"
+  data-reveal
 >
   <div class="ngf-whatsapp-inner">
-    <h2 id="ngf-whatsapp-heading" class="ngf-whatsapp-heading">
-      {section.heading ?? 'Order or enquire on WhatsApp'}
-    </h2>
-    {section.subheading !== undefined && <p class="ngf-whatsapp-sub">{section.subheading}</p>}
-    <ContactNumbers layout="stack" />
+    <div class="ngf-whatsapp-copy">
+      {section.eyebrow !== undefined && <p class="ngf-whatsapp-eyebrow">{section.eyebrow}</p>}
+      <h2 id="ngf-whatsapp-heading" class="ngf-whatsapp-heading">
+        {section.heading ?? 'Order or enquire on WhatsApp'}
+      </h2>
+      {section.subheading !== undefined && <p class="ngf-whatsapp-sub">{section.subheading}</p>}
+      <WhatsAppLink
+        context={{ kind: 'general' }}
+        label={section.ctaLabel ?? 'Message on WhatsApp'}
+        variant="solid"
+        class="ngf-whatsapp-cta"
+      />
+    </div>
+
+    <div class="ngf-whatsapp-card">
+      <ContactNumbers layout="stack" showCaption={false} />
+    </div>
   </div>
 </section>
 
 <style>
   .ngf-home-whatsapp {
-    background-color: var(--color-obsidian);
-    color: var(--color-ivory);
+    background-color: var(--color-cream);
+    color: var(--color-obsidian);
   }
 
   .ngf-whatsapp-inner {
+    display: grid;
+    gap: clamp(1.75rem, 4vw, 3.5rem);
+    align-items: center;
+    padding-block: clamp(3rem, 7vh, 5rem);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-whatsapp-inner {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    }
+  }
+
+  .ngf-whatsapp-copy {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.25rem;
-    padding-block: clamp(2.5rem, 6vh, 4rem);
+    gap: 1rem;
+  }
+
+  .ngf-whatsapp-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-whatsapp-eyebrow::before {
+    display: block;
+    width: 1.75rem;
+    height: 1px;
+    background-color: var(--color-taupe);
+    content: '';
   }
 
   .ngf-whatsapp-heading {
     margin: 0;
-    color: var(--color-ivory);
+    max-width: 22ch;
+    color: var(--color-obsidian);
     font-size: var(--text-h2);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
 
   .ngf-whatsapp-sub {
     margin: 0;
-    color: var(--color-cream);
+    max-width: 46ch;
+    color: var(--color-walnut);
+    line-height: 1.65;
+  }
+
+  .ngf-whatsapp-copy :global(.ngf-whatsapp-cta) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    margin-top: 0.5rem;
+    padding-inline: 1.5rem;
+    border-radius: var(--radius-pill);
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .ngf-whatsapp-copy :global(.ngf-whatsapp-cta:hover) {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-level2);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-whatsapp-copy :global(.ngf-whatsapp-cta) {
+      transition: none;
+    }
+
+    .ngf-whatsapp-copy :global(.ngf-whatsapp-cta:hover) {
+      transform: none;
+    }
+  }
+
+  /* The numbers sit on a card, so they read as the band's subject rather than as a footer. */
+  .ngf-whatsapp-card {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
   }
 </style>

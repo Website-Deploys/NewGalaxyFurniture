@@ -40,6 +40,7 @@ const tiles = products
   class="ngf-home-section ngf-home-gallery"
   aria-labelledby="ngf-gallery-heading"
   data-ngf-section="gallery"
+  data-reveal
 >
   <SectionHeader
     eyebrow={section.eyebrow}
@@ -51,6 +52,7 @@ const tiles = products
   {
     tiles.length === 0 ? (
       <EmptyState
+        tone="page"
         heading="Photography is in progress"
         message="Our pieces are being photographed. Tell us what you are looking for and we will send photographs of comparable work straight away."
       >

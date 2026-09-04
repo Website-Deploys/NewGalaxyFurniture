@@ -41,6 +41,7 @@ const shown = reviews.slice(0, limit);
   class="ngf-home-section ngf-home-reviews"
   aria-labelledby="ngf-reviews-heading"
   data-ngf-section="customerReviews"
+  data-reveal
 >
   <SectionHeader
     eyebrow={section.eyebrow}
@@ -52,6 +53,7 @@ const shown = reviews.slice(0, limit);
   {
     shown.length === 0 ? (
       <EmptyState
+        tone="page"
         heading="No reviews published yet"
         message="We would rather show none than write our own. When customers send us their words, they will appear here."
       >
@@ -102,9 +104,11 @@ const shown = reviews.slice(0, limit);
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    padding: 1.5rem;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
     border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-lg);
     background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
   }
 
   .ngf-review-rating {

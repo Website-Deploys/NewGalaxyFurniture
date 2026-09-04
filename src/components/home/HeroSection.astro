@@ -5,29 +5,30 @@
  * Everything Requirements 7.3, 7.4, 7.5, 7.6, 7.11, and 7.12 pin down, and why each is structured
  * the way it is:
  *
- * - **The brand mark, the positioning line, and exactly three CTAs** — Explore Collection, Order or
- *   Enquire on WhatsApp, Call Now. Three, and a fourth is impossible rather than discouraged: the
- *   CTA row is not a slot and takes no props, so there is no way to pass another one in (7.3). Each
- *   is ≥ 44 px through `.ngf-hero-cta`'s `min-height`.
+ * - **The positioning line is the `<h1>`, and the brand mark is not.** It used to be the other way
+ *   round: the wordmark was the heading and the operator's line was a small paragraph under it. That
+ *   put the site's least informative element — a logotype already fixed in the header of every page
+ *   — in the one slot a search engine and a screen-reader user weight most heavily, and it left the
+ *   page with no headline at all. The wordmark is still here, as the eyebrow's sibling, because a
+ *   visitor arriving from a search result should see who they have landed on; it is simply no longer
+ *   pretending to be the page's subject.
+ * - **Exactly three CTAs** — Explore Collection, Order or Enquire on WhatsApp, Call Now. Three, and a
+ *   fourth is impossible rather than discouraged: the CTA row is not a slot and takes no props, so
+ *   there is no way to pass another one in (7.3). Each is ≥ 44 px through `.ngf-hero-cta`.
  * - **Exactly one image, and it is the largest painted element.** One `<img>`, with its intrinsic
  *   width and height emitted so the box is reserved before a byte arrives (7.4, 15.10). Everything
- *   else in the hero is type, a hairline rule, or a small ornament — nothing paints larger at any
- *   width from 320 px to 1920 px, because nothing else has a painted area at all.
- * - **No video. Anywhere.** There is no `<video>`, no `<source>`, and no autoplaying media in this
- *   component or on any other public surface (7.5).
- * - **Three parallax planes, transform and opacity only.** The planes are declared here as
- *   `data-parallax-plane="0|1|2"` with a `--plane-depth` each, and *nothing animates them yet*:
- *   task 19 owns the motion system, and the whole point of declaring the planes now is that task 19
- *   attaches the assembly to existing markup rather than restructuring the hero (7.6). The
- *   stylesheet animates `transform` and `opacity` and no other property, which is the constraint
- *   task 19 inherits.
- * - **Reduced motion renders the final drawn state on first paint** (7.11). Since the planes hold
- *   their neutral position until task 19 moves them, the reduced-motion state is what the hero
- *   already renders — and the explicit rule below keeps it that way when the motion arrives.
- * - **The LQIP fills the slot at the final layout dimensions until load, with no shift** (7.12). The
- *   figure carries the aspect ratio and a painted ground; the image reveals over it on `load`. The
- *   brand mark, the line, and all three CTAs are outside the figure, so they are rendered and
- *   operable from first paint regardless of the image.
+ *   else in the hero is type, a hairline rule, a small ornament, or a text-only floating card —
+ *   nothing paints larger at any width from 320 px to 1920 px.
+ * - **No video. Anywhere** (7.5).
+ * - **Three parallax planes, transform and opacity only** (7.6, 21.8).
+ * - **Reduced motion renders the final drawn state on first paint** (7.11).
+ * - **The LQIP fills the slot at the final layout dimensions until load, with no shift** (7.12).
+ *
+ * **The assurance row states nothing the operator has not supplied.** "Custom sizes and finishes"
+ * and "Direct from the workshop" are the operator's own homepage sections restated as a line; the
+ * delivery line is `settings.serviceArea` verbatim, and it renders only when that array is
+ * non-empty. There is no lead time, no price, no capacity, and no history here, because none has
+ * been supplied (7.10).
  *
  * **On the image asset.** No photograph has been supplied — Open Items item 5 — and one will not be
  * invented here. So the hero renders the project's own hairline room composition
@@ -35,13 +36,11 @@
  * rather than a claim about the business, and it is a real responsive image: vector, so it is
  * resolution-independent at every viewport width without a `srcset`, with intrinsic dimensions
  * emitted. When the operator supplies a photograph, `settings.heroImage` swaps it in with no code
- * change — the same one-field swap the logo uses (Open Items item 1). Until then `site.heroImage`
- * sits in the content checklist.
+ * change.
  *
- * Requirements: 7.3, 7.4, 7.5, 7.6, 7.8, 7.11, 7.12, 15.10, 15.11, 24.3.
+ * Requirements: 7.3, 7.4, 7.5, 7.6, 7.8, 7.10, 7.11, 7.12, 15.10, 15.11, 24.3.
  */
 import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
-import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
 import TextReveal from '@/components/motion/TextReveal.astro';
 import BrandMark from '@/components/ui/BrandMark.astro';
 import CallLink from '@/components/ui/CallLink.astro';
@@ -69,6 +68,27 @@ const loading = loadingAttributes({ priority: true });
 
 const ctaLabel = section.ctaLabel ?? 'Explore Collection';
 const ctaHref = section.ctaHref ?? '/collection';
+
+/**
+ * The three assurances. Each one restates something already supplied — two of the operator's own
+ * homepage sections and `settings.serviceArea` — so the row adds emphasis, never a new claim.
+ */
+const assurances = [
+  'Custom sizes and finishes',
+  'Direct from the workshop',
+  ...(settings.serviceArea.length > 0
+    ? [`Delivered across ${settings.serviceArea.join(', ')}`]
+    : []),
+];
+
+/** The heading's lines are the operator's own line breaks, exactly as `TextReveal` requires. */
+const headingLines =
+  tagline === null
+    ? []
+    : tagline
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
 ---
 
 <section
@@ -91,13 +111,72 @@ const ctaHref = section.ctaHref ?? '/collection';
     style="--plane-depth: 0.15;"
     aria-hidden="true"
   >
-    <span class="ngf-hero-wash"></span>
     <span class="ngf-hero-room">
       <AnimatedRoom strokeWidth={1} />
     </span>
-    <span class="ngf-hero-detail">
-      <CraftsmanshipLines strokeWidth={1} delay={320} />
-    </span>
+  </div>
+
+  {/* Plane 2 — the nearest plane: type and controls. Never moves under reduced motion. */}
+  <div
+    class="ngf-hero-plane ngf-hero-plane-copy"
+    data-parallax-plane="2"
+    style="--plane-depth: 0.6;"
+  >
+    <div class="ngf-hero-copy" data-reveal data-motion-group>
+      <p class="ngf-hero-eyebrow">
+        <BrandMark size="sm" tone="dark" href={null} />
+        {section.eyebrow !== undefined && <span class="ngf-hero-kicker">{section.eyebrow}</span>}
+      </p>
+
+      {
+        /*
+        The positioning line, revealed line by line with a `clip-path` wipe. The lines are the
+        operator's own — whatever they typed in Admin → Homepage, split on the newlines they wrote —
+        so nothing is re-flowed by JavaScript and nothing is split per character. A single-line
+        tagline is one line, which wipes once (Requirement 21.6).
+
+        Requirement 7.11: under reduced motion the line renders unclipped on the first paint, so it
+        is visible and legible for the whole visit.
+      */
+        headingLines.length > 0 ? (
+          <TextReveal as="h1" class="ngf-hero-heading" lines={headingLines} />
+        ) : (
+          /* No tagline supplied. The page still needs one `h1`, and the business name is the one
+             thing always known — never an invented headline. */
+          <h1 class="ngf-hero-heading">{settings.businessName}</h1>
+        )
+      }
+      <span class="ngf-hero-rule" aria-hidden="true"></span>
+
+      {section.subheading !== undefined && <p class="ngf-hero-sub">{section.subheading}</p>}
+
+      {
+        /*
+        Exactly three controls. Requirement 7.3 names them, and there is no slot here through which
+        a fourth could be added.
+      */
+      }
+      <div class="ngf-hero-ctas">
+        <a class="ngf-hero-cta ngf-hero-cta-primary" href={ctaHref}>{ctaLabel}</a>
+        <WhatsAppLink
+          context={{ kind: 'general' }}
+          label="Order or Enquire on WhatsApp"
+          variant="outline"
+          class="ngf-hero-cta"
+        />
+        <CallLink label="Call Now" variant="outline" class="ngf-hero-cta" />
+      </div>
+
+      {
+        assurances.length > 0 && (
+          <ul class="ngf-hero-assurances">
+            {assurances.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
   </div>
 
   {/* Plane 1 — the one image. */}
@@ -124,58 +203,18 @@ const ctaHref = section.ctaHref ?? '/collection';
         data-ngf-hero-image
       />
     </figure>
-  </div>
 
-  {/* Plane 2 — the nearest plane: type and controls. Never moves under reduced motion. */}
-  <div
-    class="ngf-hero-plane ngf-hero-plane-copy"
-    data-parallax-plane="2"
-    style="--plane-depth: 0.6;"
-  >
-    <div class="ngf-hero-copy">
-      <h1 id="ngf-hero-heading" class="ngf-hero-brand">
-        <BrandMark size="lg" tone="dark" href={null} />
-      </h1>
-
-      {
-        /*
-        The positioning line, revealed line by line with a `clip-path` wipe. The lines are the
-        operator's own — whatever they typed in Admin → Homepage, split on the newlines they wrote —
-        so nothing is re-flowed by JavaScript and nothing is split per character. A single-line
-        tagline is one line, which wipes once (Requirement 21.6).
-
-        Requirement 7.11: under reduced motion the line renders unclipped on the first paint, so it
-        is visible and legible for the whole visit.
-      */
-        tagline !== null && (
-          <TextReveal
-            as="p"
-            class="ngf-hero-tagline"
-            lines={tagline
-              .split('\n')
-              .map((line) => line.trim())
-              .filter((line) => line !== '')}
-          />
-        )
-      }
-
-      {
-        /*
-        Exactly three controls. Requirement 7.3 names them, and there is no slot here through which
-        a fourth could be added.
-      */
-      }
-      <div class="ngf-hero-ctas">
-        <a class="ngf-hero-cta ngf-hero-cta-primary" href={ctaHref}>{ctaLabel}</a>
-        <WhatsAppLink
-          context={{ kind: 'general' }}
-          label="Order or Enquire on WhatsApp"
-          variant="outline"
-          class="ngf-hero-cta"
-        />
-        <CallLink label="Call Now" variant="outline" class="ngf-hero-cta" />
-      </div>
-    </div>
+    {
+      /*
+      One floating card, overlapping the media frame. Type only — no painted area that could
+      compete with the image (7.4) — and it says nothing that is not already on the page: the
+      operator's own custom-furniture section is what it points at.
+    */
+    }
+    <p class="ngf-hero-badge" data-reveal="right">
+      <span class="ngf-hero-badge-label">Made to order</span>
+      <span class="ngf-hero-badge-value">Your size, your finish</span>
+    </p>
   </div>
 </section>
 
@@ -183,17 +222,18 @@ const ctaHref = section.ctaHref ?? '/collection';
   .ngf-hero {
     position: relative;
     display: grid;
+    gap: clamp(2rem, 5vw, 3.5rem);
     align-items: center;
     max-width: var(--container-content);
     margin-inline: auto;
-    padding: clamp(3rem, 8vh, 6rem) 1.25rem clamp(3rem, 8vh, 5rem);
+    padding: clamp(2.5rem, 7vh, 5rem) 1.25rem clamp(3rem, 8vh, 5.5rem);
     isolation: isolate;
   }
 
   @media (min-width: 1024px) {
     .ngf-hero {
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-      gap: 3rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: clamp(2.5rem, 4vw, 4.5rem);
       padding-inline: 2rem;
     }
   }
@@ -237,98 +277,138 @@ const ctaHref = section.ctaHref ?? '/collection';
     pointer-events: none;
   }
 
-  .ngf-hero-wash {
-    position: absolute;
-    top: 12%;
-    right: 0;
-    left: 0;
-    height: 1px;
-    background-color: var(--color-taupe);
-  }
-
   /*
-   * The two primitives on plane 0. Both are positioned ornaments at low contrast — taupe on ivory
-   * — and both are sized in `vw` so they scale with the composition rather than being re-laid out
-   * at breakpoints. They are hidden below 768 px: on a phone the hero is type and one image, and a
-   * line drawing behind the headline is noise at that width.
+   * The one ornament on plane 0: a positioned line drawing at low contrast, sized in `vw` so it
+   * scales with the composition rather than being re-laid out at breakpoints.
+   *
+   * It is anchored to the bottom-right, which is *behind the media card*, so the part of it a
+   * visitor sees is the part that escapes below and beside the card. It used to be anchored at
+   * `right: 44%` — the middle of the composition — where it ran straight through the assurance row
+   * and read as a rendering fault rather than as an ornament. There is no version of "a line drawing
+   * of a sofa crossing the words 'Delivered across Karnataka'" that looks deliberate.
+   *
+   * The craftsmanship detail that used to sit on this plane is gone for the same reason: at
+   * every width there was text behind it or in front of it.
+   *
+   * Hidden below 1024 px: on a phone and a tablet the hero is type and one image, and a line drawing
+   * behind the headline is noise at that width.
    */
-  .ngf-hero-room,
-  .ngf-hero-detail {
+  .ngf-hero-room {
     display: none;
   }
 
-  @media (min-width: 768px) {
-    .ngf-hero-room,
-    .ngf-hero-detail {
-      position: absolute;
-      display: block;
-      color: var(--color-taupe);
-      pointer-events: none;
-    }
-
+  @media (min-width: 1024px) {
     .ngf-hero-room {
-      right: 2%;
-      bottom: 0;
-      width: 42vw;
-      max-width: 520px;
-      opacity: 0.55;
-    }
-
-    .ngf-hero-detail {
-      top: 18%;
-      left: 0;
-      width: 18vw;
-      max-width: 220px;
-      opacity: 0.5;
+      position: absolute;
+      right: -1%;
+      bottom: -6%;
+      display: block;
+      width: 26vw;
+      max-width: 360px;
+      color: var(--color-taupe);
+      opacity: 0.4;
+      pointer-events: none;
     }
   }
 
+  /*
+   * Below 1024 px the copy comes first and the media second, so the page opens on the headline and
+   * the three CTAs rather than on the image — and, more concretely, so the media card's floating
+   * badge does not land on top of the eyebrow, which is what a media-first single column produced
+   * at tablet width.
+   */
   .ngf-hero-plane-copy {
-    order: 1;
+    order: 0;
   }
 
   .ngf-hero-plane-media {
-    order: 2;
-  }
-
-  @media (min-width: 1024px) {
-    .ngf-hero-plane-copy {
-      order: 0;
-    }
-
-    .ngf-hero-plane-media {
-      order: 0;
-    }
+    position: relative;
+    order: 1;
   }
 
   .ngf-hero-copy {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.5rem;
+    gap: 1.25rem;
   }
 
-  .ngf-hero-brand {
+  /* The eyebrow: the wordmark, then the operator's kicker after a hairline dash. */
+  .ngf-hero-eyebrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
     margin: 0;
+  }
+
+  .ngf-hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-hero-kicker::before {
+    display: block;
+    width: 1.75rem;
+    height: 1px;
+    background-color: var(--color-taupe);
+    content: '';
   }
 
   /*
    * Astro forwards the scope class through a component's `class` prop, so this scoped selector
-   * still matches the `<p>` `TextReveal` renders.
+   * still matches the element `TextReveal` renders.
    */
-  .ngf-hero-tagline {
+  .ngf-hero-heading {
     margin: 0;
-    max-width: 24ch;
-    color: var(--color-espresso);
+    max-width: 18ch;
+    color: var(--color-obsidian);
     font-family: var(--font-display);
-    font-size: var(--text-h3);
-    line-height: 1.3;
+    font-size: var(--text-h1);
+    font-weight: 400;
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  /*
+   * The one champagne element in this band (Requirement 21.2): a 1 px rule that scales out from the
+   * left as the copy arrives. `transform` only, so it costs no layout.
+   */
+  .ngf-hero-rule {
+    display: block;
+    width: clamp(4rem, 12vw, 7rem);
+    height: 1px;
+    background-color: var(--color-champagne);
+    transform: scaleX(1);
+    transform-origin: left center;
+    transition: transform var(--dur-story) var(--ease-draw);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-reveal]:not([data-revealed])) .ngf-hero-rule {
+      transform: scaleX(0);
+    }
+  }
+
+  .ngf-hero-sub {
+    margin: 0;
+    max-width: 46ch;
+    color: var(--color-walnut);
+    font-size: 1.0625rem;
+    line-height: 1.65;
   }
 
   .ngf-hero-ctas {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
+    margin-top: 0.25rem;
   }
 
   /* Requirement 7.3 / 24.3: every hero control is at least 44 px in each dimension. */
@@ -337,15 +417,70 @@ const ctaHref = section.ctaHref ?? '/collection';
     align-items: center;
     justify-content: center;
     min-width: 44px;
-    min-height: 44px;
-    padding: 0.75rem 1.25rem;
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-pill);
     font-size: var(--text-body);
     text-decoration: none;
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard),
+      background-color var(--dur-fast) var(--ease-standard);
   }
 
   .ngf-hero-cta-primary {
     background-color: var(--color-obsidian);
     color: var(--color-ivory);
+    box-shadow: var(--shadow-level1);
+  }
+
+  @media (hover: hover) {
+    .ngf-hero-ctas :global(.ngf-hero-cta:hover) {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-level2);
+    }
+
+    .ngf-hero-cta-primary:hover {
+      background-color: var(--color-espresso);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-hero-ctas :global(.ngf-hero-cta) {
+      transition: none;
+    }
+
+    .ngf-hero-ctas :global(.ngf-hero-cta:hover) {
+      transform: none;
+    }
+  }
+
+  .ngf-hero-assurances {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    list-style: none;
+  }
+
+  .ngf-hero-assurances li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* A hairline tick, drawn in CSS: two borders rotated. No glyph, no icon font, no request. */
+  .ngf-hero-assurances li::before {
+    display: block;
+    width: 0.45rem;
+    height: 0.25rem;
+    border-bottom: 1px solid var(--color-sage);
+    border-left: 1px solid var(--color-sage);
+    transform: rotate(-45deg) translateY(-0.1rem);
+    content: '';
   }
 
   /*
@@ -358,9 +493,11 @@ const ctaHref = section.ctaHref ?? '/collection';
     width: 100%;
     margin: 0;
     overflow: hidden;
+    border-radius: var(--radius-xl);
     background-color: var(--color-cream);
     background-position: center;
     background-size: cover;
+    box-shadow: var(--shadow-lift);
   }
 
   .ngf-hero-figure > img {
@@ -368,5 +505,41 @@ const ctaHref = section.ctaHref ?? '/collection';
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  /* The floating card. Text only — it has no painted area that competes with the image. */
+  .ngf-hero-badge {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: -1.75rem 0 0 1.25rem;
+    width: fit-content;
+    padding: 0.85rem 1.25rem;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-level2);
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-hero-badge {
+      position: absolute;
+      right: -0.5rem;
+      bottom: -1.25rem;
+      margin: 0;
+    }
+  }
+
+  .ngf-hero-badge-label {
+    color: var(--color-walnut);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-hero-badge-value {
+    color: var(--color-obsidian);
+    font-family: var(--font-display);
+    font-size: var(--text-body);
   }
 </style>

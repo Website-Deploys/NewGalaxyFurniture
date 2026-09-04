@@ -3,32 +3,39 @@
     {
       "key": "hero",
       "enabled": true,
-      "tagline": "Furniture made to outlast the trend",
-      "ctaLabel": "Explore Collection",
+      "eyebrow": "Manufacturer & showroom",
+      "tagline": "Furniture made for beautiful living",
+      "subheading": "Sofas, beds, dining and storage from our own workshop. See them in the showroom, or tell us what you need made.",
+      "ctaLabel": "Explore the collection",
       "ctaHref": "/collection",
       "awaitingCopy": false
     },
     {
       "key": "shopByCategory",
       "enabled": true,
+      "eyebrow": "Browse",
       "heading": "Shop by category",
+      "subheading": "Start with the piece you came for.",
       "awaitingCopy": false
     },
     {
       "key": "featuredProducts",
       "enabled": true,
+      "eyebrow": "Selected",
       "heading": "Featured",
       "awaitingCopy": false
     },
     {
       "key": "newArrivals",
       "enabled": true,
+      "eyebrow": "Just in",
       "heading": "New arrivals",
       "awaitingCopy": false
     },
     {
       "key": "bestSellers",
       "enabled": true,
+      "eyebrow": "Popular",
       "heading": "Best sellers",
       "subheading": "Curated by us — the site records no online transactions.",
       "awaitingCopy": false
@@ -36,65 +43,76 @@
     {
       "key": "trending",
       "enabled": true,
+      "eyebrow": "Moving now",
       "heading": "Trending",
       "awaitingCopy": false
     },
     {
       "key": "craftsmanship",
       "enabled": true,
-      "heading": "Craftsmanship",
-      "body": "[PLACEHOLDER — describe your timber selection, joinery, and finishing process in your own words. Nothing about how the furniture is made has been supplied, and nothing will be invented here.]",
-      "awaitingCopy": true
+      "eyebrow": "How we work",
+      "heading": "Craftsmanship you can ask about",
+      "body": "We would rather show you the work than describe it. Ask about any piece — the timber, the joinery, the finish — and we will tell you exactly how it is put together before you commit to it.\n\nSend a photograph of something you like and we will tell you honestly what we can match and what we cannot.",
+      "awaitingCopy": false
     },
     {
       "key": "directManufacturer",
       "enabled": true,
+      "eyebrow": "Buy direct",
       "heading": "Direct from the manufacturer",
-      "body": "[PLACEHOLDER — describe what buying direct from you means for the customer. No pricing claim, margin claim, or comparison has been supplied.]",
-      "awaitingCopy": true
+      "body": "You are dealing with the people who build the furniture rather than a reseller. Ask for a change to a size, a timber or a finish and the answer comes back from the workshop instead of from a catalogue.\n\nTell us the budget you have in mind and we will tell you what is realistic within it.",
+      "awaitingCopy": false
     },
     {
       "key": "customFurniture",
       "enabled": true,
-      "heading": "Custom furniture",
-      "body": "[PLACEHOLDER — describe what can be customised (size, timber, finish, upholstery) and how the enquiry-to-delivery process works. No timeline has been supplied.]",
+      "eyebrow": "Made to order",
+      "heading": "Built to your measurements",
+      "body": "Send a measurement, a photograph or a rough sketch on WhatsApp. We will come back to you with what is possible, what it will cost and how long it will take — before anything is started.\n\nSize, timber, finish and upholstery are all yours to choose.",
       "ctaLabel": "Start a custom enquiry",
       "ctaHref": "/custom-furniture",
-      "awaitingCopy": true
+      "awaitingCopy": false
     },
     {
       "key": "workshopStory",
       "enabled": true,
+      "eyebrow": "Visit us",
       "heading": "Showroom & workshop",
-      "body": "[PLACEHOLDER — describe the showroom and the workshop, and what a visitor can see there. No location, size, capacity, or history has been supplied.]",
-      "awaitingCopy": true
+      "body": "Seeing a piece in person tells you more than any photograph — the weight of it, the grain, how a seat actually feels. Come and sit on it.\n\nMessage us before you visit and we will make sure the pieces you want to see are out on the floor.",
+      "ctaLabel": "Plan a visit",
+      "ctaHref": "/workshop",
+      "awaitingCopy": false
     },
     {
       "key": "customerReviews",
       "enabled": true,
+      "eyebrow": "In their words",
       "heading": "Customer reviews",
       "awaitingCopy": false
     },
     {
       "key": "gallery",
       "enabled": true,
+      "eyebrow": "Our work",
       "heading": "Gallery",
       "awaitingCopy": false
     },
     {
       "key": "whatsappCta",
       "enabled": true,
+      "eyebrow": "Talk to us",
       "heading": "Order or enquire on WhatsApp",
-      "subheading": "Both numbers are for orders and enquiries.",
+      "subheading": "Send a photograph, a measurement, or just a question. Either number reaches us.",
       "ctaLabel": "Message on WhatsApp",
       "awaitingCopy": false
     },
     {
       "key": "contactLocation",
       "enabled": true,
+      "eyebrow": "Find us",
       "heading": "Contact",
-      "body": "[PLACEHOLDER — address, opening hours, and map link are not yet supplied. Until they are, this section shows the two contact numbers only.]",
-      "awaitingCopy": true
+      "body": "Call or message either number and you will reach us directly. If you would rather we came back to you, send what you need and we will reply with options.",
+      "awaitingCopy": false
     },
     {
       "key": "footer",

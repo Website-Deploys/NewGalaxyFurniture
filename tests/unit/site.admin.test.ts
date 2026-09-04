@@ -172,17 +172,41 @@ describe('the content checklist', () => {
     expect(Object.keys(validated.fields).sort()).toEqual(['logo.height', 'logo.width']);
   });
 
-  it('lists every homepage section still holding a placeholder', () => {
-    const keys = homepagePlaceholderKeys(HOMEPAGE);
-    expect(keys).toContain('homepage.craftsmanship.body');
-    expect(keys.every((key) => key.startsWith('homepage.'))).toBe(true);
+  /**
+   * Derived from a fixture rather than from `HOMEPAGE`.
+   *
+   * It used to assert `homepagePlaceholderKeys(HOMEPAGE)` contained `homepage.craftsmanship.body`,
+   * which passed only while that section of the shipped content file was still a marker. Real copy
+   * has since replaced the markers, so the assertion was testing the content and not the function.
+   * A fixture pins the derivation itself: `awaitingCopy` in, one prefixed key per section out,
+   * nothing for the sections that are done.
+   */
+  it('derives one prefixed checklist key per section still holding a placeholder', () => {
+    const keys = homepagePlaceholderKeys({
+      sections: [
+        { key: 'hero', enabled: true, awaitingCopy: false },
+        {
+          key: 'craftsmanship',
+          enabled: true,
+          body: '[PLACEHOLDER — not written yet.]',
+          awaitingCopy: true,
+        },
+        { key: 'workshopStory', enabled: true, body: 'Real copy.', awaitingCopy: false },
+      ],
+    });
+    expect(keys).toEqual(['homepage.craftsmanship.body']);
+
+    // And on the shipped file, whatever it currently holds, every derived key is well formed.
+    expect(homepagePlaceholderKeys(HOMEPAGE).every((key) => /^homepage\.\w+\.body$/.test(key))).toBe(
+      true,
+    );
   });
 });
 
 describe('the positioning line', () => {
   it('falls back to the hero’s value until one is saved in settings', () => {
     expect(taglineOf(SETTINGS)).toBeNull();
-    expect(effectiveTagline(SETTINGS, HOMEPAGE)).toBe('Furniture made to outlast the trend');
+    expect(effectiveTagline(SETTINGS, HOMEPAGE)).toBe('Furniture made for beautiful living');
   });
 
   it('accepts 1 to 120 characters and refuses either side of that', () => {
@@ -207,7 +231,7 @@ describe('the positioning line', () => {
     }
 
     // Already equal: null, so a settings save that did not touch the line makes no commit.
-    expect(applyTaglineToHomepage(HOMEPAGE, 'Furniture made to outlast the trend')).toBeNull();
+    expect(applyTaglineToHomepage(HOMEPAGE, 'Furniture made for beautiful living')).toBeNull();
     expect(applyTaglineToHomepage(HOMEPAGE, null)).toBeNull();
   });
 });
