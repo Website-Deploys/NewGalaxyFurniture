@@ -73,16 +73,44 @@
  * Header (Requirements 9.1–9.4)
  * ------------------------------------------------------------------------- */
 
+/*
+ * A light floating pill, not a dark bar.
+ *
+ * The header used to be a full-bleed `--color-obsidian` band, which set the tone for the whole page
+ * before a visitor saw a single piece of furniture: dark, heavy, and competing with the photography
+ * it sits above. Furniture retail wants the opposite — the room should look bright and the furniture
+ * should be the darkest thing on screen.
+ *
+ * So it is a white pill inset from the edges, floating over the page, with a hairline and a low
+ * shadow. Scroll still changes nothing but background, shadow and border (Requirement 9.3): no
+ * layout property animates, so the header cannot shift the page.
+ */
 .ngf-header {
   position: sticky;
   top: 0;
   z-index: 40;
-  /* Only background-color and opacity change on scroll — Requirement 9.3. */
-  background-color: var(--color-obsidian);
-  color: var(--color-ivory);
+  padding: 0.75rem 1rem 0;
+  background-color: transparent;
+  color: var(--color-obsidian);
+}
+
+.ngf-header-inner {
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-white) 88%, transparent);
+  box-shadow: var(--shadow-level1);
   transition:
     background-color var(--dur-normal) var(--ease-standard),
-    opacity var(--dur-normal) var(--ease-standard);
+    box-shadow var(--dur-normal) var(--ease-standard),
+    border-color var(--dur-normal) var(--ease-standard);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+
+/* Past the fold the pill commits to opaque white and lifts a little further off the page. */
+.ngf-header[data-scrolled='true'] .ngf-header-inner {
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--color-taupe) 75%, transparent);
 }
 
 /* Transparent over the hero, solid once scrolled. */
@@ -95,9 +123,9 @@
   align-items: center;
   /* Tight below 1024 px: four controls plus the wordmark have to fit at 320 px. */
   gap: 0.5rem;
-  max-width: var(--container-content);
+  max-width: calc(var(--container-content) - 2rem);
   margin-inline: auto;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem 0.5rem 1.25rem;
 }
 
 .ngf-header-brand {
@@ -165,19 +193,33 @@
   list-style: none;
 }
 
+/*
+ * Sentence case, not uppercase.
+ *
+ * Six short labels in uppercase with 0.06em tracking read as a system menu; the same six in sentence
+ * case read as a shop. The nav is also no longer the loudest thing in the header — the WhatsApp pill
+ * is — so it steps back to the muted grey and only darkens on hover.
+ */
 .ngf-header-nav a,
 .ngf-header-nav summary {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   min-height: 44px;
-  color: inherit;
-  font-size: clamp(0.6875rem, 0.72vw, var(--text-small));
-  letter-spacing: 0.06em;
+  padding-inline: 0.625rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0;
   text-decoration: none;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
   cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+.ngf-header-nav a:hover,
+.ngf-header-nav summary:hover {
+  color: var(--color-obsidian);
 }
 
 .ngf-header-nav a[aria-current='page'] {
@@ -658,10 +700,18 @@
  * Footer (Requirement 9.7)
  * ------------------------------------------------------------------------- */
 
+/*
+ * A light footer.
+ *
+ * The page ends on cream with a hairline above it rather than dropping into a dark slab. On a site
+ * whose whole argument is "bright room, visible furniture", closing on obsidian undid that in the
+ * last 400 pixels — and it made the footer, which is navigation, the heaviest element on the page.
+ */
 .ngf-footer {
   margin-top: var(--spacing-section);
-  background-color: var(--color-obsidian);
-  color: var(--color-ivory);
+  border-top: 1px solid color-mix(in srgb, var(--color-taupe) 60%, transparent);
+  background-color: var(--color-cream);
+  color: var(--color-obsidian);
 }
 
 .ngf-footer-inner {
@@ -837,31 +887,6 @@
   grid-column: 1 / -1;
 }
 
-/*
- * The catalogue header's illustration slots: a decorative contour on `/collection`, and the
- * category's own glyph on `/collection/{slug}`. Both are taupe on ivory and both are sized in
- * absolute units so a wide viewport does not scale a hairline drawing up into a poster.
- */
-.ngf-catalogue-ornament {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .ngf-catalogue-ornament {
-    display: block;
-    width: 240px;
-    margin-top: 1rem;
-    color: var(--color-taupe);
-  }
-}
-
-.ngf-catalogue-glyph {
-  display: block;
-  width: 64px;
-  margin-bottom: 0.5rem;
-  color: var(--color-taupe);
-}
-
 /**
  * The h1 token's own floor (`clamp(2.25rem, …)` = 36 px) is wider than a 320 px column can hold for
  * a ten-character word like "Collection". The token is a verbatim transcription of the design and is
@@ -903,6 +928,182 @@
   color: var(--color-walnut);
 }
 
+/* Catalogue hero ---------------------------------------------------------- *
+ *
+ * The premium catalogue opener shared by `/collection` and every `/collection/{slug}`. A copy
+ * column — eyebrow, breadcrumb, title, the category's own supporting copy, the honest count — beside
+ * a drawing-board panel that holds the category's line illustration at showroom scale. It is the
+ * same visual language as the homepage's `.ngf-story-panel`: a cream ground ruled with a faint 24 px
+ * hairline grid, a 1 px taupe border, `--radius-xl`, and a subtle technical treatment (corner ticks
+ * and a thin dimension rule) drawn entirely in CSS. Category pages get their own glyph here, so they
+ * read as distinct catalogue openers rather than clones of the index.
+ */
+.ngf-cathero {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .ngf-cathero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+
+  /* The index's contour panel is wider than tall, so it gets a touch more room. */
+  .ngf-cathero-index {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.ngf-cathero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* The eyebrow: the shared small-caps letterspaced walnut label with a leading hairline dash. */
+.ngf-cathero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ngf-cathero-eyebrow::before {
+  display: block;
+  width: 1.75rem;
+  height: 1px;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+/* The breadcrumb sits above the eyebrow on a category page; keep the two clear of each other. */
+.ngf-cathero .ngf-catalogue-breadcrumbs {
+  margin-bottom: 0.25rem;
+}
+
+/*
+ * The drawing-board panel. `aspect-ratio` holds a fixed frame so the illustration never reflows the
+ * hero, and the sizes are capped in absolute units so a wide viewport does not scale a hairline
+ * drawing up into a poster.
+ */
+.ngf-cathero-panel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  aspect-ratio: 4 / 3;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+  background-position: center;
+  background-size: 24px 24px;
+  box-shadow: var(--shadow-level1);
+}
+
+/*
+ * The four corner ticks: an architect's registration marks, drawn as the panel's own inset border
+ * corners via a single element's four sides is not possible, so each panel draws two L-marks with a
+ * repeating-free pair of gradients kept simple — instead we use `::before`/`::after` insets.
+ */
+.ngf-cathero-panel::before,
+.ngf-cathero-panel::after {
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 0 solid var(--color-taupe);
+  content: '';
+  pointer-events: none;
+}
+
+.ngf-cathero-panel::before {
+  top: 0.75rem;
+  left: 0.75rem;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.ngf-cathero-panel::after {
+  right: 0.75rem;
+  bottom: 0.75rem;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+
+.ngf-cathero-glyph {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  color: var(--color-walnut);
+}
+
+.ngf-cathero-glyph :global(svg),
+.ngf-cathero-glyph svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The wide contour on the index panel can run a little larger — it is a landscape drawing. */
+.ngf-cathero-panel-wide .ngf-cathero-glyph {
+  max-width: 320px;
+}
+
+/*
+ * A thin dimension rule beneath the drawing: a hairline with a tick at each end, the technical
+ * treatment the brief asks for, drawn in CSS only. Scaled out from centre on reveal via `transform`
+ * so it costs no layout, and held at full width under reduced motion.
+ */
+.ngf-cathero-rule {
+  position: absolute;
+  right: clamp(2rem, 8%, 3.5rem);
+  bottom: clamp(1.25rem, 6%, 2rem);
+  left: clamp(2rem, 8%, 3.5rem);
+  height: 1px;
+  background-color: var(--color-taupe);
+  opacity: 0.7;
+  transform: scaleX(1);
+  transform-origin: center;
+  transition: transform var(--dur-story) var(--ease-draw);
+}
+
+.ngf-cathero-rule::before,
+.ngf-cathero-rule::after {
+  position: absolute;
+  bottom: -0.2rem;
+  width: 1px;
+  height: 0.45rem;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+.ngf-cathero-rule::before {
+  left: 0;
+}
+
+.ngf-cathero-rule::after {
+  right: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-cathero-rule {
+    transform: scaleX(0);
+  }
+}
+
 .ngf-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
@@ -926,7 +1127,11 @@
   flex-direction: column;
   gap: 0.625rem;
   height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
   background-color: var(--color-white);
+  box-shadow: var(--shadow-level1);
   transition:
     transform var(--dur-fast) var(--ease-standard),
     box-shadow var(--dur-fast) var(--ease-standard);
@@ -949,6 +1154,16 @@
 
 .ngf-card-media > * {
   height: 100%;
+}
+
+/*
+ * The base image's own transition, so a scale on hover eases rather than snaps. Declared outside
+ * the hover media query on `transform` only, but the transform itself is set solely inside the
+ * hover query below, so a touch device never animates and the LQIP/photograph pair scale together
+ * as one layer clipped by the media box's `overflow: hidden`.
+ */
+.ngf-card-media > .ngf-image {
+  transition: transform var(--dur-normal) var(--ease-standard);
 }
 
 /* The designed placeholder for a product with no photograph yet. */
@@ -1004,6 +1219,17 @@
   .ngf-card:focus-within {
     transform: translateY(-2px);
     box-shadow: var(--shadow-level2);
+  }
+
+  /*
+   * A subtle image scale on the base layer. When a second image exists it sits beneath the
+   * cross-fade layer, so the scale reads as a gentle push behind the reveal; with only one image
+   * it is the whole of the hover motion. Transform only, so it composites cheaply and the global
+   * reduced-motion clamp switches it off with everything else.
+   */
+  .ngf-card:hover .ngf-card-media > .ngf-image,
+  .ngf-card:focus-within .ngf-card-media > .ngf-image {
+    transform: scale(1.03);
   }
 
   .ngf-card:hover .ngf-card-hover,
@@ -1365,6 +1591,319 @@
   font-size: var(--text-h2);
 }
 
+/* PDP showroom composition ------------------------------------------------ *
+ *
+ * The premium two-column product layout (Milestone 3, Checkpoint B). Image-first everywhere: a
+ * single column below 1024 px with the gallery on top, then the information card; a gallery column
+ * beside a rounded white information card at 1024 px and up. The light-showroom card language — a
+ * white card with a 1 px taupe hairline, `--radius-xl`, and `--shadow-level1` — carries the whole
+ * panel, and the specification area sits on the same cream drawing-board ground as the catalogue
+ * heroes.
+ */
+.ngf-pdp-showroom {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .ngf-pdp-showroom {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+
+/* The gallery column. A mask-wipe reveal on first view; visible by default without motion. */
+.ngf-pdp-media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  /* The gallery holds its own column height while the info card scrolls past it. */
+  .ngf-pdp-media {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+.ngf-pdp-media-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-cream);
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}
+
+/* The static-fallback thumbnails (admin preview only; the public page mounts the island). */
+.ngf-pdp-media-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ngf-pdp-media-thumbs > li {
+  width: 6rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+/*
+ * A decorative technical hairline under the gallery — the same reduced-motion-safe treatment the
+ * catalogue heroes use (`.ngf-cathero-rule`): a hairline with a tick at each end that scales out
+ * from centre on reveal via `transform`, so it costs no layout, and is held at full width under
+ * reduced motion or `[data-motion='off']`. It draws no numbers; it is a line, not a measurement.
+ */
+.ngf-pdp-rule {
+  position: relative;
+  height: 1px;
+  margin-top: 0.25rem;
+  background-color: var(--color-taupe);
+  opacity: 0.7;
+  transform: scaleX(1);
+  transform-origin: center;
+  transition: transform var(--dur-story) var(--ease-draw);
+}
+
+.ngf-pdp-rule::before,
+.ngf-pdp-rule::after {
+  position: absolute;
+  bottom: -0.2rem;
+  width: 1px;
+  height: 0.45rem;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+.ngf-pdp-rule::before {
+  left: 0;
+}
+
+.ngf-pdp-rule::after {
+  right: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-pdp-rule {
+    transform: scaleX(0);
+  }
+}
+
+/* The information card. */
+.ngf-pdp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-level1);
+}
+
+.ngf-pdp-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* The name: Fraunces, balanced, with the slight negative tracking the display face is set with. */
+.ngf-pdp-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  color: var(--color-obsidian);
+}
+
+.ngf-pdp-sku {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+}
+
+.ngf-pdp-priceline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.ngf-pdp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ngf-pdp-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Pill CTAs with the reduced-motion-safe lift-on-hover the light layout uses everywhere. */
+.ngf-pdp-cta,
+.ngf-pdp-quick {
+  border-radius: var(--radius-pill);
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-pdp-quick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--color-taupe);
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .ngf-pdp-cta:hover,
+  .ngf-pdp-quick:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-pdp-quick:hover {
+    background-color: var(--color-cream);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-pdp-cta,
+  .ngf-pdp-quick {
+    transition: none;
+  }
+
+  .ngf-pdp-cta:hover,
+  .ngf-pdp-quick:hover {
+    transform: none;
+  }
+}
+
+.ngf-pdp-numbers {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}
+
+.ngf-pdp-description {
+  max-width: var(--measure-prose);
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+}
+
+/*
+ * The specification drawing-board panel. The same cream ground and faint 24 px hairline grid as
+ * the catalogue heroes' `.ngf-cathero-panel`, with the architect's corner ticks — the technical
+ * treatment the brief asks for, drawn entirely in CSS. It frames only the specification values the
+ * product actually carries; `SpecList` renders nothing when a product has none, and the panel is
+ * then a quiet decorative frame that states no measurement it was not given.
+ */
+.ngf-pdp-specpanel {
+  position: relative;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+  background-position: center;
+  background-size: 24px 24px;
+}
+
+.ngf-pdp-specpanel::before,
+.ngf-pdp-specpanel::after {
+  position: absolute;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 0 solid var(--color-taupe);
+  content: '';
+  pointer-events: none;
+}
+
+.ngf-pdp-specpanel::before {
+  top: 0.55rem;
+  left: 0.55rem;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.ngf-pdp-specpanel::after {
+  right: 0.55rem;
+  bottom: 0.55rem;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+
+/* The shared eyebrow: small-caps letterspaced walnut with a leading hairline dash. */
+.ngf-pdp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ngf-pdp-eyebrow::before {
+  display: block;
+  width: 1.5rem;
+  height: 1px;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+.ngf-pdp-specs {
+  position: relative;
+}
+
+.ngf-pdp-note {
+  display: flex;
+  flex-direction: column;
+}
+
+.ngf-pdp-note-body {
+  margin: 0;
+  max-width: var(--measure-prose);
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+}
+
+.ngf-pdp-mto {
+  margin: 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--color-champagne);
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+}
+
 /* Gallery ----------------------------------------------------------------- */
 
 .ngf-gallery {
@@ -1382,6 +1921,8 @@
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-lg);
   background-color: var(--color-cream);
 }
 
@@ -1452,11 +1993,13 @@
   min-width: 44px;
   min-height: 44px;
   border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-pill);
   background-color: rgb(255 255 255 / 0.92);
   color: var(--color-obsidian);
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
+  box-shadow: var(--shadow-level1);
 }
 
 .ngf-gallery-zoom-open {
@@ -1547,9 +2090,12 @@
   display: block;
   width: 96px;
   padding: 0;
+  overflow: hidden;
   border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-md);
   background: none;
   cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard);
 }
 
 .ngf-gallery-thumb > img {

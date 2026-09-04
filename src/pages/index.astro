@@ -198,11 +198,17 @@ const meta = pageMeta(Astro, {
                 fallbackHeading="Direct from the manufacturer"
                 ornament="right"
                 primitive="assembly"
+                tint
               />
             );
           case 'customFurniture':
             return (
-              <StorySection section={section} fallbackHeading="Custom furniture" ornament="left" />
+              <StorySection
+                section={section}
+                fallbackHeading="Custom furniture"
+                ornament="left"
+                primitive="assembly"
+              />
             );
           case 'workshopStory':
             return (
@@ -210,6 +216,8 @@ const meta = pageMeta(Astro, {
                 section={section}
                 fallbackHeading="Showroom & workshop"
                 ornament="right"
+                primitive="craftsmanship"
+                tint
               />
             );
           case 'customerReviews':
@@ -249,26 +257,40 @@ const meta = pageMeta(Astro, {
     }
   }
 
-  /* Full-bleed dark bands keep their own inner measure. */
-  .ngf-home > .ngf-home-section[data-surface='dark'] {
+  /*
+   * Full-bleed bands keep their own inner measure. `dark` and `tint` behave identically here —
+   * the attribute only says "this band paints its own ground edge to edge", and which ground it
+   * paints is the section's business. The homepage now uses `tint`; `dark` is kept because the
+   * rule is about bleed, not about colour, and a future band may want it.
+   */
+  .ngf-home > .ngf-home-section[data-surface='dark'],
+  .ngf-home > .ngf-home-section[data-surface='tint'] {
     max-width: none;
     padding-block: 0;
   }
 
-  .ngf-home > .ngf-home-section[data-surface='dark'] > * {
+  .ngf-home > .ngf-home-section[data-surface='dark'] > *,
+  .ngf-home > .ngf-home-section[data-surface='tint'] > * {
     max-width: var(--container-content);
     margin-inline: auto;
     padding-inline: 1.25rem;
   }
 
   @media (min-width: 1024px) {
-    .ngf-home > .ngf-home-section[data-surface='dark'] > * {
+    .ngf-home > .ngf-home-section[data-surface='dark'] > *,
+    .ngf-home > .ngf-home-section[data-surface='tint'] > * {
       padding-inline: 2rem;
     }
   }
 
-  /* Alternating grounds, so consecutive editorial bands do not merge into one slab. */
-  .ngf-home > .ngf-home-story:nth-of-type(even) {
-    background-color: var(--color-cream);
-  }
+  /*
+   * Alternating grounds, so four consecutive editorial bands do not merge into one slab.
+   *
+   * The alternation used to be `.ngf-home-story:nth-of-type(even)`, which counted every `<section>`
+   * in `main` rather than every story band — so which stories got the tint depended on how many
+   * product sections happened to render, and with an empty catalogue the parity flipped and two
+   * tinted bands ended up adjacent. It is now a `tint` prop decided here, where the order is known,
+   * which is also the only way to get a band that bleeds to the viewport edge without a
+   * `50vw`-based negative inset that overflows when a scrollbar is present.
+   */
 </style>

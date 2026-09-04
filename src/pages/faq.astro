@@ -98,9 +98,10 @@ const meta = pageMeta(Astro, {
 
 <BaseLayout meta={meta}>
   <div class="ngf-page">
-    <div class="ngf-page-head">
+    <div class="ngf-page-head" data-reveal data-motion-group>
       <p class="ngf-page-eyebrow">Questions</p>
       <h1>Frequently asked questions</h1>
+      <span class="ngf-hairline ngf-page-hairline" aria-hidden="true"></span>
       <p class="ngf-page-lead">
         Where we can answer, we answer. Where the answer is a term we have not finalised, we say so
         and tell you how to get it today rather than publishing a number we cannot stand behind.
@@ -108,7 +109,7 @@ const meta = pageMeta(Astro, {
     </div>
 
     <div class="ngf-page-body">
-      <ul class="ngf-faq" data-content-key="page.faq.entries">
+      <ul class="ngf-faq" data-content-key="page.faq.entries" data-reveal data-motion-group>
         {
           entries.map((entry) => (
             <li>
@@ -150,40 +151,79 @@ const meta = pageMeta(Astro, {
 </BaseLayout>
 
 <style>
+  /*
+   * The accordion as light-showroom cards. Each question is a white card with a taupe hairline and
+   * xl radius; the <details>/<summary> keeps the no-JS, keyboard- and find-in-page-operable
+   * behaviour untouched — only the presentation changes.
+   */
   .ngf-faq {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     margin: 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--color-taupe);
   }
 
   .ngf-faq > li {
-    border-bottom: 1px solid var(--color-taupe);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-faq details {
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
   }
 
   .ngf-faq summary {
     display: flex;
     align-items: center;
+    gap: 1rem;
     min-height: 56px;
-    padding-block: 0.75rem;
+    padding-block: 1rem;
     cursor: pointer;
+    color: var(--color-obsidian);
     font-family: var(--font-display);
     font-size: var(--text-h3);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
     list-style: none;
+  }
+
+  .ngf-faq summary:focus-visible {
+    outline: 2px solid var(--color-sage);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
   }
 
   .ngf-faq summary::-webkit-details-marker {
     display: none;
   }
 
+  /* A calm +/- affordance drawn from two rules so it reads as a drawn mark, not a font glyph. */
   .ngf-faq summary::after {
-    content: '+';
+    content: '';
+    flex: none;
+    width: 1rem;
+    height: 1rem;
     margin-left: auto;
-    color: var(--color-champagne);
+    background-image:
+      linear-gradient(var(--color-champagne), var(--color-champagne)),
+      linear-gradient(var(--color-champagne), var(--color-champagne));
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size:
+      100% 1px,
+      1px 100%;
   }
 
   .ngf-faq details[open] summary::after {
-    content: '−';
+    /* Open: drop the vertical stroke, leaving a minus. */
+    background-size:
+      100% 1px,
+      0 100%;
   }
 
   .ngf-faq-answer {
@@ -191,10 +231,17 @@ const meta = pageMeta(Astro, {
     flex-direction: column;
     gap: 0.5rem;
     padding-bottom: 1.25rem;
+    max-width: var(--measure-prose);
   }
 
   .ngf-faq-answer p {
     margin: 0;
     color: var(--color-espresso);
+    line-height: 1.65;
+  }
+
+  .ngf-faq-answer .ngf-policy-outstanding {
+    color: var(--color-walnut);
+    font-size: var(--text-small);
   }
 </style>

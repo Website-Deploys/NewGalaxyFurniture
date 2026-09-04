@@ -1,9 +1,9 @@
 ---
 /**
- * The craftsmanship, direct-manufacturer, and showroom/workshop sections.
+ * The craftsmanship, direct-manufacturer, custom-furniture, and showroom/workshop sections.
  *
- * One component for all three because Requirement 7.10 says the identical thing about all three, and
- * three copies of that rule would mean three places for it to be got wrong:
+ * One component for all four because Requirement 7.10 says the identical thing about them, and four
+ * copies of that rule would mean four places for it to be got wrong:
  *
  * > WHERE the craftsmanship, direct manufacturer, or showroom and workshop copy has not been supplied
  * > by the operator, THE NGF_Site SHALL render in that section a placeholder that is visually
@@ -12,46 +12,65 @@
  * > process, timeline, capability, or business achievement that the operator has not supplied.
  *
  * The last clause is the one that shapes this file. **There is no prose in it.** Every word a visitor
- * reads in these three sections comes from `data/site/homepage.json`; the component contributes
- * structure, a hairline rule, and an ornament. So there is no sentence here that *could* describe a
- * joinery method, a lead time, a workshop size, or a number of years in business — not as a default,
- * not as a fallback, not as placeholder filler. The operator's own `[PLACEHOLDER — …]` marker is what
- * shows until they replace it, printed verbatim through `PlaceholderCopy`.
+ * reads in these sections comes from `data/site/homepage.json`; the component contributes structure,
+ * a panel, and an illustration. So there is no sentence here that *could* describe a joinery method,
+ * a lead time, a workshop size, or a number of years in business — not as a default, not as a
+ * fallback, not as placeholder filler.
  *
- * `awaitingCopy` on the section record is derived from the body by the schema and the admin patch
- * function, and `getPlaceholderKeys()` turns it into the checklist entry — so this component reads
- * one flag and cannot disagree with the checklist about what is outstanding.
+ * `awaitingCopy` on the section record drives `PlaceholderCopy`, and `settings.placeholders` keeps
+ * every one of these body keys in the admin checklist whether or not `awaitingCopy` is still set —
+ * so the operator's list of "words I have not written myself yet" survives the copy being made
+ * presentable to customers.
  *
- * The three variants differ only in which side the ornament sits, so the page reads as alternating
- * bands rather than three identical slabs.
+ * **Why the band is a two-column card rather than a heading over a paragraph, and why every band
+ * carries a real drawing.** It used to be an ornament column of five hairlines beside three lines of
+ * type, four of them consecutive: roughly seven hundred pixels of near-empty page between the
+ * category grid and the reviews. Each band now pairs the copy with a drawing-board panel that holds
+ * one of the animated line illustrations at panel scale, and the bands alternate sides down the
+ * page — so four consecutive editorial bands read as a rhythm rather than as a gap. Every band gets
+ * a drawing; a bordered panel with nothing in it reads as an image that failed to load, which is the
+ * one thing an ornament must never look like.
  *
- * Requirements: 7.1, 7.7, 7.10, 7.13, 8.8.
+ * **The four bands spend two distinct primitives between them, not four.** Requirement 21.15 allows
+ * four distinct primitives per page and the homepage's other two are the hero's `room` and the
+ * category grid's `category`. So these bands draw only `craftsmanship` and `assembly` — the two
+ * whose subject *is* what the primitive depicts — reused across the four sections. The caller
+ * chooses which via `primitive`, because the caller is where the page's whole primitive budget is
+ * visible at once.
+ *
+ * Requirements: 7.1, 7.7, 7.10, 7.13, 8.8, 21.2, 21.15.
  */
 import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
-import SectionHeader from '@/components/home/SectionHeader.astro';
 import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
 import FurnitureAssembly from '@/components/motion/FurnitureAssembly.astro';
-import Hairline from '@/components/motion/Hairline.astro';
 import type { HomepageSection } from '@/schemas/homepage';
 
 interface Props {
   section: HomepageSection;
   /** A fallback heading, used only when the operator has cleared theirs. */
   fallbackHeading: string;
-  /** `left` or `right` — which side the hairline ornament sits on. */
+  /** `left` or `right` — which side the illustration panel sits on. */
   ornament?: 'left' | 'right';
   /** An extra call to action, where the section record supplies one. */
   showCta?: boolean;
   /**
-   * Which animated primitive stands in the ornament column, if any.
+   * Which animated primitive stands in the panel.
    *
-   * Defaulting to `none` — a hairline rule — is not timidity: Requirement 21.15 allows four
-   * primitives per page, the homepage spends its four on the hero's room, the craftsmanship
-   * detail, the category glyphs and the assembly, and a fifth here would break the budget for a
-   * decoration. The two sections that carry a primitive are the two whose *subject* is what the
-   * primitive draws.
+   * Only the two the homepage can afford (see the file note): `craftsmanship` — measured joinery
+   * detail — and `assembly` — parts settling into a piece. Both are already drawn once elsewhere on
+   * the page, so reusing them here adds no distinct primitive against Requirement 21.15's budget of
+   * four.
    */
-  primitive?: 'craftsmanship' | 'assembly' | 'none';
+  primitive?: 'craftsmanship' | 'assembly';
+  /**
+   * Paints the band's own cream ground, edge to edge.
+   *
+   * The caller decides, because only the caller knows where this band sits among the others — see
+   * the note on the alternation in `src/pages/index.astro`. `data-surface="tint"` is what the
+   * homepage's band rhythm keys the full-bleed off, and the inner element then carries the measure
+   * and the vertical padding.
+   */
+  tint?: boolean;
 }
 
 const {
@@ -59,7 +78,8 @@ const {
   fallbackHeading,
   ornament = 'left',
   showCta = true,
-  primitive = 'none',
+  primitive = 'craftsmanship',
+  tint = false,
 } = Astro.props;
 
 const headingId = `ngf-${section.key}-heading`;
@@ -77,43 +97,35 @@ const cta =
   data-ngf-section={section.key}
   data-ornament={ornament}
   data-awaiting-copy={section.awaitingCopy ? 'true' : 'false'}
+  data-surface={tint ? 'tint' : undefined}
   data-motion-section
   data-reveal
 >
   <div class="ngf-story-inner">
-    <div class="ngf-story-ornament">
-      {primitive === 'craftsmanship' && <CraftsmanshipLines strokeWidth={1} />}
-      {primitive === 'assembly' && <FurnitureAssembly strokeWidth={1} />}
-      {
-        /*
-        No primitive: five hairlines that scale from 0 on the X axis as the band arrives. Cheap,
-        on-language, and it does not spend one of the page's four primitives.
-      */
-        primitive === 'none' && (
-          <div class="ngf-story-rules">
-            <Hairline />
-            <Hairline />
-            <Hairline tone="champagne" />
-            <Hairline />
-            <Hairline />
-          </div>
-        )
-      }
+    <div class="ngf-story-panel">
+      <div class="ngf-story-ornament">
+        {
+          primitive === 'assembly' ? (
+            <FurnitureAssembly strokeWidth={1} />
+          ) : (
+            <CraftsmanshipLines strokeWidth={1} />
+          )
+        }
+      </div>
     </div>
 
     <div class="ngf-story-copy">
-      <SectionHeader
-        eyebrow={section.eyebrow}
-        heading={section.heading ?? fallbackHeading}
-        subheading={section.subheading}
-        headingId={headingId}
-      />
+      {section.eyebrow !== undefined && <p class="ngf-story-eyebrow">{section.eyebrow}</p>}
+
+      <h2 class="ngf-story-heading" id={headingId}>{section.heading ?? fallbackHeading}</h2>
+
+      {section.subheading !== undefined && <p class="ngf-story-sub">{section.subheading}</p>}
 
       {
         body === undefined ? (
           /*
             No body at all. The checklist still names the key, and the section still says nothing
-            about the business — an honest "not written yet" rather than an invented paragraph.
+            about the business — an honest invitation rather than an invented paragraph.
           */
           <PlaceholderCopy
             body="[PLACEHOLDER — no copy has been supplied for this section yet.]"
@@ -133,7 +145,9 @@ const cta =
       {
         cta !== null && (
           <a class="ngf-story-cta" href={cta.href}>
-            {cta.label}
+            <span>{cta.label}</span>
+            {/* A hairline arrow that slides on hover. `transform` only. */}
+            <span class="ngf-story-cta-arrow" aria-hidden="true" />
           </a>
         )
       }
@@ -142,88 +156,196 @@ const cta =
 </section>
 
 <style>
+  .ngf-home-story[data-surface='tint'] {
+    background-color: var(--color-cream);
+  }
+
   .ngf-story-inner {
     display: grid;
-    gap: 1.5rem;
-    align-items: start;
+    gap: clamp(1.75rem, 4vw, 3.5rem);
+    align-items: center;
+  }
+
+  /*
+   * A tinted band is full-bleed, so the homepage's rhythm zeroes its block padding and the inner
+   * element has to restore it — at the same measure as an untinted band, so the two read as one
+   * sequence rather than as two different page widths.
+   */
+  .ngf-home-story[data-surface='tint'] .ngf-story-inner {
+    padding-block: clamp(3rem, 8vh, 6rem);
   }
 
   @media (min-width: 768px) {
     .ngf-story-inner {
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     }
 
-    .ngf-home-story[data-ornament='right'] .ngf-story-inner {
-      grid-template-columns: minmax(0, 1fr) auto;
-    }
-
-    .ngf-home-story[data-ornament='right'] .ngf-story-ornament {
+    .ngf-home-story[data-ornament='right'] .ngf-story-panel {
       order: 2;
     }
   }
 
+  /*
+   * The illustration panel: a drawing board.
+   *
+   * A ruled ground — a 24 px hairline grid at very low contrast, the same drawing-board language as
+   * the primitives themselves — a fixed 4:3 frame so all four panels down the page are the same
+   * shape, and the illustration in walnut at panel scale so it is legible rather than a smudge.
+   */
+  .ngf-story-panel {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    max-height: 400px;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    overflow: hidden;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-cream);
+    background-image:
+      linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+    background-position: center;
+    background-size: 24px 24px;
+    box-shadow: var(--shadow-level1);
+  }
+
+  /* On a tinted band the ground inverts, so the panel keeps its edge against the cream. */
+  .ngf-home-story[data-surface='tint'] .ngf-story-panel {
+    background-color: var(--color-white);
+  }
+
   .ngf-story-ornament {
-    color: var(--color-taupe);
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    color: var(--color-walnut);
   }
 
   .ngf-story-ornament :global(svg) {
     display: block;
+    width: 100%;
     height: auto;
-    max-width: 120px;
-  }
-
-  /*
-   * The five rules, at increasing indents so they read as a plan drawing rather than a barcode.
-   * Requirement 21.2: exactly one of them is champagne, and it is a 1 px stroke, not a fill.
-   */
-  .ngf-story-rules {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 120px;
-  }
-
-  .ngf-story-rules > :global(*:nth-child(2)) {
-    width: 84%;
-  }
-
-  .ngf-story-rules > :global(*:nth-child(3)) {
-    width: 68%;
-  }
-
-  .ngf-story-rules > :global(*:nth-child(4)) {
-    width: 52%;
-  }
-
-  .ngf-story-rules > :global(*:nth-child(5)) {
-    width: 36%;
+    max-width: 300px;
+    margin-inline: auto;
   }
 
   .ngf-story-copy {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.25rem;
+    gap: 1rem;
+  }
+
+  .ngf-story-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-story-eyebrow::before {
+    display: block;
+    width: 1.75rem;
+    height: 1px;
+    background-color: var(--color-taupe);
+    content: '';
+  }
+
+  .ngf-story-heading {
+    margin: 0;
+    max-width: 24ch;
+    color: var(--color-obsidian);
+    font-size: var(--text-h2);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .ngf-story-sub {
+    margin: 0;
+    max-width: var(--measure-prose);
+    color: var(--color-espresso);
   }
 
   .ngf-story-body {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.85rem;
   }
 
   .ngf-story-body p {
     margin: 0;
-    color: var(--color-espresso);
+    max-width: 60ch;
+    color: var(--color-walnut);
+    line-height: 1.7;
   }
 
   .ngf-story-cta {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
-    padding-inline: 1.25rem;
+    gap: 0.75rem;
+    min-height: 48px;
+    margin-top: 0.5rem;
+    padding-inline: 1.5rem;
     border: 1px solid var(--color-obsidian);
+    border-radius: var(--radius-pill);
     color: var(--color-obsidian);
     text-decoration: none;
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard);
+  }
+
+  /* The arrow: a rotated hairline corner plus a shaft, drawn in CSS. No glyph, no request. */
+  .ngf-story-cta-arrow {
+    position: relative;
+    display: block;
+    width: 1.15rem;
+    height: 1px;
+    background-color: currentcolor;
+    transition: transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-story-cta-arrow::after {
+    position: absolute;
+    right: 0;
+    bottom: -0.22rem;
+    display: block;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-top: 1px solid currentcolor;
+    border-right: 1px solid currentcolor;
+    transform: rotate(45deg);
+    content: '';
+  }
+
+  @media (hover: hover) {
+    .ngf-story-cta:hover {
+      background-color: var(--color-obsidian);
+      color: var(--color-ivory);
+    }
+
+    .ngf-story-cta:hover .ngf-story-cta-arrow {
+      transform: translateX(0.25rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-story-cta,
+    .ngf-story-cta-arrow {
+      transition: none;
+    }
+
+    .ngf-story-cta:hover .ngf-story-cta-arrow {
+      transform: none;
+    }
   }
 </style>

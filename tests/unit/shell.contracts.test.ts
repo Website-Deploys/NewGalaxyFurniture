@@ -31,24 +31,24 @@ import { buildTelUrl, buildWhatsAppUrl } from '@/lib/whatsapp';
  */
 
 describe('navigation (Requirements 9.1, 9.2, 9.7)', () => {
-  it('presents exactly the nine named top-level destinations, in order', () => {
+  it('presents the six named top-level destinations, in order', () => {
+    // Six, because the header's job is to answer "what do you sell / can you make it for me / who
+    // are you / how do I reach you" at a glance. Nine competing category labels answered none of
+    // them faster, so the categories moved into one Shop dropdown.
     expect(HEADER_NAV.map((entry) => entry.label)).toEqual([
-      'Sofas',
-      'Beds',
-      'Dining',
-      'Chairs',
-      'Tables',
-      'Storage',
+      'Shop',
       'Custom Furniture',
-      'Collection',
+      'About',
+      'Workshop',
+      'Gallery',
       'Contact',
     ]);
     expect(HEADER_NAV.length).toBeLessThanOrEqual(MAX_TOP_LEVEL_DESTINATIONS);
   });
 
-  it('groups the extra category destinations into dropdowns rather than adding a tenth item', () => {
+  it('groups the category destinations into a dropdown rather than spending top-level slots', () => {
     const groups = HEADER_NAV.filter((entry) => entry.kind === 'group');
-    expect(groups.map((group) => group.label)).toEqual(['Dining', 'Chairs', 'Tables']);
+    expect(groups.map((group) => group.label)).toEqual(['Shop']);
     for (const group of groups) {
       expect(group.kind).toBe('group');
       if (group.kind !== 'group') continue;

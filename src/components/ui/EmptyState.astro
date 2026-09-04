@@ -79,11 +79,18 @@ const { heading, message, tone = 'inline', class: className } = Astro.props;
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
-    padding: 3rem 1.5rem;
+    padding: clamp(2.5rem, 6vw, 4rem) 1.5rem;
     border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
     background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
   }
 
+  /*
+   * `page` is the public-site tone: the state is the whole band, so it centres. `inline` stays
+   * left-aligned because its call sites are admin columns and a card inside a form, where centred
+   * type reads as a mistake.
+   */
   .ngf-emptystate[data-tone='page'] {
     align-items: center;
     padding-block: clamp(3rem, 8vh, 6rem);
@@ -91,17 +98,25 @@ const { heading, message, tone = 'inline', class: className } = Astro.props;
   }
 
   .ngf-emptystate-figure {
+    width: clamp(96px, 18vw, 140px);
+    height: auto;
     color: var(--color-taupe);
   }
 
   .ngf-emptystate-heading {
     margin: 0;
+    max-width: 24ch;
+    color: var(--color-obsidian);
     font-size: var(--text-h3);
+    font-weight: 400;
+    text-wrap: balance;
   }
 
   .ngf-emptystate-message {
     margin: 0;
-    color: var(--color-espresso);
+    max-width: 52ch;
+    color: var(--color-walnut);
+    line-height: 1.65;
   }
 
   .ngf-emptystate-actions {

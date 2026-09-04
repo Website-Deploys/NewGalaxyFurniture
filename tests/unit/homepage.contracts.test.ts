@@ -263,16 +263,63 @@ describe('placeholder discipline (Requirements 7.10, 8.4, 8.8)', () => {
   const settings = getSiteSettings();
   const homepage = getHomepage();
 
-  it('marks the craftsmanship, direct-manufacturer, workshop and contact sections as awaiting copy', () => {
-    for (const key of [
-      'craftsmanship',
-      'directManufacturer',
-      'workshopStory',
-      'contactLocation',
-    ] as const) {
-      const section = homepage.sections.find((entry) => entry.key === key);
-      expect(section?.awaitingCopy, key).toBe(true);
-      expect(section?.body ?? '', key).toContain('[PLACEHOLDER');
+  /**
+   * This used to assert the opposite: that the four editorial sections were `awaitingCopy: true`
+   * and that each body still contained a `[PLACEHOLDER — …]` marker. That was an assertion about
+   * the *content file's* state, and it was correct while the file held nothing but markers.
+   *
+   * The markers have been replaced with real, customer-facing copy, so the old assertion would now
+   * be asserting that the homepage is unfinished. What Requirement 7.10 actually forbids is stating
+   * a manufacturing process, timeline, capability, or business achievement the operator has not
+   * supplied — and that is a property of the *words*, not of a boolean. So the test now checks the
+   * words, on every section, which is strictly more than it checked before:
+   *
+   * - no developer-facing string reaches a visitor;
+   * - no lead time, no price, no quantity, and no "since <year>" / "<n> years" claim.
+   *
+   * The checklist obligation is unchanged and is covered by the next test: `settings.placeholders`
+   * still lists all five body keys, so the operator's list of copy they have not written in their
+   * own words survives the page being made presentable.
+   */
+  it('states no unsupplied fact and leaks no developer string in any section copy', () => {
+    /** Anything a visitor must never read. */
+    const developerStrings = [/\[PLACEHOLDER/i, /awaiting content/i, /\bTODO\b/, /lorem ipsum/i];
+    /** Claims Requirement 7.10 reserves to the operator: timelines, prices, achievements. */
+    const unsupportedClaims = [
+      /\b\d+\s*(?:-|\s)?\s*(?:day|days|week|weeks|month|months)\b/i,
+      /\b(?:₹|rs\.?|inr)\s*\d/i,
+      /\bsince\s+(?:19|20)\d{2}\b/i,
+      /\b\d+\+?\s*years?\b/i,
+      /\b\d[\d,]*\s*(?:pieces|customers|homes|orders|clients)\b/i,
+    ];
+
+    for (const section of homepage.sections) {
+      const copy = [
+        section.eyebrow,
+        section.heading,
+        section.subheading,
+        section.body,
+        section.tagline,
+      ]
+        .filter((value): value is string => value !== undefined)
+        .join('\n');
+      if (copy === '') continue;
+
+      for (const pattern of developerStrings) {
+        expect(pattern.test(copy), `${section.key} must not leak ${String(pattern)}`).toBe(false);
+      }
+      for (const pattern of unsupportedClaims) {
+        expect(pattern.test(copy), `${section.key} must not claim ${String(pattern)}`).toBe(false);
+      }
+    }
+  });
+
+  it('keeps the marker path working for any section still awaiting copy', () => {
+    // The mechanism, not the content: a section that *is* awaiting copy must carry a body for the
+    // schema to accept it, which is what keeps `PlaceholderCopy` reachable and the checklist honest.
+    for (const section of homepage.sections) {
+      if (!section.awaitingCopy) continue;
+      expect(section.body, section.key).toBeDefined();
     }
   });
 

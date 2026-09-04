@@ -45,9 +45,10 @@ const meta = pageMeta(Astro, {
 
 <BaseLayout meta={meta}>
   <div class="ngf-page">
-    <div class="ngf-page-head">
+    <div class="ngf-page-head" data-reveal data-motion-group>
       <p class="ngf-page-eyebrow">404</p>
       <h1 data-ngf-404-heading>Page not found</h1>
+      <span class="ngf-hairline ngf-page-hairline" aria-hidden="true"></span>
       <p class="ngf-page-lead" data-ngf-404-message>
         The page you requested does not exist. Search the catalogue from the control in the header,
         or start from one of the nine categories below.
@@ -60,6 +61,12 @@ const meta = pageMeta(Astro, {
     >
       <WhatsAppLink slot="action" context={{ kind: 'general' }} label="Ask on WhatsApp" />
       <CallLink slot="action" variant="outline" />
+
+      <nav aria-label="Where to go next" class="ngf-404-primary">
+        <a class="ngf-404-primary-link" href="/">Home</a>
+        <a class="ngf-404-primary-link" href="/collection">Browse the collection</a>
+        <a class="ngf-404-primary-link" href="/custom-furniture">Custom furniture</a>
+      </nav>
 
       <nav aria-label="Categories" class="ngf-404-categories">
         <ul>
@@ -78,6 +85,33 @@ const meta = pageMeta(Astro, {
 </BaseLayout>
 
 <style>
+  .ngf-404-primary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .ngf-404-primary-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 1.125rem;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-white);
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    text-decoration: none;
+    transition: transform var(--dur-fast, 160ms) var(--ease-standard, ease);
+  }
+
+  @media (hover: hover) {
+    .ngf-404-primary-link:hover {
+      transform: translate3d(0, -2px, 0);
+    }
+  }
+
   .ngf-404-categories ul {
     display: flex;
     flex-wrap: wrap;

@@ -169,7 +169,16 @@ const meta = pageMeta(Astro, {
 });
 ---
 
-<BaseLayout meta={meta} analytics={{ event: { type: 'product_view', entity: product.slug } }}>
+<BaseLayout
+  meta={meta}
+  analytics={{ event: { type: 'product_view', entity: product.slug } }}
+  actionBar={{
+    kind: 'product',
+    productName: product.name,
+    sku: product.sku,
+    productUrl: canonical,
+  }}
+>
   {
     /*
     The LCP preload. `imagesrcset`/`imagesizes` mirror the gallery's own attributes exactly, so the

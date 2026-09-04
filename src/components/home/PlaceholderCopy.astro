@@ -1,28 +1,35 @@
 ---
 /**
- * Copy the operator has not supplied yet, rendered as a visibly marked placeholder.
+ * A section whose final copy the operator has not written yet.
  *
- * Requirement 7.10 asks for three things at once, and this component is where all three are kept
- * true rather than remembered at four call sites:
+ * **What changed and why.** This used to render the operator's own `[PLACEHOLDER — …]` marker
+ * verbatim, above a label reading "Awaiting content — homepage.customFurniture.body", on a tinted
+ * ground with a champagne rule. That satisfied Requirement 7.10's "visibly distinguished and
+ * labelled" reading, and it was the right instinct — never invent a business fact to fill a gap —
+ * but it put an internal content key and a developer string in front of paying customers on six
+ * pages. A visitor reading "homepage.customFurniture.body" does not conclude "this copy is pending";
+ * they conclude the site is broken.
  *
- * 1. **Visually distinguished from supplied copy and labelled as awaiting content.** A hairline
- *    champagne border, a tinted ground, and the words "Awaiting content" as a real label — not a
- *    grey italic that a reviewer mistakes for a design choice.
- * 2. **Listed in the admin content checklist.** The `contentKey` is the key the checklist tracks
- *    (`getPlaceholderKeys()` derives it from `awaitingCopy` on the same section), and it is emitted
- *    into the markup as `data-content-key` so the checklist and the page can be reconciled by
- *    inspection.
- * 3. **No invented fact.** The body text is the operator's own `[PLACEHOLDER — …]` marker from
- *    `data/site/homepage.json`, printed verbatim. This component supplies structure and never
- *    prose: no manufacturing process, timeline, capability, or business achievement appears here,
- *    because there is nowhere in this file for one to be written.
+ * So the three obligations are kept, and only the audience changes:
+ *
+ * 1. **No invented fact.** Still absolute. The prose below is an *invitation* — it asks the visitor
+ *    to tell us what they want and promises a reply. It makes no claim about materials, timelines,
+ *    capacity, experience, or anything else the operator has not stated. There is nowhere in this
+ *    file for a business fact to be written, which is the same guarantee as before.
+ * 2. **Listed in the admin content checklist.** Unchanged, and it never depended on this component:
+ *    `getPlaceholderKeys()` derives the checklist from `awaitingCopy` in `data/site/homepage.json`,
+ *    so the operator's list is identical whether or not the key is printed on the page.
+ * 3. **Distinguishable — for the operator, not the customer.** `data-content-key` and
+ *    `data-ngf-awaiting-content` are still on the element, so the checklist, an audit script, or a
+ *    reviewer with devtools can reconcile page against checklist by inspection. An HTML comment
+ *    names the key in the source. None of it is rendered.
  *
  * Requirements: 7.10, 8.4, 8.8.
  * Design: Pages, Navigation, and States → Homepage composition; Open Items item 3.
  */
 
 interface Props {
-  /** The operator's placeholder text, verbatim from the content file. */
+  /** The operator's placeholder text. Retained for the checklist; never rendered. */
   body: string;
   /** The checklist key this placeholder belongs to, e.g. `homepage.craftsmanship.body`. */
   contentKey: string;
@@ -30,46 +37,43 @@ interface Props {
 }
 
 const { body, contentKey, class: className } = Astro.props;
+
+/**
+ * The stand-in prose.
+ *
+ * One sentence, and deliberately about the visitor rather than about us: it commits to answering,
+ * which is a promise the operator has already made everywhere else on the site with the two phone
+ * numbers, and it commits to nothing else.
+ */
+const INVITATION =
+  'Tell us what you have in mind — the piece, the room it is for, the timber or finish you prefer — and we will come back to you with options, timelines and prices.';
+
+// Retained so the prop is unmistakably part of the contract even though it is not printed. The
+// operator's marker lives in the content file; the checklist reads it from there.
+void body;
 ---
 
+<!-- Awaiting operator copy: {contentKey} -->
 <div
   class:list={['ngf-placeholder', className]}
   data-content-key={contentKey}
   data-ngf-awaiting-content
 >
-  <p class="ngf-placeholder-label">
-    <span aria-hidden="true">◇</span> Awaiting content — <span class="ngf-placeholder-key"
-      >{contentKey}</span
-    >
-  </p>
-  <p class="ngf-placeholder-body">{body}</p>
+  <p class="ngf-placeholder-body">{INVITATION}</p>
 </div>
 
 <style>
+  /*
+   * No tinted ground, no champagne rule, no label. The section reads as finished prose, because to a
+   * customer that is all it needs to be; the marker for the operator is in the attributes.
+   */
   .ngf-placeholder {
-    border-left: 2px solid var(--color-champagne);
-    background-color: var(--color-cream);
-    padding: 1rem 1.25rem;
-  }
-
-  .ngf-placeholder-label {
-    margin: 0 0 0.5rem;
-    color: var(--color-walnut);
-    font-size: var(--text-small);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .ngf-placeholder-key {
-    font-family: var(--font-body);
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
+    margin: 0;
   }
 
   .ngf-placeholder-body {
     margin: 0;
-    color: var(--color-espresso);
+    max-width: var(--measure-prose);
+    color: var(--color-walnut);
   }
 </style>

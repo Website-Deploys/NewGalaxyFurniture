@@ -15,12 +15,14 @@
  */
 
 @theme static {
-  --color-obsidian:  #171513;  /* primary text, dark sections, strong CTAs */
-  --color-espresso:  #3B2A21;  /* secondary dark surfaces, buttons, nav states */
-  --color-walnut:    #6B4A36;  /* sparing accents, hover */
-  --color-champagne: #B88A45;  /* restrained luxury accent — see usage rule */
-  --color-ivory:     #F8F2EA;  /* primary light background */
-  --color-cream:     #EFE4D7;  /* secondary background */
+  --color-obsidian:  #1C1A18;  /* primary text, strong CTAs — charcoal, not black */
+  --color-espresso:  #33302B;  /* dark surfaces, buttons, nav states */
+  --color-walnut:    #6B655C;  /* secondary copy, captions, inline links */
+  --color-champagne: #B88A45;  /* tiny accent only — see usage rule */
+  --color-sage:      #5F6E57;  /* muted natural green, the primary accent */
+  --color-clay:      #9E5340;  /* muted terracotta, very small accent */
+  --color-ivory:     #FAF8F4;  /* primary light background */
+  --color-cream:     #F3EFE8;  /* secondary background, banded sections */
   --color-taupe:     #CBBBA9;  /* supporting neutral, rules, dividers */
   --color-white:     #FFFFFF;  /* cards, contrast */
 }
@@ -54,14 +56,20 @@
   --text-body: 1rem;
   --text-small: 0.875rem;
 
-  /* Radius scale — architectural, not bubbly. Nothing else is permitted. */
+  /* Radius scale. The hairline steps stay for controls and inputs; the soft steps are
+     for the cards, media frames and pill controls the light layout is built from. */
   --radius-none: 0;
   --radius-hair: 2px;
   --radius-soft: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
 
-  /* Two elevation levels only, tight and low-opacity. */
-  --shadow-level1: 0 1px 2px rgb(23 21 19 / 0.06), 0 1px 3px rgb(23 21 19 / 0.04);
-  --shadow-level2: 0 2px 8px rgb(23 21 19 / 0.08), 0 8px 24px rgb(23 21 19 / 0.06);
+  /* Elevation. Low-opacity and warm-tinted so a lifted card reads as paper on paper. */
+  --shadow-level1: 0 1px 2px rgb(28 26 24 / 0.05), 0 1px 3px rgb(28 26 24 / 0.03);
+  --shadow-level2: 0 2px 8px rgb(28 26 24 / 0.06), 0 8px 24px rgb(28 26 24 / 0.05);
+  --shadow-lift: 0 1px 2px rgb(28 26 24 / 0.04), 0 14px 36px rgb(28 26 24 / 0.08);
 
   /* Layout language. */
   --container-content: 1440px;
