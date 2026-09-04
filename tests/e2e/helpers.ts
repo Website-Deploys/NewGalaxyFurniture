@@ -109,6 +109,40 @@ export const ADMIN_PAGES = [
   '/admin/settings',
 ] as const;
 
+/**
+ * The fixture catalogue the build was given, mirrored from `tests/fixtures/products.ts`.
+ *
+ * `npm run e2e:prepare` writes those fixtures into a git-ignored directory and the build reads the
+ * products collection from it, so these are the products the served site actually has. Repeated here
+ * rather than imported because importing the fixture module would pull `@/schemas/product` — and
+ * Zod — into the Playwright process for three strings.
+ */
+export const FIXTURES = {
+  /** In stock, discounted, two photographs, category `sofas`. */
+  sofa: {
+    slug: 'demo-l-shape-sofa',
+    name: '[DEMO] Brown L-Shape Sofa',
+    sku: 'NGF-SOF-D00001',
+    category: 'sofas',
+    material: 'Sheesham Wood',
+    colour: 'Brown',
+    images: 2,
+  },
+  /** Price on enquiry and made to order: the other side of every pricing branch. Category `dining-tables`. */
+  diningTable: { slug: 'demo-8-seater-dining-table', category: 'dining-tables' },
+  /** A DRAFT, and therefore the control: it must appear on no public surface and in no public count. */
+  draftChair: { slug: 'demo-accent-chair', category: 'accent-chairs' },
+} as const;
+
+/** Categories the fixture catalogue publishes into. */
+export const POPULATED_CATEGORIES = ['sofas', 'dining-tables'] as const;
+
+/** Published fixture products, so a count assertion has one place to change. */
+export const PUBLISHED_FIXTURE_COUNT = 2;
+
+/** A category with no published product, so the designed empty state stays under test. */
+export const EMPTY_CATEGORY = 'office';
+
 export interface E2ECredentials {
   email: string;
   password: string;

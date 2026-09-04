@@ -802,10 +802,10 @@ Design references below name the section of `design.md` the task follows. Requir
 ### Task 23 outcome
 
 The pass is complete and every gate is green: `validate:content`, `check`, `lint`, `test`
-(51 files / 851 assertions), `build` with all seven post-build audits, `size-limit`, `scan:secrets`,
-and `test:e2e` (223 passed, 11 skipped, two consecutive clean runs).
+(52 files / 854 assertions), `build` with all seven post-build audits, `size-limit`, `scan:secrets`,
+and `test:e2e` (240 passed, 9 skipped, repeated clean runs).
 
-**It found nine real defects, all fixed in this branch.** The ones worth naming, because each was
+**It found twelve real defects, all fixed in this branch.** The ones worth naming, because each was
 invisible to the unit suite by construction:
 
 1. **Duplicate DOM ids on every page.** `preact/compat`'s `useId` is derived from a vnode's position
@@ -828,10 +828,34 @@ invisible to the unit suite by construction:
    filename — the asset store answers it, not the route.
 7. Footer links and the wordmark were under the 44 px touch floor; unauthenticated `/admin/**`
    redirects carried no `x-robots-tag`; and two CSS classes were doing double duty.
+8. **`ResponsiveImage` emitted an inline `onerror`**, which `script-src 'self'` refuses to run — so
+   every product image on the site would have lost its load-failure fallback, and `audit-csp` failed
+   the build with one violation per image the moment a product existed. Replaced with a delegated
+   listener, and `tests/unit/security.inline-handlers.test.ts` now scans the templates statically so
+   the check no longer depends on the current content rendering the component.
+9. **Three defects in the product surfaces themselves**: the new-arrivals rail put `role="group"` on a
+   `<ul>`, which replaces the implicit list role and cost its items their list semantics; the trending
+   ordinal coloured *text* with champagne on a light background, a pairing this project's own
+   `tokens.contrast.test.ts` already lists as decorative-only and asserts fails contrast; and the
+   catalogue grid followed the `h1` with `h3` card titles, skipping a heading level and leaving the
+   product list with no heading of its own.
 
 Both Copilot review findings on this branch are also resolved: the `useReveal` observer leak, the
 `Math.random` crypto fallbacks (removed — they now fail closed), and `hero-image.ts` accepting `NaN`,
 `Infinity`, zero and negative intrinsic dimensions.
+
+**The product seam.** 23.2 requires the e2e suite to use only `tests/fixtures/` products and never to
+write a demo product into `data/products/`. `scripts/prepare-e2e.ts` writes those fixtures out as JSON
+into the git-ignored `.e2e/products/` and `src/content.config.ts` reads the products collection from
+there when `NGF_PRODUCTS_DIR` is set; unset — every build CI or Cloudflare runs — it reads
+`data/products/`, which still holds nothing but `.gitkeep`. Two fixtures are `PUBLISHED` and one is a
+`DRAFT`, so "unpublished appears on no public surface and in no public count" is asserted rather than
+assumed, and they publish into two categories only, so the other seven keep exercising the designed
+empty state in the same run.
+
+That seam is what found four of the nine defects above — the inline `onerror`, the `role="group"` on a
+list, the champagne ordinal, and the skipped heading level were all in code that no build had ever
+rendered.
 
 **Two deliberate deviations from the sub-task text.**
 

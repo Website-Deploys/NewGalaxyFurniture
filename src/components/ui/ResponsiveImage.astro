@@ -102,7 +102,6 @@ const ratio = `${image.width} / ${image.height}`;
     loading={attributes.loading}
     decoding={attributes.decoding}
     fetchpriority={attributes.fetchpriority}
-    onerror="this.closest('.ngf-image')?.setAttribute('data-failed','true')"
   />
   {
     /*
@@ -115,6 +114,51 @@ const ratio = `${image.width} / ${image.height}`;
     {alt === '' ? 'Photograph unavailable' : alt}
   </p>
 </div>
+
+{
+  /*
+  Why this is a script and not an `onerror` attribute.
+
+  It used to be `onerror="this.closest('.ngf-image')?.setAttribute('data-failed','true')"`, which is
+  an inline event handler — and the deployed policy is `script-src 'self'` plus four hashes, with no
+  `'unsafe-inline'`. The browser refuses to run it. The failure was invisible for as long as the
+  catalogue was empty, because no `ResponsiveImage` was ever rendered: the moment a product exists,
+  every product image on the site loses its fallback tile and `scripts/audit-csp.ts` fails the build
+  with one violation per image. Both were true and neither was observable until the end-to-end suite
+  built the fixture catalogue.
+
+  Astro hoists this once per page however many images are on it, and `assetsInlineLimit: 0` emits it
+  as an external module — which the policy allows.
+
+  Two halves, because a deferred module can miss an image that has already failed:
+
+  - a capturing listener on the document, since `error` does not bubble. It covers images added later
+    by a hydrating island, which is how every gallery and card rail arrives.
+  - a sweep of the images already in the document, because one that failed while the parser was still
+    working would never fire an event this listener could hear. `complete` with a zero
+    `naturalWidth` is exactly the "finished, and there is nothing there" state.
+*/
+}
+<script>
+  const FAILED = 'data-failed';
+
+  function markFailed(image: HTMLImageElement): void {
+    image.closest('.ngf-image')?.setAttribute(FAILED, 'true');
+  }
+
+  document.addEventListener(
+    'error',
+    (event) => {
+      const target = event.target;
+      if (target instanceof HTMLImageElement) markFailed(target);
+    },
+    true,
+  );
+
+  for (const image of document.querySelectorAll<HTMLImageElement>('.ngf-image img')) {
+    if (image.complete && image.naturalWidth === 0) markFailed(image);
+  }
+</script>
 
 <style>
   .ngf-image {

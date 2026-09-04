@@ -125,8 +125,17 @@ const basisNote =
     text-decoration: none;
   }
 
+  /*
+   * Walnut, not champagne.
+   *
+   * The ordinal is *text* — "1", "2", "3" beside each row — and champagne on a light background is
+   * 2.79:1. The project's own palette test already says so: `tokens.contrast.test.ts` lists
+   * champagne-on-ivory and champagne-on-cream as decorative-only pairings and asserts they fail both
+   * the body and the UI-stroke thresholds. Using one to colour a number was a rule this codebase had
+   * already written down. Walnut on ivory is 6.5:1 and is the palette's warm accent for exactly this.
+   */
   .ngf-trending-ordinal {
-    color: var(--color-champagne);
+    color: var(--color-walnut);
     font-family: var(--font-display);
     font-size: var(--text-h3);
     font-variant-numeric: tabular-nums;

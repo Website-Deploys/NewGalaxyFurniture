@@ -118,6 +118,16 @@ const meta = pageMeta(Astro, {
           />
         ) : (
           <>
+            {/*
+            A heading for the grid, announced but not drawn.
+
+            Every `ProductCard` titles itself with an `h3`, which is right on the homepage where each
+            rail sits under its own `h2`. Here the grid follows the `h1` directly, so the page jumped
+            from `h1` to `h3` — a skipped level, and for anyone navigating by heading the list of
+            products had no heading at all. Visually hidden rather than shown because the `h1` and the
+            count above it already say this in the design.
+          */}
+            <h2 class="sr-only">Products</h2>
             <ul class="ngf-grid" id="ngf-collection-grid" data-reveal data-motion-group>
               {products.map((product, position) => (
                 <li>

@@ -21,6 +21,14 @@
  *   running Worker opens a database that is already migrated and already seeded rather than having
  *   rows written underneath it.
  *
+ * It also materialises the fixture catalogue. The end-to-end suite has to be able to assert a real
+ * product detail page, a real product card, a filter with real values and a `Product` block in the
+ * structured data — and the spec's rule is that a demo product lives only in `tests/fixtures/` and is
+ * never written into `data/products/`. So the fixtures are written as JSON into a git-ignored
+ * directory and `src/content.config.ts` reads the collection from there for that build only, via
+ * `NGF_PRODUCTS_DIR`. `data/products/` is never touched, and a build with the variable unset — every
+ * build CI or Cloudflare runs — reads the repository exactly as before.
+ *
  * Run by `npm run e2e:prepare`; not part of any CI gate and not needed for `npm test`.
  *
  * Design: Testing Strategy → End-to-end testing.
@@ -32,6 +40,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { hashPassword } from '../src/lib/auth/password';
+import { demoProducts } from '../tests/fixtures/products';
 
 const DB_BINDING = 'DB';
 
@@ -42,6 +51,9 @@ const E2E_USER_ID = 'usr_e2elocalonly';
 
 /** Git-ignored, so the generated password never reaches a commit. */
 export const CREDENTIALS_PATH = join('test-results', 'e2e-admin.json');
+
+/** Git-ignored, and the only place a demo product is ever written. Mirrors `playwright.config.ts`. */
+export const PRODUCTS_DIR = join('.e2e', 'products');
 
 function fail(message: string): never {
   process.stderr.write(`prepare-e2e: ${message}\n`);
@@ -63,6 +75,25 @@ function generatePassword(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return Buffer.from(bytes).toString('base64url');
+}
+
+/**
+ * Write the fixture catalogue out as content files.
+ *
+ * A full rewrite each time: the directory is removed first, so a fixture renamed or deleted in
+ * `tests/fixtures/products.ts` cannot leave a stale product behind to be found by a test that no
+ * longer expects it. One file per product at `{slug}.json`, which is the filename convention the
+ * glob loader's `generateId` and the admin write pipeline both use.
+ */
+function writeFixtureProducts(): void {
+  rmSync(PRODUCTS_DIR, { recursive: true, force: true });
+  mkdirSync(PRODUCTS_DIR, { recursive: true });
+  for (const product of demoProducts) {
+    writeFileSync(
+      join(PRODUCTS_DIR, `${product.slug}.json`),
+      `${JSON.stringify(product, null, 2)}\n`,
+    );
+  }
 }
 
 async function main(): Promise<void> {
@@ -113,9 +144,22 @@ async function main(): Promise<void> {
     { mode: 0o600 },
   );
 
+  // 4. The fixture catalogue, for the product-dependent assertions.
+  //
+  // Astro's content-layer cache goes first. It is keyed by collection name and not by the directory
+  // the loader read from, so a store left behind by an earlier build — with or without the fixtures —
+  // would be reused and the collection would not reflect what is on disk now. Clearing it is what
+  // makes this run's catalogue exactly the fixtures and nothing else. `tests/e2e/global-teardown.ts`
+  // clears it again afterwards, so the next ordinary build cannot inherit them.
+  rmSync(join(process.cwd(), 'node_modules', '.astro'), { recursive: true, force: true });
+  writeFixtureProducts();
+
+  const published = demoProducts.filter((product) => product.status === 'PUBLISHED').length;
   process.stdout.write(
     `prepare-e2e — local database migrated; ${E2E_ROLE} account ${E2E_EMAIL} seeded; ` +
-      `credentials written to ${CREDENTIALS_PATH} (git-ignored).\n`,
+      `credentials written to ${CREDENTIALS_PATH} (git-ignored); ` +
+      `${String(demoProducts.length)} fixture product(s) (${String(published)} published) written to ` +
+      `${PRODUCTS_DIR} (git-ignored — data/products/ untouched).\n`,
   );
 }
 

@@ -48,12 +48,29 @@ function heightFor(width: number): number {
   return 900;
 }
 
+/**
+ * Where `e2e:prepare` writes the fixture products, and where the build reads them from.
+ *
+ * Git-ignored, rebuilt on every run, and never `data/products/` — the spec's rule is that a demo
+ * product exists only under `tests/fixtures/`, and this keeps it true while still letting the suite
+ * assert a real product page.
+ */
+const PRODUCTS_DIR = '.e2e/products';
+
 /** The specs whose subject is the viewport itself, and so run at every width. */
 const WIDTH_SENSITIVE = /(responsive|motion-trace)\.spec\.ts$/;
 
 export default defineConfig({
   testDir: './tests/e2e',
   outputDir: './test-results',
+  /*
+   * Deletes the fixture catalogue and Astro's content-layer cache when the run finishes.
+   *
+   * Astro caches a collection by name rather than by the directory it was loaded from, so without
+   * this the next ordinary `npm run build` reuses the store this run populated and quietly emits the
+   * demo product pages. See the file for the full account.
+   */
+  globalTeardown: './tests/e2e/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
@@ -127,5 +144,10 @@ export default defineConfig({
     timeout: 300_000,
     stdout: 'pipe',
     stderr: 'pipe',
+    // The product seam. `e2e:prepare` writes `tests/fixtures/products.ts` into this git-ignored
+    // directory and `src/content.config.ts` reads the collection from it, so the catalogue, a detail
+    // page and the structured data can all be asserted against real products without a demo product
+    // ever reaching `data/products/`. Unset anywhere else, which is every build that ships.
+    env: { NGF_PRODUCTS_DIR: PRODUCTS_DIR },
   },
 });

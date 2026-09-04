@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-import { ADMIN_PAGES, CATEGORY_SLUGS, PUBLIC_PAGES, jsonLdTypes, metaContent } from './helpers';
+import {
+  ADMIN_PAGES,
+  CATEGORY_SLUGS,
+  FIXTURES,
+  PUBLIC_PAGES,
+  PUBLISHED_FIXTURE_COUNT,
+  jsonLdTypes,
+  metaContent,
+} from './helpers';
 
 /**
  * The SEO assertions.
@@ -105,6 +113,30 @@ test('every page has a unique title and description, within the length bounds', 
   }
 });
 
+test('a product page has its own title, description and canonical', async ({ page, request }) => {
+  const origin = await configuredOrigin(request);
+  const seen = new Set<string>();
+
+  for (const slug of [FIXTURES.sofa.slug, FIXTURES.diningTable.slug]) {
+    await page.goto(`/product/${slug}`, { waitUntil: 'domcontentloaded' });
+
+    const title = await page.title();
+    expect(title.length, `${slug} title is ${String(title.length)} chars`).toBeLessThanOrEqual(
+      TITLE_MAX,
+    );
+    expect(seen.has(title), `${slug} repeats another product's title`).toBe(false);
+    seen.add(title);
+
+    const description = String(await metaContent(page, 'description'));
+    expect(description.length).toBeLessThanOrEqual(DESCRIPTION_MAX);
+    expect(description.trim().length).toBeGreaterThan(20);
+
+    const canonical = String(await page.locator('link[rel="canonical"]').getAttribute('href'));
+    expect(new URL(canonical).origin).toBe(origin);
+    expect(new URL(canonical).pathname).toBe(`/product/${slug}`);
+  }
+});
+
 test('structured data is present and valid where the design places it', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   const home = await jsonLdTypes(page);
@@ -126,6 +158,14 @@ test('structured data is present and valid where the design places it', async ({
 
   await page.goto('/collection', { waitUntil: 'domcontentloaded' });
   expect(await jsonLdTypes(page)).toContain('ItemList');
+  // The list names the published products and nothing else.
+  const itemList = JSON.stringify(
+    (await page.locator('script[type="application/ld+json"]').allTextContents())
+      .map((text) => JSON.parse(text) as Record<string, unknown>)
+      .find((block) => block['@type'] === 'ItemList'),
+  );
+  expect(itemList).toContain(FIXTURES.sofa.slug);
+  expect(itemList).not.toContain(FIXTURES.draftChair.slug);
 
   await page.goto(`/collection/${CATEGORY_SLUGS[0]}`, { waitUntil: 'domcontentloaded' });
   const category = await jsonLdTypes(page);
@@ -203,8 +243,14 @@ test('sitemap.xml is fetchable, complete, and free of anything unpublished', asy
   }
   // No duplicate entries.
   expect(paths.size).toBe(locations.length);
-  // No product is published, so no product URL may appear.
-  expect([...paths].filter((path) => path.startsWith('/product/'))).toStrictEqual([]);
+  // Exactly the published products, and only those: a draft in the sitemap is an invitation to index
+  // something that answers 404.
+  const productPaths = [...paths].filter((path) => path.startsWith('/product/')).sort();
+  expect(productPaths).toStrictEqual(
+    [`/product/${FIXTURES.diningTable.slug}`, `/product/${FIXTURES.sofa.slug}`].sort(),
+  );
+  expect(productPaths).toHaveLength(PUBLISHED_FIXTURE_COUNT);
+  expect(xml, 'the sitemap lists a draft product').not.toContain(FIXTURES.draftChair.slug);
 });
 
 test('robots.txt disallows the private surfaces and points at the sitemap', async ({ request }) => {

@@ -52,13 +52,18 @@ const composition = compositionFor('newArrivals');
       />
 
       {/*
-        `tabindex="0"` plus a `role`/label makes the scroll container itself reachable, so a keyboard
+        `tabindex="0"` plus an `aria-label` makes the scroll container itself reachable, so a keyboard
         visitor can scroll the rail with the arrow keys instead of only tabbing card to card.
+
+        It carried `role="group"` as well, which was the defect: an explicit role *replaces* the
+        implicit one, so the `ul` stopped being a list and its `li` children stopped being list items —
+        which is an axe `listitem` violation and, more to the point, costs a screen-reader user the
+        item count and position they would otherwise be given. A `ul` takes `aria-label` directly, so
+        the name and the keyboard reachability both survive without the role.
       */}
       <ul
         class="ngf-arrivals-rail"
         tabindex="0"
-        role="group"
         aria-label={section.heading ?? 'New arrivals'}
         data-reveal
         data-motion-group

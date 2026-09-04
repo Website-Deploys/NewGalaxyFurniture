@@ -261,7 +261,7 @@ npm run preview          # wrangler dev on http://localhost:8788
 | `npm run format`                                  | Prettier write                                                                                                                         |
 | `npm test`                                        | Vitest — unit and property suites                                                                                                      |
 | `npm run test:e2e`                                | Playwright (see [Testing](#testing) — browsers must be installed first)                                                                |
-| `npm run e2e:prepare`                             | Migrates the **local** D1 and seeds a throwaway admin account for the e2e suite (`--local` only)                                       |
+| `npm run e2e:prepare`                             | Migrates the **local** D1, seeds a throwaway admin account, writes the fixture catalogue (`--local` only)                              |
 | `npm run e2e:preview`                             | `npm run preview` with `PUBLIC_SITE_URL` pointed at `localhost:8788`, so the admin's origin check passes                               |
 | `npm run validate:content`                        | Zod over every file in `data/**`                                                                                                       |
 | `npm run size-limit`                              | Per-route asset budgets                                                                                                                |
@@ -813,8 +813,27 @@ distribution without `apt-get`, `npx playwright install chromium` alone is enoug
 dependency step needs a package manager.)
 
 `npm run test:e2e` needs nothing else set up. Its `webServer` runs `e2e:prepare` → `build` →
-`e2e:preview`, so the local D1 is migrated, a throwaway `owner` account exists, and the Worker is
-serving `dist/` before the first test starts. `e2e:prepare` touches `--local` state only: it wipes
+`e2e:preview`, so the local D1 is migrated, a throwaway `owner` account exists, the fixture catalogue
+is in place, and the Worker is serving `dist/` before the first test starts.
+
+**The product seam.** The catalogue ships empty and `data/products/` must stay that way, but the suite
+still has to assert a real product page, a real card, a filter with real values and a `Product` block
+in the structured data. So `e2e:prepare` writes `tests/fixtures/products.ts` out as JSON into the
+git-ignored `.e2e/products/`, and `src/content.config.ts` reads the products collection from there
+when `NGF_PRODUCTS_DIR` is set. Unset — which is every build CI or Cloudflare runs — it reads
+`data/products/` exactly as before. Nothing invents a product and nothing is written to the
+repository.
+
+Two of the three fixtures are `PUBLISHED` and one is a `DRAFT`, which is deliberate: the draft is the
+control for "unpublished appears on no public surface and in no public count". They publish into
+`sofas` and `dining-tables` only, so the other seven categories keep exercising the designed empty
+state in the same run.
+
+Astro caches a content collection by name rather than by the directory it was loaded from, so
+`e2e:prepare` clears `node_modules/.astro` on the way in and `tests/e2e/global-teardown.ts` clears it
+and `.e2e/` on the way out. Without that, the next ordinary `npm run build` reuses the store the suite
+populated and quietly emits the demo product pages while the glob loader reports `data/products` as
+empty. `e2e:prepare` touches `--local` state only: it wipes
 `.wrangler/state/v3/kv` so the rate limiters do not carry counters between runs, and writes the
 generated password to the git-ignored `test-results/e2e-admin.json`. No credential is committed and
 nothing it runs can reach a remote database.

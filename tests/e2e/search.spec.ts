@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { CATEGORY_SLUGS, desktopSearch, focusSearch, openSearch } from './helpers';
+import { CATEGORY_SLUGS, FIXTURES, desktopSearch, focusSearch, openSearch } from './helpers';
 
 /**
  * Search and live suggestions.
@@ -69,17 +69,67 @@ test('the index is fetched once, however much is typed', async ({ page }) => {
   expect(requested.length, `the index was fetched ${String(requested.length)} times`).toBe(1);
 });
 
+test('a product query suggests the product, and the suggestion navigates to it', async ({
+  page,
+}) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await focusSearch(page);
+  const search = desktopSearch(page);
+  const input = search.getByRole('combobox');
+  await input.fill('L-Shape');
+
+  const products = search.locator('[role="option"][data-kind="product"]');
+  await expect(products.first()).toBeVisible({ timeout: 10_000 });
+  await expect(products.first()).toContainText(FIXTURES.sofa.name);
+
+  // The live region says how many, in words, for anyone not watching the list.
+  await expect(search.locator('[role="status"]')).toContainText(/suggestion/);
+
+  // Driven from the keyboard, exactly as the combobox contract promises.
+  await input.press('ArrowDown');
+  await expect(input).toHaveAttribute('aria-activedescendant', /-option-0$/);
+  await input.press('Enter');
+  await page.waitForURL(`**/product/${FIXTURES.sofa.slug}`);
+  await expect(page.locator('[data-product]')).toHaveAttribute('data-product', FIXTURES.sofa.slug);
+});
+
+test('a product is findable by SKU, by material and by colour', async ({ page }) => {
+  // Requirement 4.2: the box is not a name search. Each of these is a different field on the same
+  // product, and each must reach it.
+  for (const query of [FIXTURES.sofa.sku, FIXTURES.sofa.material, FIXTURES.sofa.colour]) {
+    await page.goto('/', { waitUntil: 'load' });
+    await focusSearch(page);
+    const search = desktopSearch(page);
+    await search.getByRole('combobox').fill(query);
+    const products = search.locator('[role="option"][data-kind="product"]');
+    await expect(products.first(), `"${query}" found no product`).toBeVisible({ timeout: 10_000 });
+    await expect(products.first()).toContainText(FIXTURES.sofa.name);
+  }
+});
+
+test('a draft product is not in the search index', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await focusSearch(page);
+  const search = desktopSearch(page);
+  await search.getByRole('combobox').fill('accent chair');
+  // Give the debounce and the query a moment to settle before asserting an absence.
+  await page.waitForTimeout(600);
+  await expect(
+    search.locator(`[role="option"] a[href*="${FIXTURES.draftChair.slug}"]`),
+  ).toHaveCount(0);
+});
+
 test('a query that matches nothing says so and offers the categories instead', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await focusSearch(page);
   const search = desktopSearch(page);
   const input = search.getByRole('combobox');
-  await input.fill('teak four poster');
+  await input.fill('zzqx nonexistent piece');
 
   const note = search.locator('.ngf-search-note');
   await expect(note).toBeVisible({ timeout: 10_000 });
   await expect(note).toContainText('Nothing matched');
-  await expect(note).toContainText('teak four poster');
+  await expect(note).toContainText('zzqx nonexistent piece');
 
   const shortcuts = search.locator('.ngf-search-shortcuts a');
   await expect(shortcuts).toHaveCount(CATEGORY_SLUGS.length);
@@ -94,7 +144,7 @@ test('a category shortcut from the search panel navigates to that category', asy
   await page.goto('/', { waitUntil: 'load' });
   await focusSearch(page);
   const search = desktopSearch(page);
-  await search.getByRole('combobox').fill('something unmatched');
+  await search.getByRole('combobox').fill('zzqx unmatched');
   await expect(search.locator('.ngf-search-shortcuts a').first()).toBeVisible({ timeout: 10_000 });
   await search.locator(`.ngf-search-shortcuts a[href="/collection/${CATEGORY_SLUGS[0]}"]`).click();
   await page.waitForURL(`**/collection/${CATEGORY_SLUGS[0]}`);
@@ -105,12 +155,12 @@ test('Enter with no active suggestion runs the query on the catalogue page', asy
   await page.goto('/', { waitUntil: 'load' });
   await focusSearch(page);
   const input = desktopSearch(page).getByRole('combobox');
-  await input.fill('NGF-SOF');
+  await input.fill('zzqx no such piece');
   await input.press('Enter');
   await page.waitForURL(/\/collection\?/);
-  expect(new URL(page.url()).searchParams.get('q')).toBe('NGF-SOF');
+  expect(new URL(page.url()).searchParams.get('q')).toBe('zzqx no such piece');
   // And the catalogue page reports the outcome rather than showing a bare grid.
-  await expect(page.locator('[data-ngf-empty-state]')).toHaveCount(1);
+  await expect(page.locator('#ngf-collection-nomatch')).toBeVisible();
 });
 
 test('a committed search is offered back as a recent search', async ({ page }) => {
