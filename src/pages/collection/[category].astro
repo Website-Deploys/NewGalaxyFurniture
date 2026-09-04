@@ -104,33 +104,50 @@ const meta = pageMeta(Astro, {
 <BaseLayout meta={meta} analytics={{ event: { type: 'category_view', entity: category.slug } }}>
   <ImagePreload slot="head" hint={leadPreload} />
   <div class="ngf-catalogue">
-    <div class="ngf-catalogue-head" data-reveal data-motion-group>
+    <div class="ngf-catalogue-head ngf-cathero" data-reveal data-motion-group>
+      <div class="ngf-cathero-copy">
+        <Breadcrumbs items={crumbs} class="ngf-catalogue-breadcrumbs" />
+        {/* The eyebrow: a static label in the shared small-caps + hairline-dash language. It names
+            the surface, it makes no claim, and it is what tells a visitor this is one opener in a
+            set of category catalogues rather than the generic index. */}
+        <p class="ngf-cathero-eyebrow">Collection</p>
+        <h1>{category.name}</h1>
+        <p class="ngf-catalogue-intro">{category.shortDescription}</p>
+        {
+          /*
+          The category's location paragraph, when the content file carries one (Requirement 23.17).
+          Genuine sentences about where the furniture is made and where it is delivered — one natural
+          placement of a target phrase, no repetition, and the keyword-density lint holds the page to
+          2%. Absent on a category whose file has no `intro`, rather than filled with boilerplate.
+        */
+        }
+        {category.intro !== undefined && <p class="ngf-catalogue-intro">{category.intro}</p>}
+        <p class="ngf-catalogue-count">
+          {count === 1 ? '1 product' : `${count} products`}
+          {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
+        </p>
+      </div>
+
       {
         /*
         The category's own glyph, from the schema's `illustration` key — the same drawing the
-        homepage tile uses, at the head of the category it names. `trigger="none"`: it draws as part
-        of the header's single group reveal.
+        homepage tile uses, now at showroom scale on a drawing-board panel: a cream ground with a
+        faint 24px hairline grid, a 1px taupe border, corner ticks and a thin dimension rule, so each
+        category reads as its own catalogue opener rather than a shrunk icon. `trigger="none"`: it
+        draws as part of the header's single group reveal, so the whole hero counts as one animating
+        element against the per-section budget. Decorative, so `aria-hidden`.
       */
       }
-      <span class="ngf-catalogue-glyph">
-        <CategoryIllustration illustration={category.illustration} strokeWidth={1} trigger="none" />
-      </span>
-      <Breadcrumbs items={crumbs} class="ngf-catalogue-breadcrumbs" />
-      <h1>{category.name}</h1>
-      <p class="ngf-catalogue-intro">{category.shortDescription}</p>
-      {
-        /*
-        The category's location paragraph, when the content file carries one (Requirement 23.17).
-        Genuine sentences about where the furniture is made and where it is delivered — one natural
-        placement of a target phrase, no repetition, and the keyword-density lint holds the page to
-        2%. Absent on a category whose file has no `intro`, rather than filled with boilerplate.
-      */
-      }
-      {category.intro !== undefined && <p class="ngf-catalogue-intro">{category.intro}</p>}
-      <p class="ngf-catalogue-count">
-        {count === 1 ? '1 product' : `${count} products`}
-        {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
-      </p>
+      <div class="ngf-cathero-panel" aria-hidden="true">
+        <span class="ngf-cathero-glyph">
+          <CategoryIllustration
+            illustration={category.illustration}
+            strokeWidth={1}
+            trigger="none"
+          />
+        </span>
+        <span class="ngf-cathero-rule"></span>
+      </div>
     </div>
 
     <CatalogueControls

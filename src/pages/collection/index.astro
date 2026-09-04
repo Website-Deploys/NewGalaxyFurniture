@@ -78,20 +78,32 @@ const meta = pageMeta(Astro, {
 <BaseLayout meta={meta}>
   <ImagePreload slot="head" hint={leadPreload} />
   <div class="ngf-catalogue">
-    <div class="ngf-catalogue-head" data-reveal>
-      <h1>Collection</h1>
-      <p class="ngf-catalogue-intro">
-        Every piece we currently make, in one place. Filter by what matters for your room, then
-        enquire on WhatsApp or by phone.
-      </p>
-      <p class="ngf-catalogue-count">
-        {count === 1 ? '1 product' : `${count} products`}
-        {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
-      </p>
-      {/* One decorative contour, drawn as the header arrives. Decorative, so `aria-hidden`. */}
-      <span class="ngf-catalogue-ornament">
-        <AnimatedFurnitureLine strokeWidth={1} trigger="none" />
-      </span>
+    <div class="ngf-catalogue-head ngf-cathero ngf-cathero-index" data-reveal data-motion-group>
+      <div class="ngf-cathero-copy">
+        <p class="ngf-cathero-eyebrow">The full catalogue</p>
+        <h1>Collection</h1>
+        <p class="ngf-catalogue-intro">
+          Every piece we currently make, in one place. Filter by what matters for your room, then
+          enquire on WhatsApp or by phone.
+        </p>
+        <p class="ngf-catalogue-count">
+          {count === 1 ? '1 product' : `${count} products`}
+          {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
+        </p>
+      </div>
+
+      {/*
+        The site's required render of the `furniture-line` primitive, now presented on the same
+        drawing-board panel as the category heroes so `/collection` opens as a premium catalogue
+        landing rather than a bare heading. Decorative, so `aria-hidden`; `trigger="none"` folds it
+        into the hero's single group reveal.
+      */}
+      <div class="ngf-cathero-panel ngf-cathero-panel-wide" aria-hidden="true">
+        <span class="ngf-cathero-glyph">
+          <AnimatedFurnitureLine strokeWidth={1} trigger="none" />
+        </span>
+        <span class="ngf-cathero-rule"></span>
+      </div>
     </div>
 
     {

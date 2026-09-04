@@ -887,31 +887,6 @@
   grid-column: 1 / -1;
 }
 
-/*
- * The catalogue header's illustration slots: a decorative contour on `/collection`, and the
- * category's own glyph on `/collection/{slug}`. Both are taupe on ivory and both are sized in
- * absolute units so a wide viewport does not scale a hairline drawing up into a poster.
- */
-.ngf-catalogue-ornament {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .ngf-catalogue-ornament {
-    display: block;
-    width: 240px;
-    margin-top: 1rem;
-    color: var(--color-taupe);
-  }
-}
-
-.ngf-catalogue-glyph {
-  display: block;
-  width: 64px;
-  margin-bottom: 0.5rem;
-  color: var(--color-taupe);
-}
-
 /**
  * The h1 token's own floor (`clamp(2.25rem, …)` = 36 px) is wider than a 320 px column can hold for
  * a ten-character word like "Collection". The token is a verbatim transcription of the design and is
@@ -951,6 +926,182 @@
 .ngf-catalogue-breadcrumbs {
   font-size: var(--text-small);
   color: var(--color-walnut);
+}
+
+/* Catalogue hero ---------------------------------------------------------- *
+ *
+ * The premium catalogue opener shared by `/collection` and every `/collection/{slug}`. A copy
+ * column — eyebrow, breadcrumb, title, the category's own supporting copy, the honest count — beside
+ * a drawing-board panel that holds the category's line illustration at showroom scale. It is the
+ * same visual language as the homepage's `.ngf-story-panel`: a cream ground ruled with a faint 24 px
+ * hairline grid, a 1 px taupe border, `--radius-xl`, and a subtle technical treatment (corner ticks
+ * and a thin dimension rule) drawn entirely in CSS. Category pages get their own glyph here, so they
+ * read as distinct catalogue openers rather than clones of the index.
+ */
+.ngf-cathero {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .ngf-cathero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+
+  /* The index's contour panel is wider than tall, so it gets a touch more room. */
+  .ngf-cathero-index {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.ngf-cathero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* The eyebrow: the shared small-caps letterspaced walnut label with a leading hairline dash. */
+.ngf-cathero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ngf-cathero-eyebrow::before {
+  display: block;
+  width: 1.75rem;
+  height: 1px;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+/* The breadcrumb sits above the eyebrow on a category page; keep the two clear of each other. */
+.ngf-cathero .ngf-catalogue-breadcrumbs {
+  margin-bottom: 0.25rem;
+}
+
+/*
+ * The drawing-board panel. `aspect-ratio` holds a fixed frame so the illustration never reflows the
+ * hero, and the sizes are capped in absolute units so a wide viewport does not scale a hairline
+ * drawing up into a poster.
+ */
+.ngf-cathero-panel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  aspect-ratio: 4 / 3;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  overflow: hidden;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-cream);
+  background-image:
+    linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+  background-position: center;
+  background-size: 24px 24px;
+  box-shadow: var(--shadow-level1);
+}
+
+/*
+ * The four corner ticks: an architect's registration marks, drawn as the panel's own inset border
+ * corners via a single element's four sides is not possible, so each panel draws two L-marks with a
+ * repeating-free pair of gradients kept simple — instead we use `::before`/`::after` insets.
+ */
+.ngf-cathero-panel::before,
+.ngf-cathero-panel::after {
+  position: absolute;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 0 solid var(--color-taupe);
+  content: '';
+  pointer-events: none;
+}
+
+.ngf-cathero-panel::before {
+  top: 0.75rem;
+  left: 0.75rem;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.ngf-cathero-panel::after {
+  right: 0.75rem;
+  bottom: 0.75rem;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+
+.ngf-cathero-glyph {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  color: var(--color-walnut);
+}
+
+.ngf-cathero-glyph :global(svg),
+.ngf-cathero-glyph svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The wide contour on the index panel can run a little larger — it is a landscape drawing. */
+.ngf-cathero-panel-wide .ngf-cathero-glyph {
+  max-width: 320px;
+}
+
+/*
+ * A thin dimension rule beneath the drawing: a hairline with a tick at each end, the technical
+ * treatment the brief asks for, drawn in CSS only. Scaled out from centre on reveal via `transform`
+ * so it costs no layout, and held at full width under reduced motion.
+ */
+.ngf-cathero-rule {
+  position: absolute;
+  right: clamp(2rem, 8%, 3.5rem);
+  bottom: clamp(1.25rem, 6%, 2rem);
+  left: clamp(2rem, 8%, 3.5rem);
+  height: 1px;
+  background-color: var(--color-taupe);
+  opacity: 0.7;
+  transform: scaleX(1);
+  transform-origin: center;
+  transition: transform var(--dur-story) var(--ease-draw);
+}
+
+.ngf-cathero-rule::before,
+.ngf-cathero-rule::after {
+  position: absolute;
+  bottom: -0.2rem;
+  width: 1px;
+  height: 0.45rem;
+  background-color: var(--color-taupe);
+  content: '';
+}
+
+.ngf-cathero-rule::before {
+  left: 0;
+}
+
+.ngf-cathero-rule::after {
+  right: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-cathero-rule {
+    transform: scaleX(0);
+  }
 }
 
 .ngf-grid {
