@@ -100,6 +100,62 @@ describe('the PDP information panel composes the omit-when-empty components (Req
     expect(PRODUCT_DETAIL).toContain('gallerySlot');
     expect(PDP_PAGE).toContain('gallerySlot={galleryImages.length > 0}');
   });
+
+  it('gates the spec panel and its eyebrow on having at least one spec (Requirement 4.3)', () => {
+    // A spec-less product must not show a labelled but empty drawing-board frame: the panel is
+    // gated on `hasSpecs`, computed from the same fields SpecList renders. Reverting the gate (an
+    // always-rendered `<section class="ngf-pdp-specpanel">`) fails this.
+    expect(PRODUCT_DETAIL).toMatch(/const hasSpecs =/);
+    // The emptiness test mirrors SpecList's own fields, so it cannot drift from what is displayed.
+    for (const field of [
+      'product.material',
+      'product.color',
+      'product.availableColors',
+      'product.size',
+    ]) {
+      expect(PRODUCT_DETAIL).toContain(field);
+    }
+    expect(PRODUCT_DETAIL).toMatch(/hasDimensions/);
+    // The panel renders only inside the guard — never unconditionally.
+    expect(PRODUCT_DETAIL).toMatch(
+      /hasSpecs &&\s*\(\s*<section class="ngf-pdp-specpanel"/,
+    );
+    expect(PRODUCT_DETAIL).not.toMatch(
+      /}\s*\n\s*<section class="ngf-pdp-specpanel"/,
+    );
+  });
+});
+
+describe('the PDP carries an animated, reduced-motion-safe technical overlay (issue 1)', () => {
+  it('renders a decorative technical hairline in the always-present gallery column', () => {
+    // The animated technical treatment must survive a spec-less product, so it lives in the media
+    // column (which always renders) rather than in the gated spec panel.
+    const media = PRODUCT_DETAIL.slice(
+      PRODUCT_DETAIL.indexOf('data-reveal="mask"'),
+      PRODUCT_DETAIL.indexOf('class="ngf-pdp-info"'),
+    );
+    expect(media).toContain('class="ngf-pdp-rule"');
+    // Decorative only: no numbers drawn, hidden from assistive tech.
+    expect(media).toContain('aria-hidden="true"');
+  });
+
+  it('animates the rule with transform only, one-shot, reduced-motion-safe', () => {
+    const rule = SHELL_CSS.slice(
+      SHELL_CSS.indexOf('.ngf-pdp-rule {'),
+      SHELL_CSS.indexOf('/* The information card. */'),
+    );
+    // The animating property is transform (scaleX), costing no layout — never width/height.
+    expect(rule).toMatch(/transform:\s*scaleX\(1\)/);
+    expect(rule).toMatch(/transition:\s*transform var\(--dur-story\)/);
+    expect(rule).not.toMatch(/animation:[^;]*infinite/);
+    // Held full-width unless motion is allowed, using the visible-by-default from-state — never
+    // an inverted [data-revealed] selector.
+    expect(rule).toContain('@media (prefers-reduced-motion: no-preference)');
+    expect(rule).toMatch(
+      /\[data-reveal\]:not\(\[data-revealed\]\) \.ngf-pdp-rule \{\s*transform:\s*scaleX\(0\)/,
+    );
+    expect(rule).toContain("data-motion='off'");
+  });
 });
 
 describe('product card motion is CSS-only and reduced-motion-safe (Requirements 1.11–1.14)', () => {

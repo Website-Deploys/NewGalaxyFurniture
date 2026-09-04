@@ -85,6 +85,32 @@ const rest = gallery.filter((image) => image.id !== primary?.id);
 const hasGallerySlot = gallerySlot ?? Astro.slots.has('gallery');
 
 /**
+ * Whether the product carries any specification at all, mirroring exactly the fields `SpecList`
+ * renders (material, colour, available colours, size, dimensions). `SpecList` already drops its
+ * `<dl>` when every row is empty, but the wrapping panel and its "Specifications" eyebrow are
+ * chrome around that list — rendering them for a spec-less product leaves a labelled but empty
+ * drawing-board frame, which is the dishonest inverse of the omit-when-empty rule (Requirement
+ * 4.3). So the panel is gated on the same emptiness test its list uses, and disappears whole when
+ * there is nothing to specify. A dimension is a spec only when a value survives: an operator
+ * `display` string with content, or at least one axis. This states no measurement it was not
+ * given.
+ */
+const dimensions = product.dimensions;
+const hasDimensions =
+  dimensions !== undefined &&
+  ((dimensions.display !== undefined && dimensions.display.trim() !== '') ||
+    dimensions.lengthCm !== undefined ||
+    dimensions.widthCm !== undefined ||
+    dimensions.heightCm !== undefined ||
+    dimensions.depthCm !== undefined);
+const hasSpecs =
+  (product.material !== undefined && product.material.trim() !== '') ||
+  (product.color !== undefined && product.color.trim() !== '') ||
+  product.availableColors.length > 0 ||
+  (product.size !== undefined && product.size.trim() !== '') ||
+  hasDimensions;
+
+/**
  * Requirement 4.12: an out-of-stock product keeps both controls, presented as an availability
  * enquiry. The controls are relabelled and nothing else changes — the destination, the message,
  * and the tap targets are identical, because removing, hiding, or disabling either one is exactly
@@ -160,6 +186,19 @@ const quickEnquireHref = (() => {
         </>
       )
     }
+
+    {
+      /*
+      A decorative technical hairline beneath the gallery — the animated dimension-rule treatment
+      the catalogue heroes already ship (`.ngf-cathero-rule`): a hairline with a tick at each end
+      that scales out from centre on reveal via `transform`, held full-width under reduced motion.
+      It is purely decorative — it draws no numbers and states no measurement, so it is honest for
+      a catalogue with no dimension data — and it lives in the always-rendered gallery column, so
+      the PDP carries the animated technical language on every product, spec-less or not. It sits
+      inside the media column's `data-reveal="mask"`, which supplies the one-shot reveal trigger.
+    */
+    }
+    <div class="ngf-pdp-rule" aria-hidden="true"></div>
   </div>
 
   {
@@ -240,15 +279,22 @@ const quickEnquireHref = (() => {
     {
       /*
       The specification area, framed as a drawing-board panel — the same cream ground and faint
-      hairline grid the catalogue heroes use. The dimension annotation only ever states the values
-      the product actually carries; a piece with no dimensions gets the panel's decorative grid and
-      corner ticks and no invented numbers.
+      hairline grid the catalogue heroes use. It renders only when the product carries at least one
+      spec (`hasSpecs`), so a spec-less piece shows no labelled empty frame: the eyebrow, the panel
+      and its `<dl>` all disappear together, honouring the omit-when-empty rule (Requirement 4.3).
+      The dimension annotation only ever states values the product actually carries — no invented
+      numbers. The animated technical hairline that stands in for a drawing sits on the gallery
+      column above, so it is present on every PDP regardless of whether this data panel is.
     */
     }
-    <section class="ngf-pdp-specpanel" aria-label="Specifications">
-      <p class="ngf-pdp-eyebrow">Specifications</p>
-      <SpecList product={product} class="ngf-pdp-specs" />
-    </section>
+    {
+      hasSpecs && (
+        <section class="ngf-pdp-specpanel" aria-label="Specifications">
+          <p class="ngf-pdp-eyebrow">Specifications</p>
+          <SpecList product={product} class="ngf-pdp-specs" />
+        </section>
+      )
+    }
 
     <VariantList variants={product.variants} class="ngf-pdp-variants" />
 
