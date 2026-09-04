@@ -35,10 +35,10 @@ const serviceArea = settings.serviceArea.filter((area) => area.trim() !== '');
 const year = new Date().getFullYear();
 ---
 
-<footer class="ngf-footer" data-surface="dark">
+<footer class="ngf-footer">
   <div class="ngf-footer-inner">
     <div class="ngf-footer-brand">
-      <BrandMark size="md" tone="light" href="/" />
+      <BrandMark size="md" tone="dark" href="/" />
       <p class="ngf-footer-line">
         Furniture manufacturer and showroom{cityState === '' ? '' : `, ${cityState}`}{
           serviceArea.length === 0 ? '' : ` · Serving ${serviceArea.join(', ')}`

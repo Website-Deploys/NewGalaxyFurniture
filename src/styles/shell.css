@@ -73,16 +73,44 @@
  * Header (Requirements 9.1–9.4)
  * ------------------------------------------------------------------------- */
 
+/*
+ * A light floating pill, not a dark bar.
+ *
+ * The header used to be a full-bleed `--color-obsidian` band, which set the tone for the whole page
+ * before a visitor saw a single piece of furniture: dark, heavy, and competing with the photography
+ * it sits above. Furniture retail wants the opposite — the room should look bright and the furniture
+ * should be the darkest thing on screen.
+ *
+ * So it is a white pill inset from the edges, floating over the page, with a hairline and a low
+ * shadow. Scroll still changes nothing but background, shadow and border (Requirement 9.3): no
+ * layout property animates, so the header cannot shift the page.
+ */
 .ngf-header {
   position: sticky;
   top: 0;
   z-index: 40;
-  /* Only background-color and opacity change on scroll — Requirement 9.3. */
-  background-color: var(--color-obsidian);
-  color: var(--color-ivory);
+  padding: 0.75rem 1rem 0;
+  background-color: transparent;
+  color: var(--color-obsidian);
+}
+
+.ngf-header-inner {
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-white) 88%, transparent);
+  box-shadow: var(--shadow-level1);
   transition:
     background-color var(--dur-normal) var(--ease-standard),
-    opacity var(--dur-normal) var(--ease-standard);
+    box-shadow var(--dur-normal) var(--ease-standard),
+    border-color var(--dur-normal) var(--ease-standard);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+
+/* Past the fold the pill commits to opaque white and lifts a little further off the page. */
+.ngf-header[data-scrolled='true'] .ngf-header-inner {
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--color-taupe) 75%, transparent);
 }
 
 /* Transparent over the hero, solid once scrolled. */
@@ -95,9 +123,9 @@
   align-items: center;
   /* Tight below 1024 px: four controls plus the wordmark have to fit at 320 px. */
   gap: 0.5rem;
-  max-width: var(--container-content);
+  max-width: calc(var(--container-content) - 2rem);
   margin-inline: auto;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem 0.5rem 1.25rem;
 }
 
 .ngf-header-brand {
@@ -165,19 +193,33 @@
   list-style: none;
 }
 
+/*
+ * Sentence case, not uppercase.
+ *
+ * Six short labels in uppercase with 0.06em tracking read as a system menu; the same six in sentence
+ * case read as a shop. The nav is also no longer the loudest thing in the header — the WhatsApp pill
+ * is — so it steps back to the muted grey and only darkens on hover.
+ */
 .ngf-header-nav a,
 .ngf-header-nav summary {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   min-height: 44px;
-  color: inherit;
-  font-size: clamp(0.6875rem, 0.72vw, var(--text-small));
-  letter-spacing: 0.06em;
+  padding-inline: 0.625rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0;
   text-decoration: none;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
   cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+.ngf-header-nav a:hover,
+.ngf-header-nav summary:hover {
+  color: var(--color-obsidian);
 }
 
 .ngf-header-nav a[aria-current='page'] {
@@ -658,10 +700,18 @@
  * Footer (Requirement 9.7)
  * ------------------------------------------------------------------------- */
 
+/*
+ * A light footer.
+ *
+ * The page ends on cream with a hairline above it rather than dropping into a dark slab. On a site
+ * whose whole argument is "bright room, visible furniture", closing on obsidian undid that in the
+ * last 400 pixels — and it made the footer, which is navigation, the heaviest element on the page.
+ */
 .ngf-footer {
   margin-top: var(--spacing-section);
-  background-color: var(--color-obsidian);
-  color: var(--color-ivory);
+  border-top: 1px solid color-mix(in srgb, var(--color-taupe) 60%, transparent);
+  background-color: var(--color-cream);
+  color: var(--color-obsidian);
 }
 
 .ngf-footer-inner {

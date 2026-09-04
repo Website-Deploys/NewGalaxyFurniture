@@ -10,14 +10,16 @@
  * Requirements: 21.1, 21.2, 21.3, 21.7.
  */
 
-/** The eight palette tokens. No other colour value may appear in the codebase. */
+/** The ten palette tokens. No other colour value may appear in the codebase. */
 export const PALETTE = {
-  obsidian: '#171513',
-  espresso: '#3B2A21',
-  walnut: '#6B4A36',
+  obsidian: '#1C1A18',
+  espresso: '#33302B',
+  walnut: '#6B655C',
   champagne: '#B88A45',
-  ivory: '#F8F2EA',
-  cream: '#EFE4D7',
+  sage: '#5F6E57',
+  clay: '#9E5340',
+  ivory: '#FAF8F4',
+  cream: '#F3EFE8',
   taupe: '#CBBBA9',
   white: '#FFFFFF',
 } as const;
@@ -59,6 +61,20 @@ export interface PalettePair {
  * dark surfaces — never as body copy (Requirement 21.2, enforced by test).
  */
 export const PALETTE_PAIRS: readonly PalettePair[] = [
+  // --- The two natural accents, on the light surfaces they are used over ---
+  { fg: 'sage', bg: 'ivory', use: 'body', where: 'eyebrow labels, section kickers, accent links' },
+  { fg: 'sage', bg: 'cream', use: 'body', where: 'eyebrow labels in cream-banded sections' },
+  { fg: 'sage', bg: 'white', use: 'body', where: 'eyebrow labels and meta on cards' },
+  { fg: 'sage', bg: 'ivory', use: 'uiStroke', where: 'accent rules and active control borders' },
+  {
+    fg: 'clay',
+    bg: 'ivory',
+    use: 'body',
+    where: 'small emphasis: sale flags, made-to-order notes',
+  },
+  { fg: 'clay', bg: 'cream', use: 'body', where: 'small emphasis in cream-banded sections' },
+  { fg: 'clay', bg: 'white', use: 'body', where: 'small emphasis on cards' },
+
   // --- Body copy on light surfaces ---
   { fg: 'obsidian', bg: 'ivory', use: 'body', where: 'primary body copy on the page background' },
   { fg: 'obsidian', bg: 'cream', use: 'body', where: 'body copy in cream-banded sections' },

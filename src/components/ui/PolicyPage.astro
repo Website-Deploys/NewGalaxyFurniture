@@ -88,9 +88,23 @@ const outstanding = settings.placeholders.includes(contentKey);
         <section class="ngf-policy-section">
           <h2>{section.heading}</h2>
           <p>{section.prompt}</p>
+          {/*
+            Customer-facing wording, not an internal status line.
+
+            This printed "◇ Awaiting content — this section states no term yet." once per section,
+            which on the five policy pages meant the same developer-flavoured sentence six or seven
+            times down a single page. The obligation behind it is real and unchanged — state no term
+            that has not been agreed — but a visitor reading "awaiting content" concludes the site is
+            unfinished, when what is actually true is more reassuring and more useful: the term
+            exists, we will tell you what it is, and here are two numbers that reach us.
+
+            `data-ngf-awaiting-content` keeps it findable for the admin content checklist and for an
+            audit, without a customer reading it.
+          */}
           {outstanding && (
-            <p class="ngf-policy-outstanding">
-              ◇ Awaiting content — this section states no term yet.
+            <p class="ngf-policy-outstanding" data-ngf-awaiting-content>
+              We are finalising the exact wording of this section. Ask us and we will tell you
+              precisely where we stand today — on WhatsApp or by phone.
             </p>
           )}
         </section>

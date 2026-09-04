@@ -45,50 +45,41 @@ const categoryLink = (slug: (typeof SEEDED_CATEGORY_SLUGS)[number], label: strin
 });
 
 /**
- * The nine top-level header destinations, in the order Requirement 9.1 lists them.
+ * The six top-level header destinations.
  *
- * Dining, Chairs, and Tables are groups. A category appears in more than one group where
- * that is how people shop — dining chairs are both a chair and part of dining — which is
- * fine because the destination is the same route either way.
+ * Six, not nine. A visitor arriving at a furniture site needs to answer four questions — what do
+ * you sell, can you make it for me, who are you, how do I reach you — and nine competing top-level
+ * labels answers none of them faster. So every category lives under one **Shop** dropdown, which is
+ * also where a customer looks for them, and the remaining five destinations are the pages that are
+ * not a category.
+ *
+ * All nine category routes are still one hover or one tap from the header; the structural test
+ * asserts that, and the footer lists them flat as well.
+ *
+ * Requirements: 9.1, 9.2.
  */
 export const HEADER_NAV: readonly NavEntry[] = [
-  categoryLink('sofas', 'Sofas'),
-  categoryLink('beds', 'Beds'),
   {
     kind: 'group',
-    label: 'Dining',
-    href: '/collection/dining-tables',
+    label: 'Shop',
+    href: '/collection',
     items: [
+      categoryLink('sofas', 'Sofas'),
+      categoryLink('beds', 'Beds'),
       categoryLink('dining-tables', 'Dining Tables'),
       categoryLink('dining-chairs', 'Dining Chairs'),
-    ],
-    note: 'Tables and chairs built to sit together, in sizes that fit the room you have.',
-  },
-  {
-    kind: 'group',
-    label: 'Chairs',
-    href: '/collection/accent-chairs',
-    items: [
       categoryLink('accent-chairs', 'Accent Chairs'),
-      categoryLink('dining-chairs', 'Dining Chairs'),
-      categoryLink('office', 'Office'),
-    ],
-    note: 'Seating for a corner, a table, or a desk.',
-  },
-  {
-    kind: 'group',
-    label: 'Tables',
-    href: '/collection/coffee-side-tables',
-    items: [
       categoryLink('coffee-side-tables', 'Coffee & Side Tables'),
-      categoryLink('dining-tables', 'Dining Tables'),
+      categoryLink('storage-display', 'Storage & Display'),
+      categoryLink('office', 'Office'),
       categoryLink('outdoor', 'Outdoor'),
     ],
-    note: 'Surfaces for living rooms, dining rooms, and balconies.',
+    note: 'Every piece we make, by room and by purpose. Browse the full collection.',
   },
-  categoryLink('storage-display', 'Storage'),
   { kind: 'link', label: 'Custom Furniture', href: '/custom-furniture' },
-  { kind: 'link', label: 'Collection', href: '/collection' },
+  { kind: 'link', label: 'About', href: '/about' },
+  { kind: 'link', label: 'Workshop', href: '/workshop' },
+  { kind: 'link', label: 'Gallery', href: '/gallery' },
   { kind: 'link', label: 'Contact', href: '/contact' },
 ];
 

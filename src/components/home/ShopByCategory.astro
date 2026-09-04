@@ -74,9 +74,16 @@ const { section, categories } = Astro.props;
                 />
               </span>
               <span class="ngf-category-name">{category.name}</span>
-              <span class="ngf-category-count">
-                {category.count === 1 ? '1 piece' : `${category.count} pieces`}
-              </span>
+              {/*
+                "Explore", not a count.
+                
+                The count was honest and useless: with no products uploaded every one of the nine
+                tiles read "0 pieces", which tells a customer the shop is empty rather than inviting
+                them into it. The number is not what anyone is deciding on at this point in the
+                journey — the room is. Once products exist the tile still says Explore, because a
+                category with four pieces and one with forty are both simply worth opening.
+              */}
+              <span class="ngf-category-count">Explore</span>
               <span class="ngf-category-arrow">
                 <ArrowMotion size={16} />
               </span>

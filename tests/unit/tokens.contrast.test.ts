@@ -132,10 +132,10 @@ describe('champagne gold usage rule', () => {
 });
 
 describe('tokens.ts mirrors tokens.css', () => {
-  it('declares the same eight palette values as the stylesheet', async () => {
+  it('declares the same ten palette values as the stylesheet', async () => {
     const css = await readFile(new URL('../../src/styles/tokens.css', import.meta.url), 'utf8');
     const entries = Object.entries(PALETTE) as [PaletteToken, string][];
-    expect(entries).toHaveLength(8);
+    expect(entries).toHaveLength(10);
     for (const [token, hex] of entries) {
       expect(css, `--color-${token} must be ${hex} in tokens.css`).toContain(`--color-${token}:`);
       const match = new RegExp(`--color-${token}:\\s*(#[0-9A-Fa-f]{6})`).exec(css);
