@@ -308,28 +308,74 @@ test('the mobile menu opens, traps focus and closes below 1024 px', async ({ pag
   await expect(toggle).toBeFocused();
 });
 
-test('the homepage settles with a cumulative layout shift under the good threshold', async ({
+/**
+ * Cumulative layout shift, on the two pages that can actually shift.
+ *
+ * `/collection` is the one that matters and the one that was broken: its filter and sort controls are
+ * `client:visible` and cannot render until the search index arrives, so their arrival used to push the
+ * listing down by 133 px. Lighthouse measured 0.088 against a 0.05 budget and had been failing CI
+ * since the first commit on this branch, while the suite only ever asserted CLS on the homepage —
+ * which has no deferred controls and therefore never showed the defect. Asserting it here, at every
+ * width, is what stops that gap reopening.
+ */
+for (const path of ['/', '/collection']) {
+  test(`${path} settles with a cumulative layout shift under the good threshold`, async ({
+    page,
+  }) => {
+    await page.goto(path, { waitUntil: 'load' });
+    const cls = await page.evaluate(
+      async () =>
+        new Promise<number>((resolve) => {
+          let total = 0;
+          const observer = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              const shift = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
+              if (!shift.hadRecentInput) total += shift.value;
+            }
+          });
+          observer.observe({ type: 'layout-shift', buffered: true });
+          // Long enough for a `client:visible` island to have hydrated and inserted its controls.
+          setTimeout(() => {
+            observer.disconnect();
+            resolve(total);
+          }, 2500);
+        }),
+    );
+    expect(cls, `${path} shifted by ${String(cls)}`).toBeLessThan(MAX_CLS);
+  });
+}
+
+test('the deferred catalogue controls arrive without moving the page', async ({
   page,
-}) => {
-  await page.goto('/', { waitUntil: 'load' });
-  const cls = await page.evaluate(
-    async () =>
-      new Promise<number>((resolve) => {
-        let total = 0;
-        const observer = new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            const shift = entry as PerformanceEntry & { value: number; hadRecentInput: boolean };
-            if (!shift.hadRecentInput) total += shift.value;
-          }
-        });
-        observer.observe({ type: 'layout-shift', buffered: true });
-        setTimeout(() => {
-          observer.disconnect();
-          resolve(total);
-        }, 1500);
-      }),
+}, testInfo) => {
+  // Below 768 px only, where the controls are a bar *above* the listing and their arrival is what
+  // pushes it down. At 768 px and above they are a sidebar in the other grid column; that column's
+  // growth is a different question and the CLS assertion above is what covers it.
+  test.skip(
+    widthOf(testInfo.project.name) > MOBILE_MAX_WIDTH,
+    'the controls are a sidebar at this width, not a bar above the listing',
   );
-  expect(cls, `cumulative layout shift was ${String(cls)}`).toBeLessThan(MAX_CLS);
+
+  // The mechanism behind the assertion above, pinned directly: the box the controls will occupy is
+  // reserved before they exist, so hydration changes nothing about the layout. A future control added
+  // to the bar that makes it taller fails here, naming the cause, rather than only showing up as a
+  // CLS number in a Lighthouse report.
+  await page.goto('/collection', { waitUntil: 'domcontentloaded' });
+  const reserved = await page.evaluate(() => {
+    const node = document.querySelector('.ngf-controls');
+    return node === null ? null : Math.round(node.getBoundingClientRect().height);
+  });
+  expect(await waitForCatalogueControls(page)).toBe(true);
+  await page.waitForTimeout(300);
+  const hydrated = await page.evaluate(() =>
+    Math.round((document.querySelector('.ngf-controls') as Element).getBoundingClientRect().height),
+  );
+
+  expect(reserved, 'nothing was reserved for the controls').not.toBeNull();
+  expect(
+    Math.abs(Number(reserved) - hydrated),
+    `the controls box changed from ${String(reserved)} px to ${String(hydrated)} px on hydration`,
+  ).toBeLessThanOrEqual(2);
 });
 
 test('the admin sign-in page is usable at every width', async ({ page }) => {

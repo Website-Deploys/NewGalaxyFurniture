@@ -1097,6 +1097,39 @@
   gap: 1rem;
 }
 
+/*
+ * The reserved box for the deferred filter and sort controls.
+ *
+ * `CatalogueControls` is `client:visible` and cannot render a control until it has the search index —
+ * the facet counts beside every option come from it. Until then it renders an empty
+ * `.ngf-controls`, and when the index arrives a 133 px bar appears *above* the listing and pushes the
+ * whole page down. On `/collection` at 412 px that measured 0.088 cumulative layout shift against a
+ * 0.05 hard budget, which is the one Lighthouse assertion in `lighthouserc.json` that was failing CI —
+ * on this branch and on every commit before it.
+ *
+ * The heights are measured from the hydrated bar rather than guessed, and there are two because the
+ * bar is `flex-wrap: wrap`: at 420 px and below the sort control no longer fits beside the Filters
+ * button and the bar wraps to three rows (133 px); from 425 px up it is two (73 px). Reserving the
+ * measured height means the placeholder and the hydrated bar occupy the same box, so nothing moves —
+ * and because the hydrated content is exactly this tall, no gap is left behind either.
+ *
+ * At 768 px and above the panel is a sidebar beside the grid rather than a bar above it, so its
+ * arrival moves nothing and nothing needs reserving.
+ *
+ * Requirements: 22.2, 22.3. Design: Performance Budgets → Core Web Vitals targets.
+ */
+@media (max-width: 424px) {
+  .ngf-controls {
+    min-height: 133px;
+  }
+}
+
+@media (min-width: 425px) and (max-width: 767px) {
+  .ngf-controls {
+    min-height: 73px;
+  }
+}
+
 .ngf-controls-bar {
   display: flex;
   flex-wrap: wrap;
