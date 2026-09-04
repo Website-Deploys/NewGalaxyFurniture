@@ -103,6 +103,19 @@ const wrapperProps = href === null ? {} : { href, 'aria-label': `${settings.busi
     color: inherit;
   }
 
+  /*
+   * The wordmark is a link to the homepage, so on touch it owes the same 44 px as any other control
+   * (Requirement 24.3). Its own type sets its height — around 30 px at the sizes the header and
+   * footer use — which is a comfortable click and a missable tap. `justify-content: center` keeps the
+   * lettering optically where it was; only the hit area grows.
+   */
+  @media (max-width: 767px) {
+    .ngf-brand {
+      min-height: 44px;
+      justify-content: center;
+    }
+  }
+
   .ngf-brand-wordmark {
     display: flex;
     flex-wrap: nowrap; /* surfaces that need wrapping opt in — see shell.css */

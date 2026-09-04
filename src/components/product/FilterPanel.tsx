@@ -16,7 +16,9 @@
  * Requirements: 3.1, 3.2, 3.3, 3.7, 3.8, 3.17, 24.2, 24.5, 24.7.
  */
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useScopedId } from '@/lib/ui/ids';
 
 import { MULTI_DIMENSIONS } from '@/lib/search/filter';
 import type { AvailabilityFilter, Facets, MultiDimension } from '@/lib/search/filter';
@@ -55,7 +57,7 @@ export default function FilterPanel({
   hasFilters,
 }: FilterPanelProps): React.JSX.Element {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const shellId = useId();
+  const shellId = useScopedId('ngf-filter-shell');
   const shellRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
 
@@ -84,15 +86,26 @@ export default function FilterPanel({
       </button>
 
       {/*
-        `hidden` drives the bottom sheet below 768 px. At 768 px and above the stylesheet
-        overrides `[hidden]` back to `display: block`, so the sidebar is always present there
-        regardless of this attribute — the sheet's open state is meaningless on a sidebar.
+        `data-sheet`, not the `hidden` attribute.
+
+        `hidden` was the obvious choice and it silently broke the filters on every desktop viewport.
+        The intent was "closed below 768 px, always open above it", expressed as `hidden` plus a
+        `@media (min-width: 768px) { .ngf-filter-shell[hidden] { display: block } }` override — but
+        the browser's own stylesheet declares `[hidden] { display: none !important }`, so no author
+        rule can bring it back. The sidebar was `display: none` at every width, and the only way to
+        reach a filter was the sheet opener, which the same breakpoint hides. The whole filter panel
+        was unreachable at 768 px and wider.
+
+        Driving the state from a data attribute leaves `display` entirely to the stylesheet, which is
+        where the breakpoint lives. Below 768 px the closed sheet is `display: none`, so it is out of
+        the accessibility tree exactly as `hidden` intended; at and above it, it is a visible
+        sidebar.
       */}
       <div
         id={shellId}
         ref={shellRef}
         className="ngf-filter-shell"
-        hidden={!sheetOpen}
+        data-sheet={sheetOpen ? 'open' : 'closed'}
         role="group"
         aria-label="Filters"
       >
@@ -169,7 +182,7 @@ export default function FilterPanel({
             <fieldset className="ngf-filter-group" key={dimension}>
               <legend>{DIMENSION_LABELS[dimension]}</legend>
               {facets[dimension].length === 0 ? (
-                <p className="ngf-sort-basis">
+                <p className="ngf-filter-note">
                   No {DIMENSION_LABELS[dimension].toLowerCase()} values in the catalogue yet.
                 </p>
               ) : (

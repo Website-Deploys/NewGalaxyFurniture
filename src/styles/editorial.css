@@ -54,6 +54,15 @@
   flex-direction: column;
   gap: 1.5rem;
   max-width: var(--measure-prose);
+  /*
+   * `min-width: 0`, because this is a grid item inside `.ngf-page-columns` and a grid item's default
+   * `min-width: auto` refuses to shrink below its content's min-content width. On `/custom-furniture`
+   * that content includes the before/after room, whose `svg` has `viewBox="0 0 320 200"` and no width
+   * attribute — an intrinsic 320 px. The grid track therefore resolved to 358 px inside a 280 px
+   * column and the page scrolled sideways on every phone. `max-width` cannot help: the track was
+   * already wider than the element it contained.
+   */
+  min-width: 0;
 }
 
 .ngf-page-body h2 {
@@ -86,6 +95,18 @@
 
 .ngf-page-columns {
   display: grid;
+  /*
+   * `minmax(0, 1fr)`, not the implicit `auto`.
+   *
+   * A single implicit track takes its minimum from its item's min-content contribution, and one of
+   * this grid's items is `/custom-furniture`'s before/after room: an `svg` with `viewBox="0 0 320
+   * 200"` and no width attribute, whose min-content width is its intrinsic 320 px however small the
+   * viewport is. The track resolved to 358 px inside a 280 px column and the page scrolled sideways
+   * on every phone narrower than about 400 px. `minmax(0, 1fr)` pins the track's minimum at zero, so
+   * it can never exceed the column, and the SVG's own `width: 100%` then does what it was written to
+   * do.
+   */
+  grid-template-columns: minmax(0, 1fr);
   gap: 2.5rem;
 }
 

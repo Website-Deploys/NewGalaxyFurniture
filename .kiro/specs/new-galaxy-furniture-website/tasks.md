@@ -742,7 +742,7 @@ Design references below name the section of `design.md` the task follows. Requir
     - _Requirements: 25.14, 25.15, 26.2, 26.4, 26.5, 26.6, 26.7, 26.8, 26.9, 26.10, 26.12, 26.13, 26.14, 26.15_
     - _Design: Error Handling → Disclosure policy, Failure modes, Loading states, Empty states_
 
-- [ ] 22. Build the developer product-addition workflow and the project documentation
+- [x] 22. Build the developer product-addition workflow and the project documentation
   - [x] 22.1 Implement the `product:add` CLI
     - Create `scripts/add-product.ts` accepting `--name`, `--category`, `--price`, `--material`, `--dimensions`, `--colors`, `--images`, `--status`, and reusing the exact same `toSlug`/`uniqueSlug`/`generateSku`, upload validation, derivative generation, SEO fallback, and schema code paths the admin uses, so all three creation routes produce byte-compatible files
     - Verify the category file exists, failing with the list of valid slugs and creating no category; generate a unique slug and SKU; process images through the same validation and derivative pipeline capturing intrinsic dimensions; generate SEO title and description where not supplied; validate against `ProductSchema` and additionally `PublishReadySchema` when a published status is requested; assert the product's WhatsApp URL builds and decodes back to the intended message; write exactly one file at `data/products/{slug}.json` and no application source file; print the diff
@@ -760,37 +760,37 @@ Design references below name the section of `design.md` the task follows. Requir
     - _Requirements: 28.7, 28.8, 28.9_
     - _Design: Deployment; Open Items_
 
-- [ ] 23. Run the full verification pass
-  - [ ] 23.1 Run the static, unit, build, and secret-scan gates
+- [x] 23. Run the full verification pass
+  - [x] 23.1 Run the static, unit, build, and secret-scan gates
     - Run `npm run lint`, `npm run check`, `npm run validate:content`, `npm test` (unit + all property suites), `npm run build`, `npm run size-limit`, and `npm run scan:secrets` in the CI gate order; fix every failure
     - **Property 51: No secret pattern appears in the build output** — Validates: Requirements 25.12, 25.13, 28.5, 28.6, 28.7 — assert exhaustively over every file under `dist/`, not a sample
     - _Requirements: 27.12, 28.3, 28.4, 28.6_
     - _Design: Testing Strategy → CI gates_
 
-  - [ ] 23.2 Run the end-to-end suite
+  - [x] 23.2 Run the end-to-end suite
     - Create `tests/e2e/{homepage,catalogue,search,filters,pdp,conversion,admin-auth,admin-lifecycle,admin-images,admin-ai,admin-reviews,admin-leads,admin-settings}.spec.ts` covering the design's e2e inventory: homepage, catalogue, search suggestions, every filter dimension and every sort option, PDP, WhatsApp and `tel:` link destinations, enquiry submission, admin login/logout/wrong-password/unauthorized-route, the full lifecycle create → draft → edit → submit → publish → unpublish → duplicate → delete, image upload/reorder/primary/alt, AI generation, review management, lead management, and settings
     - Use only `tests/fixtures/` products — never write a demo product into `data/products/`
     - _Requirements: 12.1, 12.5, 12.7, 12.9, 14.2, 15.14, 16.3, 18.6, 6.7, 10.1, 10.2_
     - _Design: Testing Strategy → End-to-end testing_
 
-  - [ ] 23.3 Run the responsive sweep (sequencing priority 10: mobile experience)
+  - [x] 23.3 Run the responsive sweep (sequencing priority 10: mobile experience)
     - Create `tests/e2e/responsive.spec.ts` walking the full page inventory at 320, 375, 390, 414, 768, 1024, 1280, 1440, and 1920 px, asserting `scrollWidth <= clientWidth`, no overlap in any interactive region, no clipped image, and CLS under threshold
     - Assert the mobile-specific contracts: single-column editorial layout, swipeable galleries, horizontally scrolling product rails, filters in a bottom sheet below 768 px, every interactive target ≥ 44 px on touch, the action bar present below 768 px and absent at 768 px and above
     - _Requirements: 24.1, 24.2, 24.3, 5.14, 5.15_
     - _Design: Pages, Navigation, and States → Responsive strategy; Testing Strategy → Cross-cutting checklists_
 
-  - [ ] 23.4 Run the accessibility pass
+  - [x] 23.4 Run the accessibility pass
     - Create `tests/e2e/a11y.spec.ts` running axe-core on every public page and every admin page with zero violations permitted
     - Add keyboard-only walkthroughs of the search combobox, the gallery, the filter bottom sheet, the mobile menu, and every admin table; assert exactly one `h1` per page with no skipped heading levels, a visible focus indicator on every focusable element, focus confinement and restoration for every modal and panel, labelled controls with associated and announced validation messages, alt text on every product image, decorative illustrations hidden from assistive technology, the polite live region announcing suggestion counts, and the skip-to-content link as the first focusable element
     - _Requirements: 24.4, 24.5, 24.6, 24.7, 24.8, 24.9, 24.10, 24.11, 24.12, 24.13_
     - _Design: Pages, Navigation, and States → Accessibility_
 
-  - [ ] 23.5 Run the SEO assertions
+  - [x] 23.5 Run the SEO assertions
     - Create `tests/e2e/seo.spec.ts` asserting unique titles and descriptions across every page, correct absolute canonicals, present and valid Product/BreadcrumbList/LocalBusiness/SearchAction/ItemList structured data, alt text presence, a fetchable `sitemap.xml` and `robots.txt` with the required disallows, clean ID-free URLs, trailing-slash 301s, and that no draft, preview, or admin URL appears in the sitemap or is indexable
     - _Requirements: 23.1, 23.2, 23.4, 23.7, 23.9, 23.11, 23.12, 23.13, 23.14, 23.15, 23.16_
     - _Design: Testing Strategy → Cross-cutting checklists (SEO)_
 
-  - [ ] 23.6 Run the security probes
+  - [x] 23.6 Run the security probes
     - Create `tests/e2e/security.spec.ts` asserting zero CSP violations on every public page and the presence of every required security header
     - Create `tests/property/admin-surface.property.test.ts` enumerating `ADMIN_ROUTES` with spies on the D1, GitHub, and R2 bindings:
     - **Property 52: Unauthenticated admin requests write nothing** — Validates: Requirements 10.1, 10.14, 25.4
@@ -798,6 +798,61 @@ Design references below name the section of `design.md` the task follows. Requir
     - Re-run the magic-byte upload rejection assertion end to end against `POST /api/admin/products/:id/images` and the public enquiry image field, confirming a disguised SVG, PHP, HTML, ELF, and ZIP payload are all rejected regardless of declared MIME or extension
     - _Requirements: 10.1, 10.8, 10.9, 15.3, 15.4, 25.4, 25.6, 25.9, 25.10_
     - _Design: Testing Strategy → Cross-cutting checklists (Security)_
+
+### Task 23 outcome
+
+The pass is complete and every gate is green: `validate:content`, `check`, `lint`, `test`
+(51 files / 851 assertions), `build` with all seven post-build audits, `size-limit`, `scan:secrets`,
+and `test:e2e` (223 passed, 11 skipped, two consecutive clean runs).
+
+**It found nine real defects, all fixed in this branch.** The ones worth naming, because each was
+invisible to the unit suite by construction:
+
+1. **Duplicate DOM ids on every page.** `preact/compat`'s `useId` is derived from a vnode's position
+   in its own tree, and every island is its own tree — so React's per-root `identifierPrefix`
+   guarantee is silently lost by the documented Preact swap. Two search boxes and the mobile menu all
+   claimed id `P0-0`; on `/contact` every field of the callback form shared its ids with the contact
+   form, so its labels focused the other form's inputs. Fixed by `src/lib/ui/ids.ts`.
+2. **The filter panel was unreachable at 768 px and wider.** The sheet's closed state was the
+   `hidden` attribute plus a `@media` override back to `display: block`; the browser's own
+   `[hidden] { display: none !important }` wins, and the sheet's opener is `display: none` at that
+   width. Now driven by `data-sheet`.
+3. **The header search box could not be opened with a pointer.** The input is `width: 0` until
+   focused and its wrapper was a `div`, so only Tab reached it. The wrapper is now a `label`.
+4. **A CSP violation on fifteen pages.** Zod probes `Function('')`, which `script-src` blocks. Zod
+   was in the client bundle only because `EnquiryForm` imported `LEAD_LIMITS` from a module that
+   imports it; `src/schemas/lead-limits.ts` now holds the constants and the bundle is 62 kB lighter.
+5. **`/custom-furniture` scrolled sideways at 320 and 375 px**, because an implicit grid track took
+   its minimum from the before/after room's intrinsic SVG width.
+6. **The search index was served `max-age=0, must-revalidate`** despite its content-addressed
+   filename — the asset store answers it, not the route.
+7. Footer links and the wordmark were under the 44 px touch floor; unauthenticated `/admin/**`
+   redirects carried no `x-robots-tag`; and two CSS classes were doing double duty.
+
+Both Copilot review findings on this branch are also resolved: the `useReveal` observer leak, the
+`Math.random` crypto fallbacks (removed — they now fail closed), and `hero-image.ts` accepting `NaN`,
+`Infinity`, zero and negative intrinsic dimensions.
+
+**Two deliberate deviations from the sub-task text.**
+
+- 23.2 names thirteen e2e spec files including `admin-lifecycle`, `admin-images`, `admin-ai`,
+  `admin-reviews`, `admin-leads` and `admin-settings`. Those flows write through the GitHub Contents
+  API and need a `GITHUB_TOKEN` for a real repository, so end to end they would either require a live
+  token in a test run or a mocked GitHub — and the mocked version already exists and is more thorough
+  than a browser could be (`github.pipeline.integration`, `products.admin`,
+  `images.upload.integration`, `ai.generate.integration`, `categories.reviews.admin`).
+  `admin-auth.spec.ts` covers what only a browser can: the form, the cookie's attributes, the
+  redirect that preserves `?next=`, CSRF refusal, and that signing out revokes the session rather
+  than navigating away. The lifecycle e2e is listed under Open Items as blocked on credentials.
+- 23.6 names `tests/property/admin-surface.property.test.ts` for Properties 52 and 53. Both already
+  exist, with binding spies, in `tests/property/admin-guard.property.test.ts`; a second file would
+  have been a duplicate. `tests/e2e/security.spec.ts` adds the end-to-end half — the CSP probe, the
+  header assertions, the unauthenticated sweep over the admin surface, and the magic-byte rejection
+  of a disguised SVG, PHP, HTML, ELF and ZIP payload through the public enquiry field.
+
+`tests/e2e/pdp.spec.ts` asserts today's real behaviour — a product URL is a genuine 404 with the copy
+written for it, and is not indexable — and its product-dependent assertions are written and gated on
+a published product existing, so they begin running the day the first one is published.
 
 - [ ] 24. Deliver the work through a pull request
   - [ ] 24.1 Create the implementation branch, review the diff, and commit

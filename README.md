@@ -261,6 +261,8 @@ npm run preview          # wrangler dev on http://localhost:8788
 | `npm run format`                                  | Prettier write                                                                                                                         |
 | `npm test`                                        | Vitest — unit and property suites                                                                                                      |
 | `npm run test:e2e`                                | Playwright (see [Testing](#testing) — browsers must be installed first)                                                                |
+| `npm run e2e:prepare`                             | Migrates the **local** D1 and seeds a throwaway admin account for the e2e suite (`--local` only)                                       |
+| `npm run e2e:preview`                             | `npm run preview` with `PUBLIC_SITE_URL` pointed at `localhost:8788`, so the admin's origin check passes                               |
 | `npm run validate:content`                        | Zod over every file in `data/**`                                                                                                       |
 | `npm run size-limit`                              | Per-route asset budgets                                                                                                                |
 | `npm run scan:secrets`                            | Credential scan over `dist/`                                                                                                           |
@@ -802,22 +804,58 @@ npx vitest run --project unit
 npx vitest run --project property
 
 npx playwright install --with-deps   # REQUIRED once, before the first e2e run
-npm run build && npm run preview     # e2e runs against the built site on :8788
-npm run test:e2e
+npm run test:e2e                     # migrates local D1, seeds, builds, serves, runs
 ```
 
 Playwright browsers are **not** installed by `npm ci`. `npm run test:e2e` fails with a missing
-executable until `npx playwright install --with-deps` has been run in that environment.
+executable until `npx playwright install --with-deps` has been run in that environment. (On a
+distribution without `apt-get`, `npx playwright install chromium` alone is enough — only the OS
+dependency step needs a package manager.)
+
+`npm run test:e2e` needs nothing else set up. Its `webServer` runs `e2e:prepare` → `build` →
+`e2e:preview`, so the local D1 is migrated, a throwaway `owner` account exists, and the Worker is
+serving `dist/` before the first test starts. `e2e:prepare` touches `--local` state only: it wipes
+`.wrangler/state/v3/kv` so the rate limiters do not carry counters between runs, and writes the
+generated password to the git-ignored `test-results/e2e-admin.json`. No credential is committed and
+nothing it runs can reach a remote database.
 
 Playwright targets `wrangler dev` on port 8788, not the dev server, because Worker routing,
-the asset store and the prerendered HTML are part of what is under test. `playwright.config.ts`
-declares nine viewport widths — 320, 375, 390, 414, 768, 1024, 1280, 1440, 1920 — as named
-projects, so a failure names the width that broke.
+the asset store, the security headers and the prerendered HTML are part of what is under test.
 
-The e2e inventory is still being filled in: `tests/e2e/` currently holds
-`motion-trace.spec.ts`. The public, admin, responsive, accessibility, SEO and security probe
-suites are specified and not yet written, so a green `npm run test:e2e` today is a much weaker
-signal than a green `npm test`.
+Two project families. The nine viewport widths — 320, 375, 390, 414, 768, 1024, 1280, 1440, 1920 —
+run the suites whose _subject_ is the viewport (`responsive.spec.ts`, `motion-trace.spec.ts`), so a
+failure names the width that broke. Everything else runs once, at 1280, in the `functional` project;
+the few tests that care about a narrow viewport resize themselves.
+
+| Spec           | What it holds to account                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `homepage`     | The shell on every page: skip link, header nav, footer inventory, motion toggle persistence, no invented business fact      |
+| `catalogue`    | The nine category routes, the honest count, the designed empty states, the controls, sort in the URL                        |
+| `search`       | The index is not in the initial payload and is fetched once on intent; a no-match query is still useful                     |
+| `filters`      | The URL is the state: canonical, shareable, restored by back and forward, zero-count options disabled                       |
+| `pdp`          | Today's real behaviour for a product URL, plus the product assertions, gated until the first product is published           |
+| `conversion`   | Every `wa.me` and `tel:` destination, the enquiry form's success and failure paths, the traps, the no-JavaScript fallback   |
+| `admin-auth`   | The sign-in form, the session cookie's attributes, `?next=` preservation, CSRF refusal, sign-out revocation                 |
+| `responsive`   | Overflow, clipping, occlusion, 44 px touch targets, CLS, and the mobile contracts, at all nine widths                       |
+| `a11y`         | axe-core on every page with zero tolerance, plus keyboard walkthroughs, duplicate ids, and label/ARIA reference resolution  |
+| `seo`          | Unique titles and descriptions, canonicals, JSON-LD, the sitemap, `robots.txt`, trailing-slash redirects, nothing indexable |
+| `security`     | Zero CSP violations, every security header, the unauthenticated admin sweep, magic-byte rejection of disguised uploads      |
+| `motion-trace` | Long tasks, layout shift attributable to motion, frame loops off-screen and hidden, reduced motion                          |
+
+`workers` is pinned to 1 in `playwright.config.ts`. Every worker drives the same `wrangler dev`
+process, and its local proxy resets connections under concurrency and eventually exits — which turns
+two real failures into a hundred `ERR_CONNECTION_REFUSED` ones. A related rule when adding a spec:
+**never send a request body on a request the handler refuses before reading it.** An unread body
+reliably resets that proxy, and the guard's refusals happen before any body is read, so the probes
+send headers only.
+
+What e2e does _not_ cover, and why: the admin lifecycle (create → review → publish, image upload, AI
+generation, reviews, leads, settings) writes through the GitHub Contents API and needs a
+`GITHUB_TOKEN` for a real repository. Those flows are covered against a mocked GitHub by
+`tests/unit/github.pipeline.integration.test.ts`, `products.admin.test.ts`,
+`images.upload.integration.test.ts`, `ai.generate.integration.test.ts` and
+`categories.reviews.admin.test.ts`, which can assert things a browser cannot — that a refused write
+touched no binding, for instance.
 
 Property tests use fast-check and are named against the design's numbered properties, so
 traceability runs design → property → test. Unit and property suites use real code, real

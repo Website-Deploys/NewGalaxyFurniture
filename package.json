@@ -13,7 +13,10 @@
     "build": "astro build",
     "postbuild": "tsx scripts/check-motion-budget.ts && tsx scripts/emit-redirects.ts && tsx scripts/audit-seo.ts && tsx scripts/audit-csp.ts && tsx scripts/audit-page-budget.ts && tsx scripts/audit-image-loading.ts && tsx scripts/lint-keyword-density.ts",
     "preview": "wrangler dev --port 8788",
+    "e2e:prepare": "tsx scripts/prepare-e2e.ts",
+    "e2e:preview": "wrangler dev --port 8788 --var PUBLIC_SITE_URL:http://localhost:8788",
     "check": "astro check && tsc --noEmit",
+    "prelint": "astro sync",
     "lint": "eslint . && prettier --check . && tsx scripts/lint-motion.ts && tsx scripts/audit-error-disclosure.ts && tsx scripts/lint-keyword-density.ts",
     "format": "prettier --write .",
     "test": "vitest run",
@@ -41,6 +44,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@axe-core/playwright": "4.13.0",
     "@cloudflare/workers-types": "^5.20260902.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.62.1",

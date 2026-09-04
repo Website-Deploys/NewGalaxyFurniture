@@ -65,6 +65,15 @@ export interface RevealController {
   observeAll(root: ParentNode): void;
   /** Reveal an element now, without waiting for intersection. */
   revealNow(element: Element): void;
+  /**
+   * Stop watching one element without revealing it.
+   *
+   * This is the unmount path: a React island whose element leaves the document before it ever
+   * intersected must not stay in `watched`, or the controller holds a detached node alive and
+   * `pending()` never returns to zero. Unlike `revealNow` it makes no visual claim — the element
+   * is going away, so there is nothing to reveal.
+   */
+  unobserve(element: Element): void;
   /** Stop watching everything and release the observer. */
   destroy(): void;
   /** How many elements are still being watched. For tests and dev assertions. */
@@ -140,6 +149,9 @@ export function createRevealController(options: RevealOptions = {}): RevealContr
       revealNow(element) {
         element.setAttribute(REVEALED_ATTRIBUTE, '');
       },
+      unobserve() {
+        /* nothing was ever observed */
+      },
       destroy() {
         /* nothing was allocated */
       },
@@ -192,6 +204,14 @@ export function createRevealController(options: RevealOptions = {}): RevealContr
     revealNow(element) {
       if (watched.delete(element)) observer?.unobserve(element);
       markRevealed(element, true, WILL_CHANGE_HOLD_MS);
+    },
+    unobserve(element) {
+      if (!watched.delete(element)) return;
+      observer?.unobserve(element);
+      if (watched.size === 0) {
+        observer?.disconnect();
+        observer = null;
+      }
     },
     destroy() {
       observer?.disconnect();

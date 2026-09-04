@@ -29,15 +29,21 @@ export interface TakenIdentifiers {
 
 const LOWER_ALNUM = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
-/** `p_` + 10 lowercase alphanumerics, matching the schema's id pattern. */
+/**
+ * `p_` + 10 lowercase alphanumerics, matching the schema's id pattern.
+ *
+ * WebCrypto only, with no `Math.random` fallback — a product id is the permanent key every
+ * lead, analytics row, and related-product reference points at, and it must not be minted from
+ * a weaker source because an environment looked unusual. Every supported runtime has
+ * `crypto.getRandomValues`; its absence is a fault to report, not to work around.
+ */
 export function generateProductId(): string {
   const bytes = new Uint8Array(10);
   const webcrypto = globalThis.crypto;
-  if (typeof webcrypto?.getRandomValues === 'function') {
-    webcrypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  if (typeof webcrypto?.getRandomValues !== 'function') {
+    throw new Error('crypto.getRandomValues is unavailable — cannot generate a product id.');
   }
+  webcrypto.getRandomValues(bytes);
   let out = 'p_';
   for (let i = 0; i < bytes.length; i += 1)
     out += LOWER_ALNUM[(bytes[i] ?? 0) % LOWER_ALNUM.length];

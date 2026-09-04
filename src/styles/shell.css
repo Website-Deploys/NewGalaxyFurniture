@@ -724,6 +724,22 @@
   text-decoration: none;
 }
 
+/*
+ * 44 px where the input is a finger (Requirement 24.3).
+ *
+ * 36 px is a comfortable row on a pointer device and half a miss on a phone: the footer is where
+ * every category and every policy is reachable from, and it is the one place on the page that is
+ * nothing but a list of small links. The height comes from `min-height` rather than padding so the
+ * visual rhythm of the list is unchanged above 768 px, and the brand wordmark gets the same floor
+ * because it is a link to the homepage, not a picture.
+ */
+@media (max-width: 767px) {
+  .ngf-footer-col a,
+  .ngf-footer-base a {
+    min-height: 44px;
+  }
+}
+
 .ngf-footer-col a:hover,
 .ngf-footer-base a:hover {
   color: var(--color-champagne);
@@ -870,6 +886,19 @@
 
 .ngf-catalogue-count {
   margin-top: 0.5rem;
+  font-size: var(--text-small);
+  color: var(--color-walnut);
+}
+
+/*
+ * The category page's breadcrumb trail: the same quiet small type as the product count, and its own
+ * class rather than a borrowed one.
+ *
+ * It borrowed `.ngf-catalogue-count` for a while, which made `.ngf-catalogue-count` match two
+ * unrelated elements on every category page — a trail and a number — so any rule, script or test
+ * that reached for "the count" got whichever came first in the document.
+ */
+.ngf-catalogue-breadcrumbs {
   font-size: var(--text-small);
   color: var(--color-walnut);
 }
@@ -1106,7 +1135,15 @@
   font-size: var(--text-small);
 }
 
-.ngf-sort-basis {
+/*
+ * The sort control's honesty line, and the filter panel's "no values yet" note.
+ *
+ * Two different sentences with the same quiet voice. They shared one class for a while, which made
+ * `.ngf-sort-basis` match a filter note as well as a sort basis — so anything reaching for "what the
+ * sort is based on" could pick up "No colour values in the catalogue yet." instead.
+ */
+.ngf-sort-basis,
+.ngf-filter-note {
   color: var(--color-walnut);
   font-size: 0.8125rem;
   overflow-wrap: anywhere;
@@ -1208,7 +1245,7 @@
     box-shadow: var(--shadow-level2);
   }
 
-  .ngf-filter-shell[hidden] {
+  .ngf-filter-shell[data-sheet='closed'] {
     display: none;
   }
 }
@@ -1218,7 +1255,8 @@
     display: none;
   }
 
-  .ngf-filter-shell[hidden] {
+  /* No sheet to open at this width: the panel is a permanently visible sidebar. */
+  .ngf-filter-shell[data-sheet='closed'] {
     display: block;
   }
 }

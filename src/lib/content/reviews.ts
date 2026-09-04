@@ -22,6 +22,8 @@ import { getCollection } from 'astro:content';
 import { safeText } from '@/lib/security/sanitize';
 import type { Review } from '@/schemas/review';
 
+import { readOptionalCollection } from './optional-collection';
+
 /**
  * A review's two free-text fields, sanitized (Requirement 25.2, Property 55).
  *
@@ -48,7 +50,9 @@ export function filterPublishedReviews(reviews: readonly Review[]): Review[] {
 }
 
 export async function getPublishedReviews(): Promise<Review[]> {
-  const entries = await getCollection('reviews');
+  // `data/reviews/` ships empty on purpose — `/reviews` renders "No reviews published yet" rather
+  // than inventing words a customer never said. See `./optional-collection`.
+  const entries = await readOptionalCollection(() => getCollection('reviews'));
   return filterPublishedReviews(entries.map((entry) => entry.data));
 }
 

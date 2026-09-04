@@ -32,10 +32,12 @@
  * Requirements: 6.1, 6.2, 6.3, 6.5, 6.8, 6.9, 6.17, 6.18, 6.19, 24.8, 24.9, 26.2, 26.9.
  */
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useScopedId } from '@/lib/ui/ids';
 import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 
-import { LEAD_LIMITS } from '@/schemas/lead';
+import { LEAD_LIMITS } from '@/schemas/lead-limits';
 import { current as currentBatcher } from '@/lib/analytics/client';
 import { submitEnquiry, type EnquiryFailure, type FieldErrors } from '@/lib/leads/submit';
 import type { LeadTypeValue } from '@/schemas/lead';
@@ -183,7 +185,10 @@ function Alternatives({ numbers }: { numbers: readonly FallbackNumber[] }): Reac
 }
 
 export default function EnquiryForm(props: EnquiryFormProps): ReactElement {
-  const idPrefix = useId();
+  // Scoped by lead `type`, because two enquiry forms share a page: `/contact` mounts the contact
+  // form and the callback form, and unscoped `useId()` gave both the same field ids — so every
+  // label on the second form pointed at the first form's input. See `@/lib/ui/ids`.
+  const idPrefix = useScopedId(`ngf-enquiry-${props.type.toLowerCase()}`);
   const [values, setValues] = useState<TextValues>(EMPTY_VALUES);
   const [image, setImage] = useState<File | null>(null);
   const [honeypot, setHoneypot] = useState('');

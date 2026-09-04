@@ -1,16 +1,37 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * End-to-end and responsive sweep configuration.
+ * End-to-end, responsive, accessibility, SEO and security configuration.
  *
- * The nine widths are the design's responsive checklist, declared as named
- * projects so a failure names the width that broke. Each project asserts against
- * the built site served by `wrangler dev` — not the dev server — because the
- * Worker routing, the static asset store, and the prerendered HTML are part of
- * what is under test.
+ * Every project asserts against the built site served by `wrangler dev` — not the dev server —
+ * because the Worker routing, the static asset store, the security headers, and the prerendered
+ * HTML are all part of what is under test.
+ *
+ * **Two project families, because the suite asks two different questions.**
+ *
+ * The design's nine widths are declared as named projects so a failure names the width that broke,
+ * and the specs whose *subject* is the viewport — the responsive sweep and the motion trace — run
+ * in all nine. Everything else is a behavioural spec whose subject is a flow, not a width: running
+ * a login attempt or a sitemap assertion nine times over would multiply the suite's runtime by nine
+ * and report the same result nine times. Those run once, in the `functional` project, at 1280 px,
+ * and the handful that care about a narrow viewport resize themselves (`page.setViewportSize`) so
+ * the assertion and the width it depends on sit next to each other in one file.
+ *
+ * **`PUBLIC_SITE_URL` is overridden at runtime, not at build time.** The admin's CSRF origin check
+ * compares the browser's `Origin` against the configured site URL, so against `wrangler.toml`'s
+ * production `[vars]` value every admin write from `localhost` would be refused with
+ * `ORIGIN_MISMATCH` before reaching a handler — the suite would be testing the origin check and
+ * nothing else. `npm run e2e:preview` therefore passes `--var PUBLIC_SITE_URL:...` to
+ * `wrangler dev`, which takes precedence over `[vars]` in the Worker environment.
+ *
+ * Canonical links are a different matter and are deliberately left alone: they are baked from
+ * `import.meta.env.PUBLIC_SITE_URL` at build time, which is the *deployment's* origin and has to
+ * stay that way — a canonical pointing at `localhost` is the one thing a canonical must never do.
+ * `seo.spec.ts` therefore discovers the configured origin from the served `robots.txt` and asserts
+ * consistency against that, which is the real invariant and is independent of how this harness runs.
  *
  * Design: Testing Strategy → End-to-end testing, Cross-cutting checklists.
- * Requirements: 27.12.
+ * Requirements: 24.1, 24.2, 24.3, 24.4, 27.12.
  */
 
 const PORT = Number(process.env.PREVIEW_PORT ?? 8788);
@@ -27,17 +48,35 @@ function heightFor(width: number): number {
   return 900;
 }
 
+/** The specs whose subject is the viewport itself, and so run at every width. */
+const WIDTH_SENSITIVE = /(responsive|motion-trace)\.spec\.ts$/;
+
 export default defineConfig({
   testDir: './tests/e2e',
   outputDir: './test-results',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  workers: isCI ? 2 : undefined,
+  /**
+   * One worker. Not a preference — a requirement of what this suite runs against.
+   *
+   * Every Playwright worker drives the same single `wrangler dev` process, and its local proxy is
+   * the bottleneck. Under concurrent load it starts resetting connections
+   * (`disconnected: ::write(...): Connection reset by peer` inside `workerd`'s own IO, with no
+   * application frame anywhere in it) and eventually the proxy controller emits an empty error and
+   * the whole server exits. When that happens every remaining test fails with
+   * `ERR_CONNECTION_REFUSED` — a hundred failures that say nothing about the site and bury the two
+   * that did. At four workers it happened on most runs, at two on some, at one on none.
+   *
+   * The cost is runtime, and it is the right trade: a suite whose failures are always real is worth
+   * more than one that finishes two minutes sooner. `retries` deliberately stays at zero locally for
+   * the same reason — a retry that passes hides an instability rather than reporting it.
+   */
+  workers: 1,
   reporter: isCI
     ? [['github'], ['html', { open: 'never' }]]
     : [['list'], ['html', { open: 'never' }]],
-  timeout: 30_000,
+  timeout: 60_000,
   expect: { timeout: 5_000 },
 
   use: {
@@ -49,26 +88,43 @@ export default defineConfig({
     timezoneId: 'Asia/Kolkata',
   },
 
-  projects: VIEWPORT_WIDTHS.map((width) => ({
-    name: `w${width}`,
-    use: {
-      ...devices['Desktop Chrome'],
-      viewport: { width, height: heightFor(width) },
-      isMobile: false,
-      hasTouch: width <= 768,
+  projects: [
+    ...VIEWPORT_WIDTHS.map((width) => ({
+      name: `w${width}`,
+      testMatch: WIDTH_SENSITIVE,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width, height: heightFor(width) },
+        isMobile: false,
+        hasTouch: width <= 768,
+      },
+    })),
+    {
+      name: 'functional',
+      testIgnore: WIDTH_SENSITIVE,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        isMobile: false,
+        hasTouch: true,
+      },
     },
-  })),
+  ],
 
   /**
-   * Build, then serve the real Worker bundle. `astro preview` is not usable with
-   * the Cloudflare adapter (it registers no preview entrypoint), so the preview
-   * script runs `wrangler dev` against `dist/` instead.
+   * Migrate and seed the local Worker state, build, then serve the real Worker bundle.
+   *
+   * `astro preview` is not usable with the Cloudflare adapter (it registers no preview
+   * entrypoint), so the preview script runs `wrangler dev` against `dist/` instead. `e2e:prepare`
+   * runs first and only ever touches `--local` state: without a migrated D1 the admin endpoints
+   * answer `CONFIGURATION_INCOMPLETE` and the authentication assertions would be testing the
+   * absence of a database rather than the presence of a guard.
    */
   webServer: {
-    command: 'npm run build && npm run preview',
+    command: 'npm run e2e:prepare && npm run build && npm run e2e:preview',
     url: BASE_URL,
     reuseExistingServer: !isCI,
-    timeout: 180_000,
+    timeout: 300_000,
     stdout: 'pipe',
     stderr: 'pipe',
   },

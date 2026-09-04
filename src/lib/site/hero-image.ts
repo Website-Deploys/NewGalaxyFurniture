@@ -35,6 +35,37 @@ export const HERO_COMPOSITION: HeroImage = {
   supplied: false,
 };
 
+/**
+ * The largest intrinsic dimension a photograph may declare, in px.
+ *
+ * Not a limit on what can be uploaded — a sanity bound on what can be *declared*. A record claiming
+ * 100000 px is a typo or a corrupted field, and honouring it would emit an `<img width>` that
+ * reserves a slot taller than the document.
+ */
+const MAX_DIMENSION_PX = 20_000;
+
+/** A declared intrinsic dimension that a browser can actually reserve a box from. */
+function isUsableDimension(value: unknown): value is number {
+  return (
+    typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= MAX_DIMENSION_PX
+  );
+}
+
+/**
+ * The operator's photograph, or `null` when the settings record does not describe a usable one.
+ *
+ * Every field is validated rather than trusted, because this record reaches the page through the
+ * schema's `passthrough()` — it is unvalidated by construction, which is what makes swapping the
+ * hero a settings change rather than a code change, and what makes checking it here mandatory.
+ *
+ * The dimensions get the strictest treatment. `typeof width === 'number'` is true of `NaN`,
+ * `Infinity`, `-1` and `0`, and each of those produces an `<img width>` a browser cannot reserve a
+ * box from: `NaN` and `Infinity` serialise to attributes the parser discards, and zero or negative
+ * values collapse the slot. The result in every case is the layout shift this module exists to
+ * prevent — and it would appear only after an operator edited a settings file, long after anyone
+ * was looking. `null` instead falls back to the designed composition, which always has usable
+ * dimensions.
+ */
 function suppliedHeroImage(settings: SiteSettings): HeroImage | null {
   const raw = (settings as unknown as Record<string, unknown>).heroImage;
   if (typeof raw !== 'object' || raw === null) return null;
@@ -42,13 +73,13 @@ function suppliedHeroImage(settings: SiteSettings): HeroImage | null {
   if (typeof src !== 'string' || src.trim() === '') return null;
   // Intrinsic dimensions are not optional: without them the slot cannot be reserved, and the whole
   // point of the swap-in is that it does not reintroduce layout shift.
-  if (typeof width !== 'number' || typeof height !== 'number') return null;
+  if (!isUsableDimension(width) || !isUsableDimension(height)) return null;
   return {
-    src,
+    src: src.trim(),
     width,
     height,
     alt: typeof alt === 'string' ? alt : '',
-    ...(typeof lqip === 'string' ? { lqip } : {}),
+    ...(typeof lqip === 'string' && lqip.trim() !== '' ? { lqip: lqip.trim() } : {}),
     supplied: true,
   };
 }

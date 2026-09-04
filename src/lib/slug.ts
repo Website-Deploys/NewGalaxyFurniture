@@ -122,14 +122,23 @@ export function skuPrefixFor(categorySlug: string): string {
   return letters.length >= 3 ? letters.slice(0, 3) : `${letters}XXX`.slice(0, 3);
 }
 
+/**
+ * `length` random base-36 characters, from WebCrypto only.
+ *
+ * There is deliberately no `Math.random` fallback. A SKU is not a secret, but it is a *unique
+ * identifier* minted once and printed on an invoice, and `Math.random` is seeded per realm and
+ * biased in ways that make collisions likelier than the collision check assumes. Every runtime
+ * this code targets — Cloudflare Workers, Node 22, and every supported browser — exposes
+ * `crypto.getRandomValues`, so a missing one is a broken environment, not a case to degrade
+ * into: failing loudly here is safer than silently minting weaker identifiers.
+ */
 function randomBase36(length: number): string {
   const bytes = new Uint8Array(length);
   const webcrypto = globalThis.crypto;
-  if (typeof webcrypto?.getRandomValues === 'function') {
-    webcrypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  if (typeof webcrypto?.getRandomValues !== 'function') {
+    throw new Error('crypto.getRandomValues is unavailable — cannot generate a SKU.');
   }
+  webcrypto.getRandomValues(bytes);
   let out = '';
   for (let i = 0; i < length; i += 1) {
     out += BASE36[(bytes[i] ?? 0) % BASE36.length];

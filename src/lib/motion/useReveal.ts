@@ -71,6 +71,15 @@ export function useReveal(_options: UseRevealOptions = {}): UseRevealResult {
       }
     });
     watch.observe(element, { attributes: true, attributeFilter: [REVEALED_ATTRIBUTE] });
+
+    // React 19's ref-cleanup form. Without it an island unmounted *before* it reveals — a filter
+    // re-render, a closed dialog, a view transition — leaves this MutationObserver live and the
+    // element inside the shared controller's watch set, holding a detached node alive. The
+    // observer only self-disconnects on the reveal that, in that case, never comes.
+    return () => {
+      watch.disconnect();
+      controller.unobserve(element);
+    };
   }, []);
 
   return { ref, state };

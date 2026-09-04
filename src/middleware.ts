@@ -116,7 +116,18 @@ async function handle(
 
     if (session === null) {
       const next_ = `${pathname}${context.url.search}`;
-      return context.redirect(`${LOGIN_PAGE_PATH}?next=${encodeURIComponent(next_)}`, 302);
+      // The redirect is itself an admin response, so it carries the admin response headers. It
+      // would be easy to argue they are unnecessary on an empty 302 — robots.txt already disallows
+      // `/admin`, and the destination is itself `noindex` — but "every response under /admin is
+      // noindex and uncacheable" is a rule worth being able to state without an exception, and a
+      // crawler that ignores robots.txt is exactly the one that will not read the exception either.
+      const redirect = context.redirect(
+        `${LOGIN_PAGE_PATH}?next=${encodeURIComponent(next_)}`,
+        302,
+      );
+      redirect.headers.set('x-robots-tag', NOINDEX);
+      redirect.headers.set('cache-control', 'no-store');
+      return redirect;
     }
     // Handed to the page so `AdminLayout` can bootstrap the CSRF token and the nav
     // can hide controls the role lacks — without a second KV read per render.

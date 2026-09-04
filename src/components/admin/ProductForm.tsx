@@ -821,6 +821,21 @@ interface VariantEditorProps {
 }
 
 /**
+ * A fresh variant id, from WebCrypto only.
+ *
+ * This id is persisted in the product file and is what a variant-level SKU and stock status hang
+ * off, so it is a real identifier rather than a render key. `Math.random` is not used even here:
+ * the admin runs in a browser that has `crypto.getRandomValues` in every context, and having one
+ * identifier in the codebase minted from a weaker source is exactly the inconsistency a reviewer
+ * has to re-audit later.
+ */
+function newVariantId(): string {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return `var_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
  * Variants: a label, an optional SKU, and a price difference.
  *
  * `priceDelta` rather than an absolute price, matching the schema — a variant that costs
@@ -894,12 +909,7 @@ function VariantEditor({ variants, disabled, onChange }: VariantEditorProps): Re
         <button
           type="button"
           className="mt-3 min-h-[44px] border border-espresso px-4 py-2 text-small text-espresso"
-          onClick={() =>
-            onChange([
-              ...variants,
-              { id: `var_${Math.random().toString(36).slice(2, 10)}`, label: '' },
-            ])
-          }
+          onClick={() => onChange([...variants, { id: newVariantId(), label: '' }])}
         >
           Add a variant
         </button>

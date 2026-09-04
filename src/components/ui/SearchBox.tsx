@@ -27,7 +27,9 @@
  * Requirements: 2.1–2.14, 22.8, 24.11.
  */
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useScopedId } from '@/lib/ui/ids';
 import type MiniSearch from 'minisearch';
 
 import type * as SearchQueryModule from '@/lib/search/query';
@@ -90,8 +92,12 @@ export default function SearchBox({
   /** True when the rows on screen are "nearest matches" rather than actual matches. */
   const [isFallback, setIsFallback] = useState(false);
 
-  const listId = useId();
-  const optionPrefix = useId();
+  // Scoped by `variant`, because both search boxes are mounted on every page: the header's full
+  // box and the mobile bar's compact one. Unscoped `useId()` gives them the same value under
+  // `preact/compat`, which pointed both `aria-controls` attributes at one listbox — see
+  // `@/lib/ui/ids`.
+  const listId = useScopedId(`ngf-search-${variant}-list`);
+  const optionPrefix = useScopedId(`ngf-search-${variant}`);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const loading = useRef<Promise<void> | null>(null);
@@ -302,10 +308,19 @@ export default function SearchBox({
       className={`ngf-search ngf-search-${variant}`}
       data-open={listOpen ? 'true' : 'false'}
     >
-      <div className="ngf-search-field">
-        <label className="sr-only" htmlFor={`${optionPrefix}-input`}>
-          Search the catalogue
-        </label>
+      {/*
+        A `label`, not a `div`, and that is load-bearing rather than tidy.
+
+        The field is a collapsed magnifier until it has focus — `.ngf-search-field input` is
+        `width: 0` and `:focus-within` expands it, so below 1440 px the only thing on screen is the
+        icon. As a `div` there was nothing for a pointer to click: the icon is `aria-hidden` and
+        decorative, the input it would open is zero pixels wide, and the visually-hidden label was
+        one clipped pixel. Tab reached the field and a mouse could not, which is the wrong way round
+        for the site's primary way of finding a product. A `label` focuses its control on click by
+        default, so the whole icon and its padding are now the affordance.
+      */}
+      <label className="ngf-search-field" htmlFor={`${optionPrefix}-input`}>
+        <span className="sr-only">Search the catalogue</span>
         <svg
           viewBox="0 0 24 24"
           width="16"
@@ -338,7 +353,7 @@ export default function SearchBox({
             activeIndex >= 0 ? `${optionPrefix}-option-${activeIndex}` : undefined
           }
         />
-      </div>
+      </label>
 
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}

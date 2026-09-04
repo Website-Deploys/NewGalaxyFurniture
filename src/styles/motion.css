@@ -459,6 +459,15 @@
   grid-area: 1 / 1;
   display: block;
   padding: clamp(1rem, 4vw, 2.5rem);
+  /*
+   * `min-width: 0`, because a grid item's default is `min-width: auto` — it refuses to shrink below
+   * its content's min-content width. The content here is an `svg` with `viewBox="0 0 320 200"` and
+   * no width attribute, whose min-content width is therefore its intrinsic 320 px. Added to this
+   * layer's own padding that made the figure 358 px wide inside a 320 px viewport, and `/custom-
+   * furniture` scrolled sideways on every phone narrower than about 400 px. The SVG is already
+   * `width: 100%; height: auto`; this is what lets that take effect.
+   */
+  min-width: 0;
 }
 
 .ngf-ba-after {

@@ -16,6 +16,7 @@ import type { Category } from '@/schemas/category';
 import type { Product } from '@/schemas/product';
 
 import { filterCatalogue, filterCategories } from './catalogue-filter';
+import { readOptionalCollection } from './optional-collection';
 
 export {
   filterCatalogue,
@@ -24,9 +25,14 @@ export {
   isPublishedCategory,
 } from './catalogue-filter';
 
-/** Every product with a public status, newest first. */
+/**
+ * Every product with a public status, newest first.
+ *
+ * `readOptionalCollection` because `data/products/` ships empty on purpose and every listing
+ * renders its designed empty state — see `./optional-collection` for why that needs saying.
+ */
 export async function getCatalogue(): Promise<Product[]> {
-  const entries = await getCollection('products');
+  const entries = await readOptionalCollection(() => getCollection('products'));
   const products: Product[] = entries.map((entry) => entry.data);
   return filterCatalogue(products).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

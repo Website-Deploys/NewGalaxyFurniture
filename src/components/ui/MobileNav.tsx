@@ -18,7 +18,9 @@
  * Requirements: 9.4, 9.5, 9.6, 24.3, 24.5, 24.7.
  */
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { useScopedId } from '@/lib/ui/ids';
 
 import { activateTrap } from '@/lib/ui/focus-trap';
 
@@ -50,7 +52,7 @@ export default function MobileNav({
   numberLabel,
 }: MobileNavProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
-  const panelId = useId();
+  const panelId = useScopedId('ngf-mobilenav-panel');
   const panelRef = useRef<HTMLDivElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 

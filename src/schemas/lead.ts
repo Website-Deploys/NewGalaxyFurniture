@@ -35,23 +35,19 @@ import { z } from 'zod';
 import { isE164, normalizeIndianPhone } from '@/lib/phone';
 import { LEAD_TYPES } from '@/lib/leads/store';
 
+import { LEAD_LIMITS } from './lead-limits';
+
 /** The five forms, as the stored `type` column's values. */
 export const LeadTypeSchema = z.enum(LEAD_TYPES);
 export type LeadTypeValue = z.infer<typeof LeadTypeSchema>;
 
-/** Requirement 6.3's bounds, in one place so the forms and the server agree. */
-export const LEAD_LIMITS = {
-  nameMin: 2,
-  nameMax: 80,
-  messageMin: 10,
-  messageMax: 1000,
-  requirementMax: 500,
-  budgetMax: 100,
-  dimensionsMax: 200,
-} as const;
-
-/** The minimum age of a rendered form before a submission is credible (6.8). */
-export const MIN_FORM_AGE_MS = 1500;
+/**
+ * Re-exported from `./lead-limits`, which holds no Zod import.
+ *
+ * The browser needs these seven integers to render a form and must not download a schema library to
+ * get them — see that file's header for the second, less obvious reason.
+ */
+export { LEAD_LIMITS, MIN_FORM_AGE_MS } from './lead-limits';
 
 /**
  * A trimmed, optional free-text field.
