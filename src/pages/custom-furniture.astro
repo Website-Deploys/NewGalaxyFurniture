@@ -167,8 +167,10 @@ const meta = pageMeta(Astro, {
                 title={stages[3].illustrationTitle}
               />
             </span>
-            {/* The subtle directional treatment the brief asks for at DELIVER: decorative,
-                aria-hidden, and not a primitive, so it implies no claim. */}
+            {
+              /* The subtle directional treatment the brief asks for at DELIVER: decorative,
+                aria-hidden, and not a primitive, so it implies no claim. */
+            }
             <span class="ngf-process-arrow"><ArrowMotion size={20} /></span>
           </div>
           <p class="ngf-process-num" aria-hidden="true">{stages[3].step}</p>
@@ -246,17 +248,21 @@ const meta = pageMeta(Astro, {
             piece.
           </p>
 
-          {/*
+          {
+            /*
           The conversion hierarchy the brief sets: WhatsApp first, Call second, the form third. The
           two direct controls sit above the form in reading order — they are the primary action set,
           and the form remains fully functional below for anyone who prefers to write it all down.
-        */}
+        */
+          }
           <div class="ngf-custom-actions ngf-page-actions">
             <WhatsAppLink context={{ kind: 'custom' }} label="Start on WhatsApp" />
             <CallLink variant="outline" />
           </div>
 
-          <p class="ngf-custom-alt-label">Prefer to set it all out in one go? Use the enquiry form.</p>
+          <p class="ngf-custom-alt-label">
+            Prefer to set it all out in one go? Use the enquiry form.
+          </p>
           <EnquiryIsland form="custom" context={{ kind: 'custom' }} />
         </section>
 

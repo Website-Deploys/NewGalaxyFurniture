@@ -104,11 +104,13 @@ const cta =
   <div class="ngf-story-inner">
     <div class="ngf-story-panel">
       <div class="ngf-story-ornament">
-        {primitive === 'assembly' ? (
-          <FurnitureAssembly strokeWidth={1} />
-        ) : (
-          <CraftsmanshipLines strokeWidth={1} />
-        )}
+        {
+          primitive === 'assembly' ? (
+            <FurnitureAssembly strokeWidth={1} />
+          ) : (
+            <CraftsmanshipLines strokeWidth={1} />
+          )
+        }
       </div>
     </div>
 

@@ -84,7 +84,12 @@ describe('the four-stage guided process (Milestone 3, Checkpoint C)', () => {
     );
     expect(primitiveTags).toHaveLength(4);
     // Each of the four blocks contains trigger="none".
-    for (const tag of ['AnimatedRoom', 'CraftsmanshipLines', 'FurnitureAssembly', 'AnimatedFurnitureLine']) {
+    for (const tag of [
+      'AnimatedRoom',
+      'CraftsmanshipLines',
+      'FurnitureAssembly',
+      'AnimatedFurnitureLine',
+    ]) {
       const start = PAGE.indexOf(`<${tag}`);
       const end = PAGE.indexOf('/>', start);
       const block = PAGE.slice(start, end);
@@ -109,8 +114,12 @@ describe('the connecting line is CSS/SVG, transform-only and reduced-motion-safe
   it('sits at full extent by default and scales from 0 only in the no-preference not-revealed branch', () => {
     // Full extent is the default (scaleY(1)/scaleX(1)); the from-state (scale 0) lives only inside
     // prefers-reduced-motion: no-preference, gated on :not([data-revealed]) — never inverted.
-    expect(PAGE).toMatch(/\.ngf-process-step:not\(\.ngf-process-step-last\)::after[\s\S]*?transform: scaleY\(1\)/);
-    expect(PAGE).toMatch(/\.ngf-process-step:not\(\.ngf-process-step-last\)::after[\s\S]*?transition: transform/);
+    expect(PAGE).toMatch(
+      /\.ngf-process-step:not\(\.ngf-process-step-last\)::after[\s\S]*?transform: scaleY\(1\)/,
+    );
+    expect(PAGE).toMatch(
+      /\.ngf-process-step:not\(\.ngf-process-step-last\)::after[\s\S]*?transition: transform/,
+    );
     expect(PAGE).toMatch(
       /prefers-reduced-motion: no-preference[\s\S]*?\[data-reveal\]:not\(\[data-revealed\]\) \.ngf-process-step::after \{\s*transform: scaleY\(0\)/,
     );

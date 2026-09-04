@@ -158,8 +158,14 @@ const meta = pageMeta(Astro, {
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    :where(:not([data-motion='off'])) .ngf-lookbook-link:hover .ngf-lookbook-frame > :global(.ngf-image),
-    :where(:not([data-motion='off'])) .ngf-lookbook-link:focus-visible .ngf-lookbook-frame > :global(.ngf-image) {
+    :where(:not([data-motion='off']))
+      .ngf-lookbook-link:hover
+      .ngf-lookbook-frame
+      > :global(.ngf-image),
+    :where(:not([data-motion='off']))
+      .ngf-lookbook-link:focus-visible
+      .ngf-lookbook-frame
+      > :global(.ngf-image) {
       transform: scale(1.04);
     }
   }

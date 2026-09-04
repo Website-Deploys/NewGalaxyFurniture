@@ -107,9 +107,11 @@ const meta = pageMeta(Astro, {
     <div class="ngf-catalogue-head ngf-cathero" data-reveal data-motion-group>
       <div class="ngf-cathero-copy">
         <Breadcrumbs items={crumbs} class="ngf-catalogue-breadcrumbs" />
-        {/* The eyebrow: a static label in the shared small-caps + hairline-dash language. It names
+        {
+          /* The eyebrow: a static label in the shared small-caps + hairline-dash language. It names
             the surface, it makes no claim, and it is what tells a visitor this is one opener in a
-            set of category catalogues rather than the generic index. */}
+            set of category catalogues rather than the generic index. */
+        }
         <p class="ngf-cathero-eyebrow">Collection</p>
         <h1>{category.name}</h1>
         <p class="ngf-catalogue-intro">{category.shortDescription}</p>

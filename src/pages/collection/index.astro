@@ -92,12 +92,14 @@ const meta = pageMeta(Astro, {
         </p>
       </div>
 
-      {/*
+      {
+        /*
         The site's required render of the `furniture-line` primitive, now presented on the same
         drawing-board panel as the category heroes so `/collection` opens as a premium catalogue
         landing rather than a bare heading. Decorative, so `aria-hidden`; `trigger="none"` folds it
         into the hero's single group reveal.
-      */}
+      */
+      }
       <div class="ngf-cathero-panel ngf-cathero-panel-wide" aria-hidden="true">
         <span class="ngf-cathero-glyph">
           <AnimatedFurnitureLine strokeWidth={1} trigger="none" />

@@ -294,7 +294,13 @@ describe('placeholder discipline (Requirements 7.10, 8.4, 8.8)', () => {
     ];
 
     for (const section of homepage.sections) {
-      const copy = [section.eyebrow, section.heading, section.subheading, section.body, section.tagline]
+      const copy = [
+        section.eyebrow,
+        section.heading,
+        section.subheading,
+        section.body,
+        section.tagline,
+      ]
         .filter((value): value is string => value !== undefined)
         .join('\n');
       if (copy === '') continue;

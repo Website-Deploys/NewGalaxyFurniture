@@ -197,9 +197,9 @@ describe('the content checklist', () => {
     expect(keys).toEqual(['homepage.craftsmanship.body']);
 
     // And on the shipped file, whatever it currently holds, every derived key is well formed.
-    expect(homepagePlaceholderKeys(HOMEPAGE).every((key) => /^homepage\.\w+\.body$/.test(key))).toBe(
-      true,
-    );
+    expect(
+      homepagePlaceholderKeys(HOMEPAGE).every((key) => /^homepage\.\w+\.body$/.test(key)),
+    ).toBe(true);
   });
 });
 

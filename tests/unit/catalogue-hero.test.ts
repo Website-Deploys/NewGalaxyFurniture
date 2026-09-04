@@ -35,7 +35,9 @@ describe('the category catalogue hero (Milestone 3, Checkpoint A)', () => {
     // The distinct visual identity: each category page draws its own glyph from the schema's
     // `illustration` field, not a shared ornament. If this ever became a static drawing the
     // categories would all look alike, which is the exact regression this checkpoint forbids.
-    expect(CATEGORY_PAGE).toMatch(/<CategoryIllustration[\s\S]*illustration=\{category\.illustration\}/);
+    expect(CATEGORY_PAGE).toMatch(
+      /<CategoryIllustration[\s\S]*illustration=\{category\.illustration\}/,
+    );
   });
 
   it('renders the category shortDescription and its intro copy in the hero', () => {

@@ -60,7 +60,7 @@ describe('the sticky mobile action bar is public-page-only', () => {
   });
 
   it('routes the bar context through buildEnquiryMessage in the layout, not a hand-rolled string', () => {
-    expect(BASE_LAYOUT).toContain('buildEnquiryMessage(actionBar ?? { kind: \'general\' }');
+    expect(BASE_LAYOUT).toContain("buildEnquiryMessage(actionBar ?? { kind: 'general' }");
   });
 
   it('keeps the sticky bar out of ProductDetail, which /admin/preview reuses', () => {
@@ -74,7 +74,13 @@ describe('the sticky mobile action bar is public-page-only', () => {
 
 describe('the PDP information panel composes the omit-when-empty components (Requirement 4.3)', () => {
   it('uses the decomposed blocks rather than restating price/spec/stock/variant logic', () => {
-    for (const component of ['PriceBlock', 'SpecList', 'StockBadge', 'VariantList', 'Breadcrumbs']) {
+    for (const component of [
+      'PriceBlock',
+      'SpecList',
+      'StockBadge',
+      'VariantList',
+      'Breadcrumbs',
+    ]) {
       expect(PRODUCT_DETAIL).toContain(`<${component}`);
     }
   });
@@ -117,12 +123,8 @@ describe('the PDP information panel composes the omit-when-empty components (Req
     }
     expect(PRODUCT_DETAIL).toMatch(/hasDimensions/);
     // The panel renders only inside the guard — never unconditionally.
-    expect(PRODUCT_DETAIL).toMatch(
-      /hasSpecs &&\s*\(\s*<section class="ngf-pdp-specpanel"/,
-    );
-    expect(PRODUCT_DETAIL).not.toMatch(
-      /}\s*\n\s*<section class="ngf-pdp-specpanel"/,
-    );
+    expect(PRODUCT_DETAIL).toMatch(/hasSpecs &&\s*\(\s*<section class="ngf-pdp-specpanel"/);
+    expect(PRODUCT_DETAIL).not.toMatch(/}\s*\n\s*<section class="ngf-pdp-specpanel"/);
   });
 });
 
@@ -189,6 +191,8 @@ describe('product card motion is CSS-only and reduced-motion-safe (Requirements 
       SHELL_CSS.indexOf('.ngf-card-hover'),
     );
     expect(media).toMatch(/transition: transform/);
-    expect(SHELL_CSS.slice(SHELL_CSS.indexOf('.ngf-card {'))).not.toMatch(/animation:[^;]*infinite/);
+    expect(SHELL_CSS.slice(SHELL_CSS.indexOf('.ngf-card {'))).not.toMatch(
+      /animation:[^;]*infinite/,
+    );
   });
 });

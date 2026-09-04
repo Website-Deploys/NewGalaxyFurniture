@@ -52,7 +52,9 @@ describe('about — the premium hero, the placeholder story and the values band'
   });
 
   it('draws exactly one reused primitive as the brand mark: titled and trigger="none"', () => {
-    const tags = ABOUT.match(/<Animated\w+|<CraftsmanshipLines|<FurnitureAssembly|<CategoryIllustration/g);
+    const tags = ABOUT.match(
+      /<Animated\w+|<CraftsmanshipLines|<FurnitureAssembly|<CategoryIllustration/g,
+    );
     expect(tags).toHaveLength(1);
     expect(ABOUT).toContain('<AnimatedRoom');
     const start = ABOUT.indexOf('<AnimatedRoom');
@@ -100,9 +102,11 @@ describe('workshop — an architectural story on drawing-board panels', () => {
 
   it('uses at most four distinct reused primitives, and no new or fifth primitive', () => {
     const distinct = new Set(
-      [...WORKSHOP.matchAll(/<(Animated\w+|CraftsmanshipLines|FurnitureAssembly|CategoryIllustration)\b/g)].map(
-        (m) => m[1],
-      ),
+      [
+        ...WORKSHOP.matchAll(
+          /<(Animated\w+|CraftsmanshipLines|FurnitureAssembly|CategoryIllustration)\b/g,
+        ),
+      ].map((m) => m[1]),
     );
     expect(distinct.size).toBeLessThanOrEqual(4);
     // The four the sequence uses are the four furniture silhouettes — the ones the site would
