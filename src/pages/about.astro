@@ -19,6 +19,7 @@
  * Requirements: 8.1, 8.8, 19.6, 23.17.
  */
 import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
+import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
 import CallLink from '@/components/ui/CallLink.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -39,13 +40,33 @@ const meta = pageMeta(Astro, {
 
 <BaseLayout meta={meta}>
   <div class="ngf-page">
-    <div class="ngf-page-head">
-      <p class="ngf-page-eyebrow">About us</p>
-      <h1>{settings.businessName}</h1>
-      <p class="ngf-page-lead">
-        A furniture manufacturer and showroom in Bengaluru, making sofas, beds, dining furniture,
-        storage and custom pieces for homes across {serviceArea}.
-      </p>
+    {/*
+      The premium catalogue hero (Milestone 3, Checkpoint D). A copy column beside a drawing-board
+      panel holding ONE reused primitive as the brand mark: AnimatedRoom, titled so it is a
+      meaningful role="img", rendered trigger="none" so it draws its final static state and folds
+      into the hero's single group reveal. The whole hero is one [data-reveal][data-motion-group],
+      so it counts as one animating element.
+    */}
+    <div class="ngf-page-head ngf-cathero ngf-cathero-index" data-reveal data-motion-group>
+      <div class="ngf-cathero-copy">
+        <p class="ngf-cathero-eyebrow">About us</p>
+        <h1>{settings.businessName}</h1>
+        <p class="ngf-page-lead">
+          A furniture manufacturer and showroom in Bengaluru, making sofas, beds, dining furniture,
+          storage and custom pieces for homes across {serviceArea}.
+        </p>
+      </div>
+
+      <div class="ngf-cathero-panel ngf-cathero-panel-wide">
+        <span class="ngf-cathero-glyph">
+          <AnimatedRoom
+            strokeWidth={1}
+            trigger="none"
+            title="A furnished room drawn in line — a sofa, a table and a lamp against a wall and window"
+          />
+        </span>
+        <span class="ngf-cathero-rule"></span>
+      </div>
     </div>
 
     <div class="ngf-page-columns">
@@ -94,5 +115,89 @@ const meta = pageMeta(Astro, {
         </div>
       </aside>
     </div>
+
+    {/*
+      A values band. Every value is claim-free positioning that the specification already
+      establishes — made to order, direct from the workshop, serving Karnataka — and NOT one of the
+      facts that has not been supplied: no years, no counts, no certifications, no production
+      numbers, no delivery guarantees. Its own <section> so its reveal budget is isolated.
+    */}
+    <section class="ngf-about-values" aria-labelledby="ngf-about-values-heading">
+      <h2 id="ngf-about-values-heading">How we work</h2>
+      <ul class="ngf-about-values-list" data-reveal data-motion-group>
+        <li class="ngf-about-value">
+          <h3>Made to order</h3>
+          <p>
+            Sizes, timber, finishes and upholstery can be changed on most pieces, and a piece can be
+            built to a drawing or a measurement you give us.
+          </p>
+        </li>
+        <li class="ngf-about-value">
+          <h3>Direct from the workshop</h3>
+          <p>
+            There is no reseller between the workshop and your room. Every enquiry on this site
+            reaches the people who build the furniture.
+          </p>
+        </li>
+        <li class="ngf-about-value">
+          <h3>Serving {serviceArea}</h3>
+          <p>
+            We manufacture in Bengaluru and deliver and install across {serviceArea}. Ask us what is
+            possible for your room.
+          </p>
+        </li>
+      </ul>
+    </section>
   </div>
 </BaseLayout>
+
+<style>
+  .ngf-about-values {
+    margin-top: var(--spacing-section, 4rem);
+  }
+
+  .ngf-about-values > h2 {
+    margin: 0;
+    font-size: var(--text-h2);
+  }
+
+  .ngf-about-values-list {
+    display: grid;
+    gap: 1.5rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-about-values-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-about-value {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-about-value h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 400;
+  }
+
+  .ngf-about-value p {
+    margin: 0;
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    line-height: 1.6;
+  }
+</style>

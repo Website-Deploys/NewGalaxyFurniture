@@ -75,6 +75,12 @@ const meta = pageMeta(Astro, {
         <div class="ngf-page-actions" style="margin-top: 0;">
           <WhatsAppLink context={{ kind: 'general' }} />
           <CallLink variant="outline" />
+          {/*
+            The custom-furniture CTA (Milestone 3, Checkpoint D). A plain link styled as a pill,
+            pointing at the enquiry page — not a WhatsApp or tel: URL, so it adds no channel the
+            shared components do not already own.
+          */}
+          <a class="ngf-contact-custom-cta" href="/custom-furniture">Ask about custom furniture</a>
         </div>
 
         {
@@ -162,5 +168,32 @@ const meta = pageMeta(Astro, {
     flex-direction: column;
     font-style: normal;
     color: var(--color-espresso);
+  }
+
+  /*
+   * The custom-furniture CTA, styled to sit alongside the WhatsApp/Call pills: the same outline pill
+   * language (`.ngf-cta-outline`), scoped here because those rules live inside CallLink's own style
+   * block. It is a plain internal link, so it introduces no new contact channel.
+   */
+  .ngf-contact-custom-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid currentColor;
+    border-radius: var(--radius-hair);
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .ngf-contact-custom-cta:hover {
+      background-color: var(--color-cream);
+    }
   }
 </style>

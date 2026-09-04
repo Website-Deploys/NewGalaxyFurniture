@@ -50,6 +50,7 @@ const meta = pageMeta(Astro, {
     {
       reviews.length === 0 ? (
         <EmptyState
+          tone="page"
           heading="No reviews published yet"
           message="We would rather show none than write our own. Ask us for references and we will put you in touch with customers who agreed to be contacted."
         >
@@ -57,9 +58,16 @@ const meta = pageMeta(Astro, {
           <CallLink slot="action" variant="outline" />
         </EmptyState>
       ) : (
-        <ul class="ngf-reviewlist">
+        /*
+          The published-review path, styled as premium showroom cards for when reviews exist. Only
+          the fields the schema and the record actually supply are drawn — the customer name, the
+          rating, the text and, where present, the date and the product they bought. Nothing here is
+          invented; `getPublishedReviews()` is the single source and this page adds no field of its
+          own. No average is computed and no rating markup is emitted (see the note below).
+        */
+        <ul class="ngf-reviewlist" data-reveal data-motion-group>
           {reviews.map((review) => (
-            <li>
+            <li class="ngf-reviewcard">
               <p class="ngf-reviewlist-rating">{review.rating} out of 5</p>
               <blockquote>{review.text}</blockquote>
               <p class="ngf-reviewlist-by">
@@ -90,13 +98,15 @@ const meta = pageMeta(Astro, {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
   }
 
-  .ngf-reviewlist > li {
+  .ngf-reviewcard {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    padding: 1.5rem;
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
     border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-lg);
     background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
   }
 
   .ngf-reviewlist-rating {

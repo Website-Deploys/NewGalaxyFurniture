@@ -10,9 +10,16 @@
  *
  * There is deliberately no paragraph here about seasoned timber, mortise-and-tenon joinery, hand-
  * rubbed finishes, or curing times. Every one of those would be plausible and none of them has been
- * confirmed.
+ * confirmed. Milestone 3, Checkpoint D relights the page as an architectural/editorial workshop
+ * story: a scroll-linked sequence of technical DRAWINGS on the shared `.ngf-process` drawing-board
+ * panels — a sofa, a bed, a dining table and a chair, each drawn in line as a silhouette study —
+ * with NO fabricated photographs. Every illustration is one of the four REUSED furniture primitives
+ * (sofa, bed, table, chair), which are the four the site would otherwise render nowhere; the page
+ * therefore both stays at exactly four distinct `data-ngf-primitive` names AND keeps the site's
+ * nine-illustration set complete (Requirement 21.5). Every sequence is a single `data-motion-group`
+ * reveal that stays visible-by-default so a broken script can never hide the content.
  *
- * Requirements: 7.10, 8.1, 8.8, 23.17.
+ * Requirements: 7.10, 8.1, 8.8, 21.15, 23.17.
  */
 import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
 import AnimatedBed from '@/components/motion/AnimatedBed.astro';
@@ -27,6 +34,40 @@ import { pageMeta } from '@/lib/seo/page';
 import '@/styles/editorial.css';
 
 const settings = getSiteSettings();
+
+/**
+ * What the workshop builds, as a sequence of line-drawn silhouette studies. Each stage is a
+ * drawing-board panel holding one reused furniture primitive, so the page stays at exactly four
+ * distinct `data-ngf-primitive` names and the site's nine-illustration set stays complete. The copy
+ * names no process, material, tolerance or timeline — it describes the *drawing* and the kind of
+ * piece, which are the honest things this page can show.
+ */
+const stages = [
+  {
+    step: '01',
+    title: 'Sofas',
+    copy: 'A sofa drawn in line — the frame, the arms and the seat, the proportions set before a single length is cut.',
+    illustrationTitle: 'A three-seater sofa drawn in line',
+  },
+  {
+    step: '02',
+    title: 'Beds',
+    copy: 'A bed drawn to its headboard and rails, the piece a room is planned around.',
+    illustrationTitle: 'A bed with a headboard drawn in line',
+  },
+  {
+    step: '03',
+    title: 'Dining tables',
+    copy: 'A dining table drawn top and legs, the surface a home gathers at.',
+    illustrationTitle: 'A dining table drawn in line',
+  },
+  {
+    step: '04',
+    title: 'Chairs',
+    copy: 'A chair drawn seat and back — the piece where proportion is felt most. Ask us to walk you through the making.',
+    illustrationTitle: 'A dining chair drawn in line',
+  },
+] as const;
 
 const meta = pageMeta(Astro, {
   title: 'Workshop',
@@ -47,6 +88,72 @@ const meta = pageMeta(Astro, {
       </p>
     </div>
 
+    {/*
+      The architectural sequence (Milestone 3, Checkpoint D), reusing the `.ngf-process` drawing-
+      board + connecting-line language from `/custom-furniture`. Its own top-level <section> so the
+      per-section reveal budget is isolated. The four stages are one [data-reveal][data-motion-group]
+      list, so the whole sequence counts as ONE animating element and staggers in as one group.
+
+      Each stage's illustration is a REUSED primitive rendered with trigger="none": it draws its
+      final static state, carries no data-reveal of its own, and is titled so it is a meaningful
+      role="img" describing the drawing rather than a decorative ornament. There is no photograph
+      here, and none is implied — Requirement 7.10 forbids asserting a making the operator has not
+      supplied, so the page shows intentional drawings, not stand-in imagery.
+    */}
+    <section class="ngf-process" aria-labelledby="ngf-workshop-process-heading">
+      <h2 id="ngf-workshop-process-heading">What we build, drawn</h2>
+      <p class="ngf-process-lead">
+        Sofas, beds, dining tables and chairs — the four things the workshop builds, each set out in
+        line before it is made.
+      </p>
+
+      <ol class="ngf-process-steps" data-reveal data-motion-group>
+        <li class="ngf-process-step">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <AnimatedSofa strokeWidth={1} trigger="none" title={stages[0].illustrationTitle} />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[0].step}</p>
+          <h3 class="ngf-process-title">{stages[0].title}</h3>
+          <p class="ngf-process-copy">{stages[0].copy}</p>
+        </li>
+
+        <li class="ngf-process-step">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <AnimatedBed strokeWidth={1} trigger="none" title={stages[1].illustrationTitle} />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[1].step}</p>
+          <h3 class="ngf-process-title">{stages[1].title}</h3>
+          <p class="ngf-process-copy">{stages[1].copy}</p>
+        </li>
+
+        <li class="ngf-process-step">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <AnimatedTable strokeWidth={1} trigger="none" title={stages[2].illustrationTitle} />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[2].step}</p>
+          <h3 class="ngf-process-title">{stages[2].title}</h3>
+          <p class="ngf-process-copy">{stages[2].copy}</p>
+        </li>
+
+        <li class="ngf-process-step ngf-process-step-last">
+          <div class="ngf-process-panel">
+            <span class="ngf-process-glyph">
+              <AnimatedChair strokeWidth={1} trigger="none" title={stages[3].illustrationTitle} />
+            </span>
+          </div>
+          <p class="ngf-process-num" aria-hidden="true">{stages[3].step}</p>
+          <h3 class="ngf-process-title">{stages[3].title}</h3>
+          <p class="ngf-process-copy">{stages[3].copy}</p>
+        </li>
+      </ol>
+    </section>
+
     <div class="ngf-page-body">
       <h2>How we make it</h2>
       <PlaceholderCopy
@@ -60,47 +167,6 @@ const meta = pageMeta(Astro, {
         <a href="/contact">contact page</a> as soon as they are confirmed. Until then, call or message
         us and we will arrange a time.
       </p>
-
-      {
-        /*
-        The four furniture primitives, as a "what we make" band.
-        
-        They are **meaningful, not decorative**, which is why each carries a `title`: the band is the
-        only thing on this page that says what kinds of furniture the workshop builds, and the copy
-        above it cannot say so — Requirement 7.10 forbids asserting a capability the operator has not
-        supplied, and the four categories *are* supplied, in `data/categories/`. A titled `role="img"`
-        conveys that to a screen reader; an `aria-hidden` drawing would leave the band saying nothing
-        at all to anyone who cannot see it (Requirement 24.10).
-
-        Exactly four primitives on this page, which is Requirement 21.15's ceiling. The grid is one
-        `data-motion-group`, so the four draw as one staggered group rather than four independent
-        animations.
-      */
-      }
-      <h2 id="ngf-workshop-makes-heading">What we build</h2>
-      <ul
-        class="ngf-workshop-makes"
-        data-reveal
-        data-motion-group
-        aria-labelledby="ngf-workshop-makes-heading"
-      >
-        <li>
-          <AnimatedSofa strokeWidth={1} trigger="none" title="A three-seater sofa" />
-          <span>Sofas and sectionals</span>
-        </li>
-        <li>
-          <AnimatedBed strokeWidth={1} trigger="none" title="A bed with a headboard" />
-          <span>Beds</span>
-        </li>
-        <li>
-          <AnimatedTable strokeWidth={1} trigger="none" title="A dining table" />
-          <span>Dining tables</span>
-        </li>
-        <li>
-          <AnimatedChair strokeWidth={1} trigger="none" title="A dining chair" />
-          <span>Chairs</span>
-        </li>
-      </ul>
 
       <h2>Made to order</h2>
       <p>
@@ -118,31 +184,175 @@ const meta = pageMeta(Astro, {
 </BaseLayout>
 
 <style>
-  .ngf-workshop-makes {
-    display: grid;
-    gap: 1.5rem;
-    margin: 1.5rem 0 0;
-    padding: 0;
-    list-style: none;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* -------------------------------------------------------------------------- */
+  /* The architectural sequence reuses the shared `.ngf-process` language from   */
+  /* `/custom-furniture`. The rules below are the same drawing-board panel,      */
+  /* connecting line and reduced-motion contract, kept scoped to this page.      */
+  /* -------------------------------------------------------------------------- */
+
+  .ngf-process {
+    max-width: none;
+    margin: 0 0 var(--spacing-section, 4rem);
+  }
+
+  .ngf-process > h2 {
+    margin: 0;
+    font-size: var(--text-h2);
+  }
+
+  .ngf-process-lead {
+    max-width: var(--measure-prose);
+    margin: 0.75rem 0 2rem;
     color: var(--color-walnut);
   }
 
-  @media (min-width: 768px) {
-    .ngf-workshop-makes {
+  .ngf-process-steps {
+    display: grid;
+    gap: 2rem 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 640px) {
+    .ngf-process-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-process-steps {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  .ngf-workshop-makes li {
+  .ngf-process-step {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     align-items: flex-start;
+    min-width: 0;
   }
 
-  .ngf-workshop-makes span {
+  .ngf-process-panel {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    padding: clamp(1rem, 4vw, 1.75rem);
+    overflow: hidden;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-cream);
+    background-image:
+      linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+    background-position: center;
+    background-size: 24px 24px;
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-process-panel::before,
+  .ngf-process-panel::after {
+    position: absolute;
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 0 solid var(--color-taupe);
+    content: '';
+    pointer-events: none;
+  }
+
+  .ngf-process-panel::before {
+    top: 0.6rem;
+    left: 0.6rem;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+
+  .ngf-process-panel::after {
+    right: 0.6rem;
+    bottom: 0.6rem;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+  }
+
+  .ngf-process-glyph {
+    display: block;
+    width: 100%;
+    max-width: 200px;
+    color: var(--color-walnut);
+  }
+
+  .ngf-process-glyph :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .ngf-process-step:not(.ngf-process-step-last)::after {
+    content: '';
+    position: absolute;
+    background-color: var(--color-taupe);
+    opacity: 0.7;
+    transform: scaleY(1);
+    transform-origin: top;
+    transition: transform var(--dur-story) var(--ease-draw);
+    pointer-events: none;
+  }
+
+  .ngf-process-step:not(.ngf-process-step-last)::after {
+    left: calc(clamp(1rem, 4vw, 1.75rem));
+    top: 100%;
+    width: 1px;
+    height: 2rem;
+    margin-top: -1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-process-step:not(.ngf-process-step-last)::after {
+      top: calc((100% / 3) - 0.5rem);
+      left: 100%;
+      width: 1.5rem;
+      height: 1px;
+      margin-top: 0;
+      margin-left: -0.75rem;
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+  }
+
+  .ngf-process-num {
+    margin: 1rem 0 0;
+    color: var(--color-champagne);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  .ngf-process-title {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+  }
+
+  .ngf-process-copy {
+    margin: 0.5rem 0 0;
     color: var(--color-espresso);
     font-size: var(--text-small);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-process-step::after {
+      transform: scaleY(0);
+    }
+  }
+
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-process-step::after {
+      transform: scaleX(0);
+    }
   }
 </style>
