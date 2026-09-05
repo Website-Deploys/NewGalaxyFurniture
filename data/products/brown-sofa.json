@@ -15,7 +15,7 @@
   "imageStatus": "IMAGE REQUIRED — MANUAL ADMIN UPLOAD",
   "images": [
     {
-      "alt": "",
+      "alt": "f",
       "altSource": "admin",
       "derivativeFormats": [
         "avif",
@@ -146,6 +146,6 @@
     "Sofa"
   ],
   "trending": false,
-  "updatedAt": "2026-09-05T13:39:56.913Z",
+  "updatedAt": "2026-09-05T13:40:14.986Z",
   "variants": []
 }
