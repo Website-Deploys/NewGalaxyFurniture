@@ -45,13 +45,20 @@ const { heading, message, showCategories = true, categoryName } = Astro.props;
     <AnimatedFurnitureLine strokeWidth={1} />
   </span>
 
-  <a slot="action" class="ngf-card-enquire" href="/collection">Browse the full collection</a>
+  {
+    /*
+    The WhatsApp enquiry is the primary way forward here: with an empty catalogue there is nothing
+    to browse to, so the clearest action is to tell us what you are after. It leads as the solid
+    CTA; browsing the full collection is the quieter secondary link beside it.
+  */
+  }
   <WhatsAppLink
     slot="action"
     context={categoryName === undefined ? { kind: 'general' } : { kind: 'category', categoryName }}
-    variant="outline"
-    label="Ask on WhatsApp"
+    variant="solid"
+    label="Enquire on WhatsApp"
   />
+  <a slot="action" class="ngf-card-enquire" href="/collection">Browse the full collection</a>
 
   {
     showCategories && (

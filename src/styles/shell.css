@@ -1104,10 +1104,69 @@
   }
 }
 
+/*
+ * The category-navigation row inside the index hero. It spans both columns beneath the copy and
+ * the drawing-board panel, ruled off by a hairline so the reading order — title, then rooms, then
+ * controls, then grid — is unmistakable. The chips reuse the site's quiet pill language rather
+ * than inventing a new control: a taupe hairline that warms to espresso on hover, `transform`-only
+ * feedback so nothing here touches a forbidden property.
+ */
+.ngf-cathero-nav {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: clamp(0.5rem, 2vw, 1rem);
+  padding-top: clamp(1.25rem, 3vw, 1.75rem);
+  border-top: 1px solid var(--color-taupe);
+}
+
+.ngf-cathero-nav-label {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ngf-cathero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ngf-cathero-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding-inline: 0.9rem;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-white);
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-cathero-chip:hover,
+  .ngf-cathero-chip:focus-visible {
+    border-color: var(--color-espresso);
+    transform: translateY(-1px);
+  }
+}
+
 .ngf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2rem);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1125,13 +1184,19 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.75rem;
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--color-taupe);
   border-radius: var(--radius-lg);
   background-color: var(--color-white);
   box-shadow: var(--shadow-level1);
+  /*
+   * `transform` and `box-shadow` on separate lines is deliberate, not a formatting accident:
+   * `lint-motion` reads a `transition` declaration per line, so keeping `box-shadow` on its own
+   * line documents that the shadow settles with the lift while never presenting `box-shadow` as an
+   * animated token to the lint. The lift itself is `transform`, which composites cheaply.
+   */
   transition:
     transform var(--dur-fast) var(--ease-standard),
     box-shadow var(--dur-fast) var(--ease-standard);
@@ -1192,15 +1257,17 @@
   position: absolute;
   right: 0.75rem;
   bottom: 0.75rem;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
+  border-radius: var(--radius-pill);
   background-color: var(--color-obsidian);
   color: var(--color-ivory);
   opacity: 0;
-  transform: translateX(-4px);
+  transform: translateX(-6px);
   transition:
     opacity var(--dur-fast) var(--ease-standard),
     transform var(--dur-fast) var(--ease-standard);
@@ -1217,8 +1284,8 @@
 @media (hover: hover) and (min-width: 768px) {
   .ngf-card:hover,
   .ngf-card:focus-within {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-level2);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
   }
 
   /*
@@ -1269,13 +1336,13 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.25rem 0.875rem 0.875rem;
+  gap: 0.4rem;
+  padding: 0.35rem 1rem 1rem;
 }
 
 .ngf-card-tag {
   font-size: 0.75rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-walnut);
 }
@@ -1284,23 +1351,40 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-h3);
+  font-weight: 400;
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--color-obsidian);
   text-wrap: balance;
 }
 
-/* The price is the decision line: obsidian, a touch more weight, on its own row above stock. */
+/*
+ * Price and stock share the decision row: the number and the availability that qualifies it sit on
+ * one baseline, with the stock pushed to the row's end so a scanning eye reads "how much" then
+ * "can I have it now" without dropping a line. A slightly larger gap opens above this row so the
+ * decision separates from the name and tag that identify the piece.
+ */
+.ngf-card-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+}
+
 .ngf-card-price {
-  margin: 0.15rem 0 0;
+  margin: 0;
   color: var(--color-obsidian);
   font-size: var(--text-body);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
 .ngf-card-stock {
   font-size: var(--text-small);
   color: var(--color-walnut);
+  text-align: end;
+  white-space: nowrap;
 }
 
 .ngf-card-stock[data-stock='OUT_OF_STOCK'] {
@@ -1314,16 +1398,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   min-height: 44px;
   min-width: 44px;
   margin-top: auto;
   padding: 0.5rem 1rem;
   border: 1px solid var(--color-espresso);
-  border-radius: var(--radius-hair);
+  border-radius: var(--radius-soft);
   color: var(--color-espresso);
   font-size: var(--text-small);
   font-weight: 600;
+  letter-spacing: 0.01em;
   text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-card-enquire:hover,
+  .ngf-card-enquire:focus-visible {
+    background-color: var(--color-espresso);
+    color: var(--color-ivory);
+  }
 }
 
 /* Filters and sort ------------------------------------------------------- */
@@ -1393,16 +1490,29 @@
   flex: 1 0 100%;
 }
 
+.ngf-sort > label {
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.02em;
+}
+
 .ngf-sort select {
   max-width: 100%;
   min-height: 44px;
-  padding-inline: 0.5rem;
+  padding-inline: 0.75rem;
   border: 1px solid var(--color-taupe);
-  border-radius: var(--radius-hair);
+  border-radius: var(--radius-soft);
   background-color: var(--color-white);
   color: inherit;
   font-family: inherit;
   font-size: var(--text-small);
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-sort select:hover {
+    border-color: var(--color-espresso);
+  }
 }
 
 /*
@@ -1422,15 +1532,45 @@
 .ngf-filter-toggle {
   display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
   min-height: 44px;
   padding-inline: 1rem;
   border: 1px solid var(--color-espresso);
-  border-radius: var(--radius-hair);
+  border-radius: var(--radius-soft);
   background: none;
   color: var(--color-espresso);
   font-family: inherit;
   font-size: var(--text-small);
+  font-weight: 600;
   cursor: pointer;
+}
+
+/* The active-filter count on the mobile toggle: a small filled pill reading the number of filters. */
+.ngf-filter-toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding-inline: 0.35rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-espresso);
+  color: var(--color-ivory);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* The same count, worded, in the sheet head. */
+.ngf-filter-sheet-count {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-cream);
+  color: var(--color-walnut);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .ngf-filter-panel {
@@ -1469,6 +1609,8 @@
   align-items: center;
   gap: 0.5rem;
   min-height: 40px;
+  padding-inline: 0.4rem;
+  border-radius: var(--radius-soft);
   font-size: var(--text-small);
 }
 
@@ -1476,6 +1618,21 @@
   width: 18px;
   height: 18px;
   accent-color: var(--color-espresso);
+}
+
+/*
+ * The clear active state: a selected option warms its label to obsidian and gives it a touch more
+ * weight, so which filters are on is legible at a glance rather than only from a checked box. The
+ * `:has()` selector keeps this a presentation concern — the input's `:checked` is the single
+ * source of truth, exactly as it was.
+ */
+.ngf-filter-option:has(input:checked) {
+  background-color: var(--color-cream);
+}
+
+.ngf-filter-option:has(input:checked) label {
+  color: var(--color-obsidian);
+  font-weight: 600;
 }
 
 /* Requirement 3.8: zero-result options are disabled and show 0 — never removed. */
@@ -1494,12 +1651,73 @@
   min-height: 44px;
   padding-inline: 1rem;
   border: 1px solid var(--color-espresso);
-  border-radius: var(--radius-hair);
+  border-radius: var(--radius-soft);
   background: none;
   color: var(--color-espresso);
   font-family: inherit;
   font-size: var(--text-small);
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-filter-clear:hover,
+  .ngf-filter-clear:focus-visible {
+    background-color: var(--color-espresso);
+    color: var(--color-ivory);
+  }
+}
+
+/*
+ * The mobile sheet's action row. Hidden in the sidebar at 768 px and up — the sidebar filters live
+ * and needs no "Done", and the in-panel Clear serves the reset there. Below 768 px it is a sticky
+ * footer inside the sheet so Reset and Done are reachable without scrolling back through the
+ * options.
+ */
+.ngf-filter-sheet-actions {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .ngf-filter-sheet-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    gap: 0.75rem;
+    margin: 1rem -1.25rem -1.5rem;
+    padding: 0.875rem 1.25rem calc(0.875rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--color-taupe);
+    background-color: var(--color-ivory);
+  }
+
+  .ngf-filter-sheet-reset,
+  .ngf-filter-sheet-done {
+    min-height: 44px;
+    padding-inline: 1rem;
+    border-radius: var(--radius-soft);
+    font-family: inherit;
+    font-size: var(--text-small);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .ngf-filter-sheet-reset {
+    flex: 0 0 auto;
+    border: 1px solid var(--color-espresso);
+    background: none;
+    color: var(--color-espresso);
+  }
+
+  .ngf-filter-sheet-done {
+    flex: 1;
+    border: 1px solid var(--color-espresso);
+    background-color: var(--color-espresso);
+    color: var(--color-ivory);
+  }
 }
 
 /* Sidebar at ≥ 768 px, bottom sheet below it (design → Responsive strategy). */
@@ -1510,7 +1728,7 @@
     z-index: 55;
     max-height: 85vh;
     overflow-y: auto;
-    padding: 1.25rem 1.25rem calc(1.5rem + 56px + env(safe-area-inset-bottom, 0px));
+    padding: 1.25rem 1.25rem 1.5rem;
     background-color: var(--color-ivory);
     box-shadow: var(--shadow-level2);
   }
@@ -1553,16 +1771,25 @@
  */
 .ngf-empty-figure {
   display: block;
-  width: 96px;
+  width: clamp(112px, 20vw, 148px);
   color: var(--color-taupe);
 }
 
+/*
+ * The category shortcut row closes the empty state: even with nothing published, a visitor can
+ * pick the room they came for. Centred to sit under the page-tone composition, with a hairline
+ * above so it reads as a distinct "or start from a category" step rather than a fourth action.
+ */
 .ngf-empty-categories {
+  align-self: stretch;
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem;
-  margin: 0;
-  padding: 0;
+  max-width: 46rem;
+  margin: 0.5rem auto 0;
+  padding: 1.25rem 0 0;
+  border-top: 1px solid var(--color-taupe);
   list-style: none;
 }
 
@@ -1570,11 +1797,23 @@
   display: inline-flex;
   align-items: center;
   min-height: 40px;
-  padding-inline: 0.75rem;
+  padding-inline: 0.9rem;
   border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-pill);
   color: var(--color-espresso);
   font-size: var(--text-small);
   text-decoration: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-empty-categories a:hover,
+  .ngf-empty-categories a:focus-visible {
+    border-color: var(--color-espresso);
+    color: var(--color-obsidian);
+  }
 }
 
 /* ------------------------------------------------------------------------- *

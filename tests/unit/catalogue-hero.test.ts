@@ -62,8 +62,25 @@ describe('the collection index hero', () => {
   it('opens with the shared hero language and keeps the furniture-line ornament', () => {
     expect(INDEX_PAGE).toContain('ngf-cathero');
     expect(INDEX_PAGE).toContain('ngf-cathero-eyebrow');
-    // The site's required render of the furniture-line primitive stays on this page.
+    // The site's required render of the furniture-line primitive stays on this page, still folded
+    // into the hero's single group reveal with `trigger="none"`.
     expect(INDEX_PAGE).toContain('<AnimatedFurnitureLine');
+    expect(INDEX_PAGE).toMatch(/<AnimatedFurnitureLine[\s\S]*trigger="none"/);
+  });
+
+  it('makes the reading order explicit with an in-hero category-navigation row', () => {
+    // Milestone 2: the collection opener carries the way into each room between the title and the
+    // controls, reusing CATEGORY_NAV so the row cannot drift from the footer or the empty state.
+    expect(INDEX_PAGE).toContain("import { CATEGORY_NAV } from '@/lib/site/navigation'");
+    expect(INDEX_PAGE).toContain('ngf-cathero-nav');
+    expect(INDEX_PAGE).toMatch(/CATEGORY_NAV\.map\(/);
+  });
+
+  it('keeps the whole hero, navigation row included, a single reveal group', () => {
+    // The category nav is the hero's last group child, so the opener still counts as one animating
+    // element against the motion budget.
+    expect(INDEX_PAGE).toMatch(/ngf-cathero[\s\S]*data-reveal data-motion-group/);
+    expect(INDEX_PAGE).toMatch(/data-reveal data-motion-group[\s\S]*ngf-cathero-nav/);
   });
 });
 

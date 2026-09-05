@@ -21,7 +21,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useScopedId } from '@/lib/ui/ids';
 
 import { MULTI_DIMENSIONS } from '@/lib/search/filter';
-import type { AvailabilityFilter, Facets, MultiDimension } from '@/lib/search/filter';
+import type { AvailabilityFilter, FacetOption, Facets, MultiDimension } from '@/lib/search/filter';
 import type { PriceBandFilter } from '@/lib/money';
 import { activateTrap } from '@/lib/ui/focus-trap';
 
@@ -61,6 +61,18 @@ export default function FilterPanel({
   const shellRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
 
+  /**
+   * The number of active filters, derived from the facets the panel already renders rather than
+   * from the state it is deliberately not given. Every selected option counts once — a selected
+   * price band or availability that is not the neutral "any", and each selected value across the
+   * five multi-select dimensions. It drives the count badge on the mobile toggle and in the sheet
+   * head so a visitor who has scrolled the sheet closed still sees how many filters are narrowing
+   * the listing.
+   */
+  const activeCount = (Object.values(facets) as FacetOption[][])
+    .flat()
+    .filter((option) => option.selected && option.value !== 'any').length;
+
   useEffect(() => {
     const shell = shellRef.current;
     if (!sheetOpen || shell === null) return;
@@ -82,7 +94,17 @@ export default function FilterPanel({
         aria-controls={shellId}
         onClick={() => setSheetOpen((open) => !open)}
       >
-        Filters
+        <span>Filters</span>
+        {activeCount > 0 && (
+          <span className="ngf-filter-toggle-count" aria-hidden="true">
+            {activeCount}
+          </span>
+        )}
+        {activeCount > 0 && (
+          <span className="sr-only">
+            {activeCount === 1 ? ', 1 active' : `, ${String(activeCount)} active`}
+          </span>
+        )}
       </button>
 
       {/*
@@ -110,7 +132,14 @@ export default function FilterPanel({
         aria-label="Filters"
       >
         <div className="ngf-filter-sheet-head">
-          <p className="ngf-mobilenav-eyebrow">Filters</p>
+          <p className="ngf-mobilenav-eyebrow">
+            Filters
+            {activeCount > 0 && (
+              <span className="ngf-filter-sheet-count">
+                {activeCount === 1 ? '1 active' : `${String(activeCount)} active`}
+              </span>
+            )}
+          </p>
           <button
             type="button"
             className="ngf-mobilenav-close"
@@ -214,6 +243,32 @@ export default function FilterPanel({
               Clear all filters
             </button>
           )}
+        </div>
+
+        {/*
+          The mobile sheet's action row. It is only ever visible below 768 px (CSS hides it in the
+          sidebar), and neither control changes what is applied — filtering is already live on
+          every toggle. "Done" simply closes the sheet and returns focus to the toggle, the same
+          contract as Escape and the × so `responsive.spec.ts`'s focus-return assertion holds; the
+          reset mirrors the in-panel clear so a visitor at the bottom of a long sheet does not have
+          to scroll back up to it.
+        */}
+        <div className="ngf-filter-sheet-actions">
+          {hasFilters && (
+            <button type="button" className="ngf-filter-sheet-reset" onClick={onClear}>
+              Reset
+            </button>
+          )}
+          <button
+            type="button"
+            className="ngf-filter-sheet-done"
+            onClick={() => {
+              setSheetOpen(false);
+              toggleRef.current?.focus();
+            }}
+          >
+            Done
+          </button>
         </div>
       </div>
     </div>

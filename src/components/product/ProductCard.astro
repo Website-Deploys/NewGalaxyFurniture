@@ -150,10 +150,12 @@ const hoverSrc = second === undefined ? null : derivativeUrl(product.id, second.
   <div class="ngf-card-body">
     <span class="ngf-card-tag">{classification}</span>
     <h3 class="ngf-card-name">{name}</h3>
-    <p class="ngf-card-price">{price}</p>
-    <span class="ngf-card-stock" data-stock={product.stockStatus}>
-      {stockLabel(product.stockStatus)}
-    </span>
+    <div class="ngf-card-meta">
+      <p class="ngf-card-price">{price}</p>
+      <span class="ngf-card-stock" data-stock={product.stockStatus}>
+        {stockLabel(product.stockStatus)}
+      </span>
+    </div>
 
     {
       enquiryHref !== null && (

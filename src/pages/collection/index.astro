@@ -23,6 +23,7 @@ import AnimatedFurnitureLine from '@/components/motion/AnimatedFurnitureLine.ast
 import ProductCard from '@/components/product/ProductCard.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { CATEGORY_NAV } from '@/lib/site/navigation';
 import { getAnalyticsSnapshot } from '@/lib/content/analytics-snapshot';
 import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
 import { getRankings } from '@/lib/content/site';
@@ -106,6 +107,29 @@ const meta = pageMeta(Astro, {
         </span>
         <span class="ngf-cathero-rule"></span>
       </div>
+
+      {
+        /*
+        The category-navigation row. It makes the reading order explicit — Collection title, then
+        the way into each room, then the controls, then the grid — and reuses `CATEGORY_NAV` so a
+        new category file appears here, in the footer and in the empty state at once. It is the
+        hero's third and last group child, so the whole opener stays a single animating element.
+      */
+      }
+      <nav class="ngf-cathero-nav" aria-label="Browse by category">
+        <p class="ngf-cathero-nav-label">Browse by category</p>
+        <ul class="ngf-cathero-chips">
+          {
+            CATEGORY_NAV.map((link) => (
+              <li>
+                <a class="ngf-cathero-chip" href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
     </div>
 
     {
