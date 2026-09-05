@@ -19,9 +19,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "front.png",
       "height": 1070,
       "id": "img_emkgdux824",
