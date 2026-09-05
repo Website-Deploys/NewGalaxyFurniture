@@ -219,7 +219,9 @@ test('the reviews page renders its empty state without inventing a review', asyn
 
 test('the gallery shows every published photograph, each with alt text', async ({ page }) => {
   await page.goto('/gallery', { waitUntil: 'load' });
-  const items = page.locator('.ngf-gallerypage img');
+  // The gallery renders as a lookbook grid (`.ngf-lookbook`), each tile a `ResponsiveImage`; the
+  // legacy `.ngf-gallerypage` container no longer exists in the markup.
+  const items = page.locator('.ngf-lookbook img');
   await expect(items).not.toHaveCount(0);
 
   const alts = await items.evaluateAll((nodes) =>
