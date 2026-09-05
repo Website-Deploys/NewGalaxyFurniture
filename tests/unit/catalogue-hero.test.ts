@@ -40,15 +40,31 @@ describe('the category catalogue hero (Milestone 3, Checkpoint A)', () => {
     );
   });
 
+  it('draws the category glyph on view so the outline → details sequence plays', () => {
+    // Milestone 2: the hero glyph runs its own draw-on entrance (`trigger="inView"`) rather than
+    // rendering flat, so each category's line-art reads as being measured and finished. The copy
+    // column stays the hero's reveal group; the glyph is the one further animation in the section.
+    expect(CATEGORY_PAGE).toMatch(/<CategoryIllustration[\s\S]*trigger="inView"/);
+  });
+
   it('renders the category shortDescription and its intro copy in the hero', () => {
     expect(CATEGORY_PAGE).toContain('{category.shortDescription}');
     expect(CATEGORY_PAGE).toContain('category.intro !== undefined');
   });
 
+  it('carries a WhatsApp enquiry CTA scoped to the category, without inventing a claim', () => {
+    // The category surface's conversion endpoint. A category-kind enquiry names the category only
+    // (no product, no price, no fabricated claim), and it is a real WhatsAppLink rather than a
+    // hand-rolled control.
+    expect(CATEGORY_PAGE).toContain('<WhatsAppLink');
+    expect(CATEGORY_PAGE).toMatch(/kind: 'category', categoryName: category\.name/);
+    expect(CATEGORY_PAGE).toContain('ngf-cathero-cta');
+  });
+
   it('opens with the shared eyebrow + drawing-board panel, revealed as one group', () => {
     expect(CATEGORY_PAGE).toContain('ngf-cathero-eyebrow');
     expect(CATEGORY_PAGE).toContain('ngf-cathero-panel');
-    // The whole hero is one staggered reveal group, so it counts as a single animating element.
+    // The copy column is a staggered reveal group, so the opener's copy counts as one element.
     expect(CATEGORY_PAGE).toMatch(/ngf-cathero[\s\S]*data-reveal data-motion-group/);
   });
 
@@ -58,12 +74,65 @@ describe('the category catalogue hero (Milestone 3, Checkpoint A)', () => {
   });
 });
 
+describe('the enriched category illustrations (Milestone 2)', () => {
+  const ILLUSTRATION = readFileSync(
+    fileURLToPath(
+      new URL('../../src/components/motion/CategoryIllustration.astro', import.meta.url),
+    ),
+    'utf8',
+  );
+
+  it('dispatches an architectural line-art glyph for each of the nine schema keys', () => {
+    // The dispatch must stay exhaustive over the schema enum so a missing key is a TS error.
+    for (const key of [
+      'sofa',
+      'bed',
+      'diningTable',
+      'diningChair',
+      'accentChair',
+      'coffeeTable',
+      'storage',
+      'office',
+      'outdoor',
+    ]) {
+      expect(ILLUSTRATION).toMatch(new RegExp(`\\b${key}:\\s*\\[`));
+    }
+  });
+
+  it('builds each glyph as a drawn outline plus faded-in detail parts', () => {
+    // The outline draws (`.ngf-draw` / stroke-dashoffset) and the details settle in
+    // (`.ngf-part` / opacity + transform) — the "outline → details → finished" sequence, using
+    // only the two lint-permitted mechanisms.
+    expect(ILLUSTRATION).toContain('ngf-draw');
+    expect(ILLUSTRATION).toContain('ngf-part');
+    expect(ILLUSTRATION).toContain('--ngf-part-delay');
+    expect(ILLUSTRATION).toContain('--ngf-draw-delay');
+  });
+});
+
 describe('the collection index hero', () => {
   it('opens with the shared hero language and keeps the furniture-line ornament', () => {
     expect(INDEX_PAGE).toContain('ngf-cathero');
     expect(INDEX_PAGE).toContain('ngf-cathero-eyebrow');
-    // The site's required render of the furniture-line primitive stays on this page.
+    // The site's required render of the furniture-line primitive stays on this page, still folded
+    // into the hero's single group reveal with `trigger="none"`.
     expect(INDEX_PAGE).toContain('<AnimatedFurnitureLine');
+    expect(INDEX_PAGE).toMatch(/<AnimatedFurnitureLine[\s\S]*trigger="none"/);
+  });
+
+  it('makes the reading order explicit with an in-hero category-navigation row', () => {
+    // Milestone 2: the collection opener carries the way into each room between the title and the
+    // controls, reusing CATEGORY_NAV so the row cannot drift from the footer or the empty state.
+    expect(INDEX_PAGE).toContain("import { CATEGORY_NAV } from '@/lib/site/navigation'");
+    expect(INDEX_PAGE).toContain('ngf-cathero-nav');
+    expect(INDEX_PAGE).toMatch(/CATEGORY_NAV\.map\(/);
+  });
+
+  it('keeps the whole hero, navigation row included, a single reveal group', () => {
+    // The category nav is the hero's last group child, so the opener still counts as one animating
+    // element against the motion budget.
+    expect(INDEX_PAGE).toMatch(/ngf-cathero[\s\S]*data-reveal data-motion-group/);
+    expect(INDEX_PAGE).toMatch(/data-reveal data-motion-group[\s\S]*ngf-cathero-nav/);
   });
 });
 

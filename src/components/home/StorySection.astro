@@ -162,14 +162,15 @@ const cta =
 
   .ngf-story-inner {
     display: grid;
-    gap: clamp(1.75rem, 4vw, 3.5rem);
+    gap: clamp(1.5rem, 3.5vw, 3rem);
     align-items: center;
   }
 
   /*
    * A tinted band is full-bleed, so the homepage's rhythm zeroes its block padding and the inner
    * element has to restore it — at the same measure as an untinted band, so the two read as one
-   * sequence rather than as two different page widths.
+   * sequence rather than as two different page widths. The value matches the untinted band's own
+   * `padding-block` from `index.astro`, so tinted and untinted bands keep one cadence.
    */
   .ngf-home-story[data-surface='tint'] .ngf-story-inner {
     padding-block: clamp(3rem, 8vh, 6rem);
@@ -177,11 +178,25 @@ const cta =
 
   @media (min-width: 768px) {
     .ngf-story-inner {
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
     }
 
     .ngf-home-story[data-ornament='right'] .ngf-story-panel {
       order: 2;
+    }
+
+    /*
+     * One asymmetric moment, held to the four editorial bands: the copy column pulls slightly
+     * toward the panel so the type does not sit flush to the page measure on both sides. It reads
+     * as an editor's hang rather than a centred block, and it is a `padding` on the copy column
+     * only — the reading order and the grid are untouched, so navigation stays dead simple.
+     */
+    .ngf-home-story[data-ornament='left'] .ngf-story-copy {
+      padding-inline-start: clamp(0.5rem, 2vw, 2rem);
+    }
+
+    .ngf-home-story[data-ornament='right'] .ngf-story-copy {
+      padding-inline-end: clamp(0.5rem, 2vw, 2rem);
     }
   }
 
@@ -197,7 +212,7 @@ const cta =
     display: grid;
     place-items: center;
     aspect-ratio: 4 / 3;
-    max-height: 400px;
+    max-height: 360px;
     padding: clamp(1.5rem, 4vw, 3rem);
     overflow: hidden;
     border: 1px solid var(--color-taupe);
@@ -236,7 +251,12 @@ const cta =
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: 1.1rem;
+  }
+
+  /* The eyebrow hangs close to the heading it labels, not floating at copy-block spacing. */
+  .ngf-story-eyebrow + .ngf-story-heading {
+    margin-top: -0.35rem;
   }
 
   .ngf-story-eyebrow {
@@ -260,19 +280,27 @@ const cta =
 
   .ngf-story-heading {
     margin: 0;
-    max-width: 24ch;
+    max-width: 18ch;
     color: var(--color-obsidian);
+    font-family: var(--font-display);
     font-size: var(--text-h2);
     font-weight: 400;
-    line-height: 1.12;
-    letter-spacing: -0.01em;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
 
+  /*
+   * The subheading is the band's one lead line — set a shade larger than the body paragraphs and
+   * in obsidian-adjacent espresso, so where a band carries one it reads heading → lead → body
+   * rather than three undifferentiated blocks of type.
+   */
   .ngf-story-sub {
     margin: 0;
-    max-width: var(--measure-prose);
+    max-width: 46ch;
     color: var(--color-espresso);
+    font-size: var(--text-body);
+    line-height: 1.6;
   }
 
   .ngf-story-body {
@@ -283,7 +311,7 @@ const cta =
 
   .ngf-story-body p {
     margin: 0;
-    max-width: 60ch;
+    max-width: 54ch;
     color: var(--color-walnut);
     line-height: 1.7;
   }
@@ -333,7 +361,13 @@ const cta =
       color: var(--color-ivory);
     }
 
-    .ngf-story-cta:hover .ngf-story-cta-arrow {
+    /*
+     * Hover and focus-visible nudge the arrow the same ~4 px, so a keyboard visitor gets the same
+     * acknowledgement the shared `.ngf-arrow` already gives on `:focus-visible` (Requirement 21.12).
+     * Gated with hover like the shared arrow block, so a touch device never leaves it mid-slide.
+     */
+    .ngf-story-cta:hover .ngf-story-cta-arrow,
+    .ngf-story-cta:focus-visible .ngf-story-cta-arrow {
       transform: translateX(0.25rem);
     }
   }
@@ -344,7 +378,8 @@ const cta =
       transition: none;
     }
 
-    .ngf-story-cta:hover .ngf-story-cta-arrow {
+    .ngf-story-cta:hover .ngf-story-cta-arrow,
+    .ngf-story-cta:focus-visible .ngf-story-cta-arrow {
       transform: none;
     }
   }

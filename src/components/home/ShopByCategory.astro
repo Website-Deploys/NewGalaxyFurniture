@@ -95,7 +95,12 @@ const { section, categories } = Astro.props;
       </ul>
 
       <p class="ngf-category-all">
-        <a href="/collection">See the whole collection</a>
+        {/* The shared elegant underline reveal (motion.css `.ngf-underline`): drawn by default,
+            so it degrades to a plain visible underline with no JS or under reduced motion, and it
+            draws in from the left on hover/focus-visible — the same inline-link language site-wide. */}
+        <a href="/collection" class="ngf-underline">
+          See the whole collection
+        </a>
       </p>
     </section>
   )
@@ -236,7 +241,9 @@ const { section, categories } = Astro.props;
       transform: scale(1.04);
     }
 
-    .ngf-category-tile:hover .ngf-category-arrow {
+    /* Focus-visible nudges the arrow too, so a keyboard visitor gets the same acknowledgement. */
+    .ngf-category-tile:hover .ngf-category-arrow,
+    .ngf-category-tile:focus-visible .ngf-category-arrow {
       transform: translateX(3px);
     }
   }
@@ -257,20 +264,15 @@ const { section, categories } = Astro.props;
     margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
   }
 
+  /*
+   * The underline itself is the shared `.ngf-underline` utility from motion.css (drawn by default,
+   * elegant scaleX draw on hover/focus). This rule only carries the colour and the ≥ 44 px touch
+   * target: vertical padding rather than a stretched `min-height`, so the utility's 1 px line hugs
+   * the text baseline instead of sitting at the bottom of a tall flex box.
+   */
   .ngf-category-all a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
+    display: inline-block;
+    padding-block: 0.6rem;
     color: var(--color-obsidian);
-    text-decoration: underline;
-    text-decoration-color: var(--color-taupe);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.35em;
-  }
-
-  @media (hover: hover) {
-    .ngf-category-all a:hover {
-      text-decoration-color: var(--color-obsidian);
-    }
   }
 </style>

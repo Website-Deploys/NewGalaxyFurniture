@@ -6,6 +6,12 @@
  * the shared `.ngf-draw` transition; the lift is `[data-motion-lift]` on the tile that contains it,
  * so hovering the whole tile lifts the whole tile rather than the glyph sliding inside it.
  *
+ * Each glyph is an architectural line-art composition, not an icon: an outline that draws in first
+ * (`.ngf-draw`, animated by `stroke-dashoffset`), then the piece's details and a restrained
+ * blueprint/dimension annotation that fade and translate in after it (`.ngf-part`, animated by
+ * `opacity`/`transform`). The sequence reads as the drawing being measured and finished — the
+ * user's "outline → details → finished" brief — while staying inside the one shared primitive.
+ *
  * **Why its own nine glyphs rather than delegating to `AnimatedSofa` and friends.** Two reasons,
  * and the second is the load-bearing one:
  *
@@ -34,37 +40,108 @@ interface Props extends MotionPrimitiveProps {
 }
 
 const { illustration, ...rest } = Astro.props;
-const { svg, title } = primitiveAttrs(rest, 'category', 360);
+// The path length is a per-set constant a little larger than the longest glyph's drawn length; a
+// value above the truth only starts the draw from slightly further away, which is invisible.
+const { svg, title } = primitiveAttrs(rest, 'category', 520);
 
 /**
- * The nine glyphs, as path data.
- *
- * A table rather than a switch of markup blocks: nine `<Fragment>`s would be nine copies of the
- * same `<path class="ngf-draw">` wrapper, and the whole set is under a kilobyte this way.
- * Each entry is two or three paths, drawn in the same 72 × 56 field so the tiles align optically.
+ * A drawn path (the outline, drawn by `stroke-dashoffset`) or a detail part (fades/translates in
+ * after the outline via `.ngf-part`). `y` seeds the part's translate-from offset so details settle
+ * from a natural direction; `delay` orders the whole entrance so it reads outline → details.
  */
-const GLYPHS: Record<CategoryIllustrationValue, readonly string[]> = {
-  // A three-seater in profile: base, arms, back.
-  sofa: ['M4 44h64M4 44V28h64v16', 'M4 28h10v16M58 28h10v16', 'M14 28V14h44v14'],
-  // A bed: headboard, mattress, legs.
-  bed: ['M6 42V12h12v30', 'M18 30h48v12H18z', 'M22 26h16v4H22M42 26h16v4H42'],
-  // A dining table: top, apron, four legs.
-  diningTable: ['M4 22h64v6H4z', 'M12 28v18M60 28v18M20 28v20M52 28v20', 'M4 48h64'],
-  // A dining chair: back, seat, legs.
-  diningChair: ['M22 26V6h28v20', 'M18 26h36l-4 6H22z', 'M22 32v16M50 32v16M22 42h28'],
-  // An accent chair: a low curved back and splayed legs.
-  accentChair: ['M18 30q0-20 18-20t18 20', 'M14 30h44v8H14z', 'M18 38l-4 12M54 38l4 12'],
-  // A round coffee table, seen slightly from above.
-  coffeeTable: ['M10 24h52v5H10z', 'M20 29v14M52 29v14', 'M14 43h44'],
-  // A storage unit: carcass, two shelves, two doors.
-  storage: ['M12 8h48v40H12z', 'M12 22h48M12 34h48', 'M36 8v40'],
-  // A desk with a drawer bank.
-  office: ['M6 22h60v5H6z', 'M10 27v20M62 27v20', 'M36 27h26v14H36zM40 34h8'],
-  // A garden bench and a slatted back.
-  outdoor: ['M8 34h56v5H8z', 'M14 39v9M58 39v9', 'M14 30h44M14 24h44M14 18h44'],
+interface Stroke {
+  d: string;
+  part?: boolean;
+  delay: number;
+  y?: number;
+}
+
+/**
+ * The nine glyphs, as architectural line-art. Each is drawn in the same 72 × 56 field so the tiles
+ * align optically. The `.ngf-draw` strokes are the outline the drawing is built from; the
+ * `.ngf-part` strokes are the details and the thin dimension/blueprint hairlines that arrive once
+ * the outline is down. Kept to a handful of paths each so the whole set stays well inside the
+ * combined-markup budget (the budget counts only the single largest rendered glyph).
+ */
+const GLYPHS: Record<CategoryIllustrationValue, readonly Stroke[]> = {
+  // Sofa — a three-seater in profile: base and arms outline, then back, cushions, feet, a datum.
+  sofa: [
+    { d: 'M4 46h64v-4H4z', delay: 0 },
+    { d: 'M4 42V26h6v16M62 42V26h6v16', delay: 110 },
+    { d: 'M10 26V16h52v10', delay: 220 },
+    { d: 'M10 26h52v6H10z', part: true, delay: 380, y: -6 },
+    { d: 'M27 26v-6M45 26v-6', part: true, delay: 460, y: -4 },
+    { d: 'M12 50v4M60 50v4', part: true, delay: 540, y: 4 },
+    { d: 'M4 54h64', part: true, delay: 640, y: 4 },
+  ],
+  // Bed — headboard elevation and frame outline, then mattress edge, pillows, legs, a dimension.
+  bed: [
+    { d: 'M6 44V12h13v32', delay: 0 },
+    { d: 'M19 30h49v14H19z', delay: 140 },
+    { d: 'M19 30l5-6h39l5 6', delay: 280 },
+    { d: 'M25 24h14v6H25zM43 24h14v6H43z', part: true, delay: 420, y: -6 },
+    { d: 'M11 44v6M64 44v6', part: true, delay: 520, y: 4 },
+    { d: 'M19 52h49M19 50v4M68 50v4', part: true, delay: 620, y: 4 },
+  ],
+  // Dining table — top outline, then apron, four legs, place settings, a datum line.
+  diningTable: [
+    { d: 'M6 22h60v6H6z', delay: 0 },
+    { d: 'M10 28h52v3H10z', delay: 140 },
+    { d: 'M14 31v17M58 31v17M22 31v20M50 31v20', part: true, delay: 320, y: -6 },
+    { d: 'M18 18a5 4 0 0 1 10 0M44 18a5 4 0 0 1 10 0', part: true, delay: 460, y: -4 },
+    { d: 'M6 52h60', part: true, delay: 600, y: 4 },
+  ],
+  // Dining chair — back and seat contour, then legs, seat detail, construction lines.
+  diningChair: [
+    { d: 'M22 28V6h28v22', delay: 0 },
+    { d: 'M18 28h36l-4 6H22z', delay: 160 },
+    { d: 'M22 34v16M50 34v16M24 44h24', part: true, delay: 320, y: 6 },
+    { d: 'M28 24h16M28 16h16', part: true, delay: 440, y: -4 },
+    { d: 'M14 6v46', part: true, delay: 560, y: 0 },
+  ],
+  // Accent chair — a low curved shell, then splayed legs, cushion seam, construction radius.
+  accentChair: [
+    { d: 'M16 32q0-22 20-22t20 22', delay: 0 },
+    { d: 'M14 32h44v9H14z', delay: 180 },
+    { d: 'M18 41l-5 11M54 41l5 11', part: true, delay: 340, y: 6 },
+    { d: 'M20 32q16-8 32 0', part: true, delay: 460, y: -3 },
+    { d: 'M36 10v-4M12 32h-4', part: true, delay: 580, y: 0 },
+  ],
+  // Coffee / side table — an oval top seen from above, then legs, an under-rail, a datum.
+  coffeeTable: [
+    { d: 'M10 24h52v6H10z', delay: 0 },
+    { d: 'M14 20h44v4H14z', delay: 140 },
+    { d: 'M18 30v16M54 30v16', part: true, delay: 320, y: -6 },
+    { d: 'M18 40h36', part: true, delay: 440, y: 4 },
+    { d: 'M10 50h52', part: true, delay: 560, y: 4 },
+  ],
+  // Storage — a cabinet carcass elevation, then shelves, two doors, handles, plinth.
+  storage: [
+    { d: 'M12 6h48v42H12z', delay: 0 },
+    { d: 'M12 20h48M12 34h48', delay: 160 },
+    { d: 'M36 6v42', delay: 300 },
+    { d: 'M31 26v4M41 26v4', part: true, delay: 440, y: 0 },
+    { d: 'M16 48v4M56 48v4M12 48h48', part: true, delay: 560, y: 4 },
+  ],
+  // Office — a desk / workstation blueprint, then drawer bank, monitor stand, cable datum.
+  office: [
+    { d: 'M6 24h60v5H6z', delay: 0 },
+    { d: 'M10 29v20M62 29v20', delay: 150 },
+    { d: 'M40 29h22v16H40z', part: true, delay: 320, y: 6 },
+    { d: 'M40 37h22M50 32h2', part: true, delay: 440, y: 0 },
+    { d: 'M24 24V14h12v10M30 14v-4', part: true, delay: 560, y: -6 },
+    { d: 'M6 52h60', part: true, delay: 680, y: 4 },
+  ],
+  // Outdoor — a slatted bench outline, then legs, back slats, and environment ground lines.
+  outdoor: [
+    { d: 'M10 34h52v5H10z', delay: 0 },
+    { d: 'M16 39v10M56 39v10', delay: 160 },
+    { d: 'M16 30h40M16 24h40M16 18h40M16 18v16M56 18v16', part: true, delay: 320, y: -6 },
+    { d: 'M4 52h20M30 52h14M50 52h18', part: true, delay: 520, y: 4 },
+  ],
 };
 
-const paths = GLYPHS[illustration];
+const strokes = GLYPHS[illustration];
 ---
 
 <svg
@@ -75,8 +152,16 @@ const paths = GLYPHS[illustration];
 >
   {title !== null && <title>{title}</title>}
   {
-    paths.map((d, index) => (
-      <path class="ngf-draw" style={`--ngf-draw-delay:${String(index * 120)}ms`} d={d} />
+    strokes.map((stroke) => (
+      <path
+        class={stroke.part === true ? 'ngf-part' : 'ngf-draw'}
+        style={
+          stroke.part === true
+            ? `--ngf-part-delay:${String(stroke.delay)}ms;--ngf-part-y:${String(stroke.y ?? 8)}px`
+            : `--ngf-draw-delay:${String(stroke.delay)}ms`
+        }
+        d={stroke.d}
+      />
     ))
   }
 </svg>

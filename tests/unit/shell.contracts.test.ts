@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { SEARCH_PLACEHOLDER } from '@/components/ui/SearchBox';
@@ -229,5 +232,90 @@ describe('honest sort labelling (Requirements 3.13–3.16)', () => {
     });
     expect(source.basis).toBe('manual');
     expect(source.asOf).toBeUndefined();
+  });
+});
+
+/**
+ * The product card's touch-safety contract, as a source-level assertion (Requirement 1.14).
+ *
+ * The second (hover) card image is a `background-image` painted from `--ngf-card-hover-src`. A
+ * touch device — no hover, and typically below 768 px — must NEVER match the rule that declares
+ * that `background-image`, because a `background-image` in a rule that never matches is never
+ * fetched. This is the one invariant the card's presentation must not regress: it is easy to move
+ * an `.ngf-card-hover` declaration while restyling the body and quietly cost every phone a second
+ * image download. Asserted against the stylesheet source so a regression fails in the editor
+ * rather than only in a device audit.
+ *
+ * The scroll-reveal inversion for `motion.css` lives in `motion.test.ts`; this is the card's own
+ * fetch contract, which is a `shell.css` property.
+ */
+describe('product card touch-safety (Requirement 1.14)', () => {
+  const STYLES_DIR = fileURLToPath(new URL('../../src/styles/', import.meta.url));
+  // Strip comments: the file documents the contract in prose, and a sentence naming
+  // `background-image` is documentation rather than a declaration.
+  const shell = readFileSync(`${STYLES_DIR}shell.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  /** The body of every `@media (hover: hover) and (min-width: 768px)` block, concatenated. */
+  function hoverGatedBlocks(source: string): string {
+    const marker = '@media (hover: hover) and (min-width: 768px)';
+    let out = '';
+    let index = 0;
+    while (index < source.length) {
+      const at = source.indexOf(marker, index);
+      if (at === -1) break;
+      let cursor = source.indexOf('{', at) + 1;
+      let depth = 1;
+      const start = cursor;
+      while (cursor < source.length && depth > 0) {
+        if (source[cursor] === '{') depth += 1;
+        else if (source[cursor] === '}') depth -= 1;
+        cursor += 1;
+      }
+      out += source.slice(start, cursor - 1);
+      index = cursor;
+    }
+    return out;
+  }
+
+  /** The whole stylesheet with every hover-and-wide block removed. */
+  function withoutHoverGatedBlocks(source: string): string {
+    const marker = '@media (hover: hover) and (min-width: 768px)';
+    let out = '';
+    let index = 0;
+    while (index < source.length) {
+      const at = source.indexOf(marker, index);
+      if (at === -1) {
+        out += source.slice(index);
+        break;
+      }
+      out += source.slice(index, at);
+      let cursor = source.indexOf('{', at) + 1;
+      let depth = 1;
+      while (cursor < source.length && depth > 0) {
+        if (source[cursor] === '{') depth += 1;
+        else if (source[cursor] === '}') depth -= 1;
+        cursor += 1;
+      }
+      index = cursor;
+    }
+    return out;
+  }
+
+  it('declares the hover second image only inside the (hover: hover) and (min-width: 768px) gate', () => {
+    // The custom property is only ever *painted* inside the gate. It may be *defined* elsewhere as
+    // an inline style on the card, but the `background-image: var(--ngf-card-hover-src)` that
+    // actually triggers the fetch must live only where a touch device cannot match it.
+    expect(hoverGatedBlocks(shell)).toMatch(/background-image:\s*var\(--ngf-card-hover-src\)/);
+    expect(withoutHoverGatedBlocks(shell)).not.toMatch(
+      /background-image:\s*var\(--ngf-card-hover-src\)/,
+    );
+  });
+
+  it('keeps the card lift and image scale inside the same touch-excluded gate', () => {
+    // The elevation and the image scale are hover affordances, not layout: a touch device must
+    // render the resting card, so both live in the gate too.
+    const gated = hoverGatedBlocks(shell);
+    expect(gated).toMatch(/\.ngf-card:hover/);
+    expect(gated).toMatch(/transform:\s*scale\(1\.03\)/);
   });
 });
