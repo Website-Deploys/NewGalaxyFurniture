@@ -255,6 +255,37 @@ describe('the built-output image audit', () => {
     );
   });
 
+  it('recognises each eager-eligible container: card grid, gallery page, and the lookbook', () => {
+    /*
+     * The audit allowlists the containers whose above-the-fold tiles are legitimately eager. The
+     * gallery lookbook (`/gallery`, ul.ngf-lookbook > li.ngf-lookbook-tile > a.ngf-lookbook-link >
+     * span.ngf-lookbook-frame > .ngf-image) joined this set: its first tiles are eager and its first
+     * tile is the page's prioritised LCP image, exactly like the catalogue grid. This case guards
+     * that the lookbook is accepted so the e2e boot blocker cannot silently reopen.
+     */
+    const eagerTile = (container: string, inner = ''): string =>
+      `<ul class="${container}"><li${inner}><span class="ngf-image"><img src="/a.jpg" width="4" height="3" alt="" loading="eager" decoding="async"></span></li></ul>`;
+    for (const container of ['ngf-grid', 'ngf-gallerypage', 'ngf-lookbook']) {
+      expect(auditImages(eagerTile(container), 'p.html', ASPECT_CLASSES), container).toEqual([]);
+    }
+
+    // The real lookbook shape from src/pages/gallery.astro, eager first tile, box reserved by .ngf-image.
+    const lookbook =
+      '<ul class="ngf-lookbook"><li class="ngf-lookbook-tile ngf-lookbook-tile-wide">' +
+      '<a class="ngf-lookbook-link" href="/product/x"><span class="ngf-lookbook-frame" data-reveal="mask">' +
+      '<span class="ngf-image"><img src="/img/p1/i1-960.webp" width="960" height="1200" ' +
+      'srcset="/img/p1/i1-320.webp 320w, /img/p1/i1-640.webp 640w" sizes="30vw" alt="" ' +
+      'loading="eager" decoding="async"></span></span></a></li></ul>';
+    expect(auditImages(lookbook, 'gallery.html', ASPECT_CLASSES)).toEqual([]);
+
+    // An eager image with no recognised container is still rejected — the rule is not weakened.
+    const notContainer =
+      '<figure class="ngf-image"><img src="/a.jpg" width="4" height="3" alt="" loading="eager" decoding="async"></figure>';
+    expect(rules(auditImages(notContainer, 'p.html', ASPECT_CLASSES))).toContain(
+      'only the prioritised image and above-fold cards load eagerly',
+    );
+  });
+
   it('rejects a card served its full-resolution or zoom derivative', () => {
     const fullRes =
       '<div class="ngf-card-media"><span class="ngf-image"><img src="/c.webp" width="1600" height="1200" srcset="/c-960.webp 960w, /c-1600.webp 1600w" sizes="30vw" alt="" loading="lazy" decoding="async"></span></div>';

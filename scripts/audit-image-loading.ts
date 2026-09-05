@@ -202,12 +202,28 @@ export function srcsetWidths(srcset: string): number[] {
     .sort((a, b) => a - b);
 }
 
+/**
+ * The container classes that mark an eager image as an above-the-fold card or gallery photograph.
+ *
+ * - `ngf-card-media` / `ngf-grid`: a product card's media slot and the catalogue grid it sits in.
+ * - `ngf-gallerypage`: the standalone gallery surface.
+ * - `ngf-lookbook`: the gallery lookbook grid (`/gallery`), whose first tiles are eager and whose
+ *   first tile is the page's prioritised LCP image — the same above-the-fold gallery photographs
+ *   `ngf-gallerypage` already names, in the lookbook's masonry rhythm. Each tile reserves its box
+ *   via the `.ngf-image` aspect-ratio inside `.ngf-lookbook-frame`, so recognising it here only
+ *   admits the eager-eligibility, not any relaxation of the reserved-box or full-resolution rules.
+ */
+const CARD_CONTAINER_CLASSES = new Set([
+  'ngf-card-media',
+  'ngf-gallerypage',
+  'ngf-grid',
+  'ngf-lookbook',
+]);
+
 /** True when this `<img>` is a product card's or gallery tile's photograph. */
 function isCardImage(image: ImageElement): boolean {
   return image.ancestors.some((ancestor) =>
-    ancestor.classes.some(
-      (name) => name === 'ngf-card-media' || name === 'ngf-gallerypage' || name === 'ngf-grid',
-    ),
+    ancestor.classes.some((name) => CARD_CONTAINER_CLASSES.has(name)),
   );
 }
 
