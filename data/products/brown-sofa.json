@@ -131,13 +131,13 @@
   "price": 41990,
   "priceOnEnquiry": false,
   "primaryImage": "img_tchmzkuoeb",
-  "published": false,
+  "published": true,
   "relatedProductIds": [],
   "seoDescription": "A Premium 3+1+1 Sofa Set with a termite-resistant Neem wood frame, high-density foam and 410 GSM water-resistant fabric, in multiple fabrics and colours.",
   "seoTitle": "Premium 3+1+1 Sofa Set — Neem Wood, High-Density Foam",
   "sku": "NGF-SOF-WBJZX0",
   "slug": "brown-sofa",
-  "status": "REVIEW",
+  "status": "PUBLISHED",
   "stockStatus": "IN_STOCK",
   "tags": [
     "Brown Sofa",
@@ -146,6 +146,6 @@
     "Sofa"
   ],
   "trending": false,
-  "updatedAt": "2026-09-05T13:40:36.821Z",
+  "updatedAt": "2026-09-05T13:42:07.180Z",
   "variants": []
 }
