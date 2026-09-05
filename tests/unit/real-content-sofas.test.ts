@@ -51,7 +51,7 @@ const brownSofa = loadProduct('brown-sofa');
 /** slug → the exact committed values this suite locks in. */
 const cases = [
   { label: 'Corner Sofa', product: cornerSofa, price: 44990 },
-  { label: 'Brown Sofa', product: brownSofa, price: 41990 },
+  { label: 'Premium 3+1+1 Sofa Set', product: brownSofa, price: 41990 },
 ] as const;
 
 describe('real DRAFT sofas: the product-specific WhatsApp enquiry', () => {
@@ -155,5 +155,56 @@ describe('real DRAFT sofas: the committed content is exactly what was authored',
       expect(product.sku).toMatch(/^NGF-SOF-[A-Z0-9]{6}$/);
     }
     expect(cornerSofa.sku).not.toBe(brownSofa.sku);
+  });
+});
+
+describe('Premium 3+1+1 Sofa Set: the verified record and its WhatsApp enquiry', () => {
+  it('carries the verified, renamed customer-facing identity and attributes', () => {
+    expect(brownSofa.name).toBe('Premium 3+1+1 Sofa Set');
+    expect(brownSofa.sku).toBe('NGF-SOF-WBJZX0');
+    expect(brownSofa.slug).toBe('brown-sofa');
+    expect(brownSofa.price).toBe(41990);
+    expect(brownSofa.material).toContain('Neem Wood');
+    // 'Brown Sofa' is retained as a searchable alias in the search-consumed `tags`.
+    expect(brownSofa.tags).toContain('Brown Sofa');
+    expect(brownSofa.tags).toContain('3+1+1 Sofa');
+    expect(brownSofa.tags).toContain('Sofa');
+    expect(brownSofa.imageAltText).toBe('Premium 3+1+1 Sofa Set by New Galaxy Furniture');
+  });
+
+  it('records the approved manual-upload image order as inert passthrough metadata', () => {
+    const record = brownSofa as Product & { pendingImageOrder?: unknown };
+    expect(record.pendingImageOrder).toEqual(['front', 'top', 'left', 'right']);
+  });
+
+  it('produces the exact required WhatsApp message, never mentioning Corner Sofa', () => {
+    const message = buildEnquiryMessage(
+      { kind: 'product', productName: brownSofa.name, sku: brownSofa.sku },
+      settings,
+    );
+
+    // Verbatim — the two sentences are joined with a single newline by assemble().
+    expect(message).toBe(
+      "Hi New Galaxy Furniture, I'm interested in the Premium 3+1+1 Sofa Set (SKU: NGF-SOF-WBJZX0)." +
+        '\n' +
+        'I would like to enquire about the price, availability and order details.',
+    );
+    expect(message).not.toContain('Corner Sofa');
+  });
+});
+
+describe('Corner Sofa stays completely separate from the Premium 3+1+1 Sofa Set', () => {
+  it('keeps its own name in its WhatsApp message and never borrows the other sofa', () => {
+    const message = buildEnquiryMessage(
+      { kind: 'product', productName: cornerSofa.name, sku: cornerSofa.sku },
+      settings,
+    );
+
+    expect(message).toContain('Corner Sofa');
+    expect(message).not.toContain('Premium 3+1+1 Sofa Set');
+    // The two records never share a name, SKU or price.
+    expect(cornerSofa.name).not.toBe(brownSofa.name);
+    expect(cornerSofa.sku).not.toBe(brownSofa.sku);
+    expect(cornerSofa.price).not.toBe(brownSofa.price);
   });
 });
