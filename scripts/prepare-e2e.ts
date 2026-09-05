@@ -37,7 +37,8 @@
 
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
 import { hashPassword } from '../src/lib/auth/password';
 import { demoProducts } from '../tests/fixtures/products';
@@ -65,8 +66,31 @@ function sqlString(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
 }
 
+/**
+ * Wrangler's JS entrypoint, resolved once.
+ *
+ * Not `npx`, and not `shell: true`: spawning through a shell with an args array is what Node warns
+ * about (DEP0190), and `npx.cmd` only exists to bridge that shell on Windows. Instead we run the
+ * entrypoint directly under this same Node (`process.execPath`), which needs no shell and no `.cmd`
+ * on any platform.
+ *
+ * The path is read from Wrangler's own `package.json` `bin.wrangler` field rather than resolved as a
+ * subpath, because the package's `exports` map does not expose `./bin/wrangler.js` and resolving it
+ * directly throws. `package.json` itself is always resolvable, so we join its `bin` value against the
+ * directory it lives in.
+ */
+const wranglerBin = (() => {
+  const require = createRequire(import.meta.url);
+  const pkgPath = require.resolve('wrangler/package.json');
+  const pkg = require('wrangler/package.json') as { bin: string | { wrangler: string } };
+  const binRel = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin.wrangler;
+  return join(dirname(pkgPath), binRel);
+})();
+
 function wrangler(args: readonly string[]): void {
-  const result = spawnSync('npx', ['wrangler', ...args], { stdio: 'inherit' });
+  const result = spawnSync(process.execPath, [wranglerBin, ...args], {
+    stdio: 'inherit',
+  });
   if (result.status !== 0) fail(`wrangler ${args.join(' ')} failed`);
 }
 
