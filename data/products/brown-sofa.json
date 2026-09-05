@@ -17,9 +17,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "ChatGPT Image Sep 5, 2026, 04_01_07 PM.png",
       "height": 1070,
       "id": "img_tchmzkuoeb",
@@ -32,9 +42,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "ChatGPT Image Sep 5, 2026, 04_00_31 PM.png",
       "height": 1071,
       "id": "img_tlutq0cci2",
@@ -47,9 +67,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "ChatGPT Image Sep 5, 2026, 04_00_06 PM.png",
       "height": 1071,
       "id": "img_s8k3oxoflo",
@@ -62,9 +92,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "ChatGPT Image Sep 5, 2026, 03_59_52 PM.png",
       "height": 1071,
       "id": "img_ey2dy4u4kt",
