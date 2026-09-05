@@ -18,6 +18,7 @@ import QuickEnquireHost from '@/components/forms/QuickEnquireHost.astro';
 import CatalogueControls from '@/components/product/CatalogueControls';
 import CatalogueEmpty from '@/components/product/CatalogueEmpty.astro';
 import CategoryIllustration from '@/components/motion/CategoryIllustration.astro';
+import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import Breadcrumbs from '@/components/product/Breadcrumbs.astro';
 import ProductCard from '@/components/product/ProductCard.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
@@ -128,16 +129,33 @@ const meta = pageMeta(Astro, {
           {count === 1 ? '1 product' : `${count} products`}
           {snapshot === null && ' · Most Viewed, Best Selling and Trending are curated orderings'}
         </p>
+        {
+          /*
+          A clear conversion affordance in the hero. The endpoint of every category surface is a
+          WhatsApp enquiry, so the opener carries one: a real link whose pre-filled message names
+          this category only (Requirement 5.4) — no invented claim, no product, no price. It is the
+          hero group's last copy child, so it arrives on the same single reveal as the rest.
+        */
+        }
+        <div class="ngf-cathero-cta">
+          <WhatsAppLink
+            context={{ kind: 'category', categoryName: category.name }}
+            variant="outline"
+            label={`Ask about ${category.name} on WhatsApp`}
+          />
+        </div>
       </div>
 
       {
         /*
-        The category's own glyph, from the schema's `illustration` key — the same drawing the
-        homepage tile uses, now at showroom scale on a drawing-board panel: a cream ground with a
-        faint 24px hairline grid, a 1px taupe border, corner ticks and a thin dimension rule, so each
-        category reads as its own catalogue opener rather than a shrunk icon. `trigger="none"`: it
-        draws as part of the header's single group reveal, so the whole hero counts as one animating
-        element against the per-section budget. Decorative, so `aria-hidden`.
+        The category's own glyph, from the schema's `illustration` key — the same architectural
+        line-art the homepage tile uses, now at showroom scale on a drawing-board panel: a cream
+        ground with a faint 24px hairline grid, a 1px taupe border, corner ticks and a thin dimension
+        rule, so each category reads as its own catalogue opener rather than a shrunk icon. It draws
+        its own outline → details → finished sequence in view (`stroke-dashoffset` + `.ngf-part`
+        opacity/transform only); that is one further `data-reveal` in this section, still far inside
+        the twelve-per-section budget, while the copy column stays the hero's single reveal group.
+        Decorative, so `aria-hidden`.
       */
       }
       <div class="ngf-cathero-panel" aria-hidden="true">
@@ -145,7 +163,7 @@ const meta = pageMeta(Astro, {
           <CategoryIllustration
             illustration={category.illustration}
             strokeWidth={1}
-            trigger="none"
+            trigger="inView"
           />
         </span>
         <span class="ngf-cathero-rule"></span>

@@ -40,21 +40,73 @@ describe('the category catalogue hero (Milestone 3, Checkpoint A)', () => {
     );
   });
 
+  it('draws the category glyph on view so the outline → details sequence plays', () => {
+    // Milestone 2: the hero glyph runs its own draw-on entrance (`trigger="inView"`) rather than
+    // rendering flat, so each category's line-art reads as being measured and finished. The copy
+    // column stays the hero's reveal group; the glyph is the one further animation in the section.
+    expect(CATEGORY_PAGE).toMatch(/<CategoryIllustration[\s\S]*trigger="inView"/);
+  });
+
   it('renders the category shortDescription and its intro copy in the hero', () => {
     expect(CATEGORY_PAGE).toContain('{category.shortDescription}');
     expect(CATEGORY_PAGE).toContain('category.intro !== undefined');
   });
 
+  it('carries a WhatsApp enquiry CTA scoped to the category, without inventing a claim', () => {
+    // The category surface's conversion endpoint. A category-kind enquiry names the category only
+    // (no product, no price, no fabricated claim), and it is a real WhatsAppLink rather than a
+    // hand-rolled control.
+    expect(CATEGORY_PAGE).toContain('<WhatsAppLink');
+    expect(CATEGORY_PAGE).toMatch(/kind: 'category', categoryName: category\.name/);
+    expect(CATEGORY_PAGE).toContain('ngf-cathero-cta');
+  });
+
   it('opens with the shared eyebrow + drawing-board panel, revealed as one group', () => {
     expect(CATEGORY_PAGE).toContain('ngf-cathero-eyebrow');
     expect(CATEGORY_PAGE).toContain('ngf-cathero-panel');
-    // The whole hero is one staggered reveal group, so it counts as a single animating element.
+    // The copy column is a staggered reveal group, so the opener's copy counts as one element.
     expect(CATEGORY_PAGE).toMatch(/ngf-cathero[\s\S]*data-reveal data-motion-group/);
   });
 
   it('keeps the breadcrumb and the honest product count in the hero', () => {
     expect(CATEGORY_PAGE).toContain('ngf-catalogue-breadcrumbs');
     expect(CATEGORY_PAGE).toMatch(/1 product.*\$\{count\} products/s);
+  });
+});
+
+describe('the enriched category illustrations (Milestone 2)', () => {
+  const ILLUSTRATION = readFileSync(
+    fileURLToPath(
+      new URL('../../src/components/motion/CategoryIllustration.astro', import.meta.url),
+    ),
+    'utf8',
+  );
+
+  it('dispatches an architectural line-art glyph for each of the nine schema keys', () => {
+    // The dispatch must stay exhaustive over the schema enum so a missing key is a TS error.
+    for (const key of [
+      'sofa',
+      'bed',
+      'diningTable',
+      'diningChair',
+      'accentChair',
+      'coffeeTable',
+      'storage',
+      'office',
+      'outdoor',
+    ]) {
+      expect(ILLUSTRATION).toMatch(new RegExp(`\\b${key}:\\s*\\[`));
+    }
+  });
+
+  it('builds each glyph as a drawn outline plus faded-in detail parts', () => {
+    // The outline draws (`.ngf-draw` / stroke-dashoffset) and the details settle in
+    // (`.ngf-part` / opacity + transform) — the "outline → details → finished" sequence, using
+    // only the two lint-permitted mechanisms.
+    expect(ILLUSTRATION).toContain('ngf-draw');
+    expect(ILLUSTRATION).toContain('ngf-part');
+    expect(ILLUSTRATION).toContain('--ngf-part-delay');
+    expect(ILLUSTRATION).toContain('--ngf-draw-delay');
   });
 });
 

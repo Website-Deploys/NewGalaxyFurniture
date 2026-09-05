@@ -1043,6 +1043,16 @@
   border-bottom-width: 1px;
 }
 
+/*
+ * The hero conversion affordance, set a little apart from the count line above it so the reading
+ * order — title, description, count, then the way to enquire — is unmistakable. It reuses the
+ * shared `.ngf-cta` outline button (44px target, transform-only feedback); the wrapper only adds
+ * the standoff and keeps the button its own natural width rather than stretching it.
+ */
+.ngf-cathero-cta {
+  margin-top: 0.5rem;
+}
+
 .ngf-cathero-glyph {
   display: block;
   width: 100%;
