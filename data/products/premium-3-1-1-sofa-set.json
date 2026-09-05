@@ -1,0 +1,41 @@
+{
+  "aiAssisted": false,
+  "aiFields": [],
+  "availableColors": [
+    "Multiple colours available"
+  ],
+  "bestSeller": false,
+  "category": "sofas",
+  "color": "Brown",
+  "createdAt": "2026-09-05T13:07:23.472Z",
+  "currency": "INR",
+  "customization": "Custom sizes available. Multiple fabric options available: Fabric, Leatherette & Suede. A wide range of colours is available.",
+  "deliveryInformation": "Delivery available across Karnataka. Please contact New Galaxy Furniture for delivery details and availability.",
+  "description": "A premium 3+1+1 sofa set from New Galaxy Furniture, crafted with a termite-resistant Neem Wood frame, high-density foam and 410 GSM water-resistant fabric. Designed with expert craftsmanship and premium finishing, this sofa set can be customized to suit your space and preferences.",
+  "discount": null,
+  "featured": false,
+  "id": "p_eg3vtxpioj",
+  "images": [],
+  "keywords": [],
+  "madeToOrder": false,
+  "material": "Neem Wood Frame",
+  "name": "Premium 3+1+1 Sofa Set",
+  "newArrival": true,
+  "originalPrice": null,
+  "price": 41990,
+  "priceOnEnquiry": false,
+  "published": false,
+  "relatedProductIds": [],
+  "seoDescription": "Premium 3+1+1 sofa set with a termite-resistant Neem Wood frame, high-density foam and 410 GSM water-resistant fabric. Custom sizes, colours and fabric options available.",
+  "seoTitle": "Premium 3+1+1 Sofa Set | New Galaxy Furniture",
+  "sku": "NGF-SOF-9E2HP8",
+  "slug": "premium-3-1-1-sofa-set",
+  "status": "DRAFT",
+  "stockStatus": "IN_STOCK",
+  "tags": [
+    "Brown Sofa 3+1+1"
+  ],
+  "trending": false,
+  "updatedAt": "2026-09-05T13:07:23.472Z",
+  "variants": []
+}
