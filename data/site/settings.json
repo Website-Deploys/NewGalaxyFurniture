@@ -50,7 +50,6 @@
     "site.logo.src",
     "site.seoDefaults.ogImageKey",
     "site.social.facebook",
-    "site.social.instagram",
     "site.social.pinterest",
     "site.social.youtube"
   ],
@@ -64,7 +63,7 @@
   ],
   "social": {
     "facebook": null,
-    "instagram": null,
+    "instagram": "https://www.instagram.com/newgalaxyfurniture.in",
     "pinterest": null,
     "youtube": null
   },
