@@ -1,67 +1,82 @@
 {
   "businessName": "New Galaxy Furniture",
+  "location": {
+    "addressLines": [
+      "1, Thubarahalli, Varthur Main Road, post, next to icici Bank, Whitefield, Bengaluru, Karnataka - 560066"
+    ],
+    "city": "Bangalore",
+    "geo": null,
+    "mapUrl": null,
+    "postalCode": "560066",
+    "state": "Karnataka"
+  },
   "logo": {
+    "height": null,
     "src": null,
+    "width": null,
     "wordmarkFallback": "NEW GALAXY FURNITURE"
   },
-  "whatsapp": [
-    { "label": "Orders & Enquiries 1", "e164": "+919513443606" },
-    { "label": "Orders & Enquiries 2", "e164": "+918147083703" }
-  ],
   "phone": [
-    { "label": "Orders & Enquiries 1", "e164": "+919513443606" },
-    { "label": "Orders & Enquiries 2", "e164": "+918147083703" }
+    {
+      "e164": "+919513443606",
+      "label": "Orders & Enquiries 1"
+    },
+    {
+      "e164": "+918147083703",
+      "label": "Orders & Enquiries 2"
+    }
   ],
-  "location": {
-    "addressLines": [],
-    "city": "",
-    "state": "",
-    "postalCode": null,
-    "mapUrl": null,
-    "geo": null
-  },
-  "serviceArea": ["Karnataka"],
-  "social": {
-    "instagram": null,
-    "facebook": null,
-    "youtube": null,
-    "pinterest": null
-  },
-  "seoDefaults": {
-    "titleSuffix": " | New Galaxy Furniture",
-    "description": "New Galaxy Furniture catalogue — sofas, beds, dining tables and chairs, accent chairs, coffee and side tables, storage, office, and outdoor furniture. Enquire on WhatsApp or by phone.",
-    "ogImageKey": null
-  },
   "placeholders": [
-    "site.logo.src",
-    "site.heroImage",
-    "site.location.addressLines",
-    "site.location.city",
-    "site.location.state",
-    "site.location.postalCode",
-    "site.location.mapUrl",
-    "site.location.geo",
-    "site.location.openingHours",
-    "site.social.instagram",
-    "site.social.facebook",
-    "site.social.youtube",
-    "site.social.pinterest",
-    "site.seoDefaults.ogImageKey",
-    "homepage.craftsmanship.body",
-    "homepage.directManufacturer.body",
-    "homepage.customFurniture.body",
-    "homepage.workshopStory.body",
-    "homepage.contactLocation.body",
-    "page.about.body",
-    "page.workshop.body",
-    "page.faq.entries",
-    "page.privacy.body",
-    "page.terms.body",
-    "page.shipping.body",
-    "page.returns.body",
-    "page.warranty.body",
+    "content.gallery",
     "content.products",
     "content.reviews",
-    "content.gallery"
+    "homepage.contactLocation.body",
+    "homepage.craftsmanship.body",
+    "homepage.customFurniture.body",
+    "homepage.directManufacturer.body",
+    "homepage.workshopStory.body",
+    "page.about.body",
+    "page.faq.entries",
+    "page.privacy.body",
+    "page.returns.body",
+    "page.shipping.body",
+    "page.terms.body",
+    "page.warranty.body",
+    "page.workshop.body",
+    "site.heroImage",
+    "site.location.geo",
+    "site.location.mapUrl",
+    "site.location.openingHours",
+    "site.logo.src",
+    "site.seoDefaults.ogImageKey",
+    "site.social.facebook",
+    "site.social.instagram",
+    "site.social.pinterest",
+    "site.social.youtube"
+  ],
+  "seoDefaults": {
+    "description": "New Galaxy Furniture catalogue — sofas, beds, dining tables and chairs, accent chairs, coffee and side tables, storage, office, and outdoor furniture. Enquire on WhatsApp or by phone.",
+    "ogImageKey": null,
+    "titleSuffix": " | New Galaxy Furniture"
+  },
+  "serviceArea": [
+    "Karnataka"
+  ],
+  "social": {
+    "facebook": null,
+    "instagram": null,
+    "pinterest": null,
+    "youtube": null
+  },
+  "tagline": "Furniture made for beautiful living",
+  "whatsapp": [
+    {
+      "e164": "+919513443606",
+      "label": "Orders & Enquiries 1"
+    },
+    {
+      "e164": "+918147083703",
+      "label": "Orders & Enquiries 2"
+    }
   ]
 }
