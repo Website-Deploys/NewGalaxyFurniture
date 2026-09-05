@@ -22,6 +22,10 @@ test-results/
 coverage/
 blob-report/
 .playwright/
+cookies.txt
+
+# agent/orchestrator scratch and task-state (never commit)
+.agents/
 
 # logs / editor / OS
 *.log
