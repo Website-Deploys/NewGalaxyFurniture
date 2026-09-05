@@ -378,6 +378,61 @@
   }
 }
 
+/* ------------------------------------------------------------------------- *
+ * The elegant underline reveal, for editorial and inline links
+ *
+ * A shared micro-interaction so an inline link acknowledges the pointer the same way everywhere
+ * rather than each section inventing its own. A 1 px underline pseudo-element scales from 0 on X
+ * with `transform-origin: left`, so the line draws in from the start of the word — `transform`
+ * only, never `width` (Requirement 21.8) and never `text-decoration`, which cannot be animated
+ * smoothly.
+ *
+ * The inversion is the same as the reveal's: the DRAWN underline is the default. The from-state —
+ * the collapsed `scaleX(0)` — lives only inside the no-preference gate and only while motion is
+ * permitted, so with no JavaScript, under reduced motion, or with the motion toggle off the link
+ * simply carries a static, fully visible underline. Nothing about the link's affordance depends on
+ * the animation running.
+ *
+ * The hover path is gated on `(hover: hover)` so a touch device is never left with a half-drawn
+ * line, but `:focus-visible` triggers the same draw unconditionally so a keyboard visitor gets the
+ * identical acknowledgement.
+ */
+.ngf-underline {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ngf-underline::after {
+  position: absolute;
+  right: 0;
+  bottom: -0.15em;
+  left: 0;
+  height: 1px;
+  background-color: currentcolor;
+  transform: scaleX(1);
+  transform-origin: left center;
+  content: '';
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) .ngf-underline::after {
+    transform: scaleX(0);
+    transition: transform var(--dur-normal) var(--ease-standard);
+  }
+
+  :where(:not([data-motion='off'])) .ngf-underline:focus-visible::after {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  :where(:not([data-motion='off'])) .ngf-underline:hover::after {
+    transform: scaleX(1);
+  }
+}
+
 /*
  * A card or tile lift. `transform` only — never `box-shadow`, which Requirement 21.8
  * forbids animating and which is the usual way this effect is (expensively) built.

@@ -48,6 +48,7 @@ const shown = reviews.slice(0, limit);
     heading={section.heading ?? 'Customer reviews'}
     subheading={section.subheading}
     headingId="ngf-reviews-heading"
+    align={shown.length === 0 ? 'center' : 'start'}
   />
 
   {
@@ -84,7 +85,7 @@ const shown = reviews.slice(0, limit);
     )
   }
 
-  <p class="ngf-reviews-note">
+  <p class="ngf-reviews-note" data-centered={shown.length === 0 ? 'true' : undefined}>
     Reviews are collected by us from customers and published as they were given. We publish no
     overall rating, because these are testimonials rather than verified purchase reviews.
   </p>
@@ -137,5 +138,12 @@ const shown = reviews.slice(0, limit);
     margin: 1.5rem 0 0;
     color: var(--color-walnut);
     font-size: var(--text-small);
+  }
+
+  /* When the section is an empty state its header centres, so the closing note follows it. */
+  .ngf-reviews-note[data-centered='true'] {
+    max-width: 52ch;
+    margin-inline: auto;
+    text-align: center;
   }
 </style>

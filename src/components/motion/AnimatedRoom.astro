@@ -1,23 +1,37 @@
 ---
 /**
- * `AnimatedRoom` — a room composition: floor line, wall, window, and three pieces.
+ * `AnimatedRoom` — a room composition: floor line, wall, window, three pieces, and the dimension
+ * lines that settle over them.
  *
  * Signature motion (design's component table): "layered: architecture draws, then furniture pieces
- * enter from their own axes, parallax on scroll". All three are here:
+ * enter from their own axes, parallax on scroll". The homepage hero reads this as *an architect's
+ * drawing becoming a finished interior*, so the one entrance sequence is staged in four restrained
+ * beats, each a multiple of the stagger tokens (`--stagger-tight` 45 ms, `--stagger-loose` 90 ms)
+ * and all resolved inside the `--dur-story` (1 s) window:
  *
- * - **The architecture draws first** — floor, wall return, skirting, window — as `.ngf-draw` paths
- *   with no delay.
- * - **The furniture enters from its own axis.** Each piece is a `.ngf-part` group with its own
+ * - **Beat 1 — the shell (0 → 90 ms).** The floor line, then the wall return: the outline of the
+ *   room drawn first, so the eye reads the box before anything is placed in it.
+ * - **Beat 2 — the fittings (180 → 360 ms).** The skirting, then the window frame and its glazing
+ *   bars: the fixed detail of the room, drawn onto the shell.
+ * - **Beat 3 — the furniture (450 → 630 ms).** Each piece is a `.ngf-part` group with its own
  *   `--ngf-part-x` / `--ngf-part-y`: the sofa slides in from the left, the table rises, the lamp
  *   drops. "Its own axis" is the point — three pieces sliding in from the same direction reads as a
- *   single sheet moving.
- * - **Parallax on scroll** is not this component's job and deliberately so: it is the *page's*, and
- *   it is applied by putting this illustration on one of the hero's `[data-parallax-plane]`
- *   elements. A primitive that moved itself on scroll would be a second rAF loop, which
- *   Requirement 21.10 and the design's "these are the only rAF loops in the codebase" both forbid.
+ *   single sheet moving — and they arrive *after* the room they belong in exists (fills to form).
+ * - **Beat 4 — the dimensions settle (720 → 810 ms).** Two hairline dimension lines with end ticks
+ *   draw in last, the drawing's measurements added once the interior is finished. They are ordinary
+ *   `.ngf-draw` paths inside this same primitive drawn as the final step of the one entrance
+ *   sequence — not a fifth primitive and not a continuous loop (the only sanctioned loop in the
+ *   system is `CraftsmanshipLines`' 6 s drift).
+ *
+ * **Parallax on scroll** is not this component's job and deliberately so: it is the *page's*, and
+ * it is applied by putting this illustration on one of the hero's `[data-parallax-plane]`
+ * elements. A primitive that moved itself on scroll would be a second rAF loop, which
+ * Requirement 21.10 and the design's "these are the only rAF loops in the codebase" both forbid.
  *
  * This is also the illustration the before/after slider layers twice — once empty, once furnished —
- * which is why the architecture and the furniture are separate groups with separate ids.
+ * which is why the architecture and the furniture are separate groups with separate ids. The
+ * dimension lines live inside the furnished branch: they annotate the finished interior, so the
+ * empty "before" layer of the comparison stays a bare shell.
  *
  * Requirements: 7.6, 21.5, 21.7, 21.8, 21.11.
  */
@@ -35,32 +49,50 @@ const { svg, title } = primitiveAttrs(rest, 'room', 1400);
 <svg {...svg} viewBox="0 0 320 200" preserveAspectRatio="xMidYMax meet">
   {title !== null && <title>{title}</title>}
 
-  {/* --- The architecture. Always drawn, in both layers of the comparison. --- */}
+  {/* --- Beats 1 and 2: the architecture. Always drawn, in both layers of the comparison. --- */}
   <g>
+    {/* Beat 1 — the shell: floor first, then the wall return. */}
     <path class="ngf-draw" d="M8 176h304"></path>
-    <path class="ngf-draw" style="--ngf-draw-delay:100ms" d="M8 176V28h304v148"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:90ms" d="M8 176V28h304v148"></path>
+    {/* Beat 2 — the fittings: skirting, then the window frame and its glazing bars. */}
     <path class="ngf-draw" style="--ngf-draw-delay:180ms" d="M8 166h304"></path>
-    {/* The window: frame, then the two glazing bars. */}
-    <path class="ngf-draw" style="--ngf-draw-delay:260ms" d="M196 44h96v72h-96z"></path>
-    <path class="ngf-draw" style="--ngf-draw-delay:340ms" d="M244 44v72M196 80h96"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:270ms" d="M196 44h96v72h-96z"></path>
+    <path class="ngf-draw" style="--ngf-draw-delay:360ms" d="M244 44v72M196 80h96"></path>
   </g>
 
   {
     furnished && (
       <>
+        {/* Beat 3 — the furniture, each entering from its own axis after the room exists. */}
         {/* The sofa, entering from the left wall. */}
-        <g class="ngf-part" style="--ngf-part-x:-18px;--ngf-part-y:0;--ngf-part-delay:420ms">
+        <g class="ngf-part" style="--ngf-part-x:-18px;--ngf-part-y:0;--ngf-part-delay:450ms">
           <path d="M28 166v-34h96v34M28 132h20v34M104 132h20v34M48 132V112h56v20" />
         </g>
 
         {/* The low table, rising into place. */}
-        <g class="ngf-part" style="--ngf-part-y:14px;--ngf-part-delay:500ms">
+        <g class="ngf-part" style="--ngf-part-y:14px;--ngf-part-delay:540ms">
           <path d="M144 152h56v6h-56zM152 158v8M192 158v8" />
         </g>
 
         {/* The floor lamp, dropping from above — the vertical accent the composition needs. */}
-        <g class="ngf-part" style="--ngf-part-y:-20px;--ngf-part-delay:580ms">
+        <g class="ngf-part" style="--ngf-part-y:-20px;--ngf-part-delay:630ms">
           <path d="M266 166v-52M254 114h24l-6-16h-12z" />
+        </g>
+
+        {/*
+          Beat 4 — the dimensions settle. Two hairline dimension lines drawn last, once the
+          interior is finished: a horizontal run measuring the sofa's footprint below the floor and
+          a vertical drop measuring the wall at the left, each capped by short witness ticks. They
+          are ordinary `.ngf-draw` paths in this one sequence — no fifth primitive, no loop — so
+          under reduced motion or no JS they render fully drawn like the rest of the room.
+        */}
+        <g>
+          <path class="ngf-draw" style="--ngf-draw-delay:720ms" d="M28 190h96M28 186v8M124 186v8" />
+          <path
+            class="ngf-draw"
+            style="--ngf-draw-delay:810ms"
+            d="M300 28v148M296 28h8M296 176h8"
+          />
         </g>
       </>
     )

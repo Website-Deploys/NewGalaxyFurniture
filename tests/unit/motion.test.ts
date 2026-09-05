@@ -776,6 +776,18 @@ describe('the reduced-motion inversion in motion.css', () => {
     expect(unconditional).not.toMatch(/stroke-dashoffset:\s*var\(--ngf-path-length/);
   });
 
+  it('declares the shared underline reveal drawn by default and collapses it only inside the gate', () => {
+    // The shared `.ngf-underline` inline-link micro-interaction follows the same inversion as the
+    // scroll reveals: the DRAWN line (`scaleX(1)`) is the default, so with no JavaScript, under
+    // reduced motion, or with the motion toggle off the link carries a plain visible underline. The
+    // collapsed from-state (`scaleX(0)`) must exist ONLY inside the no-preference gate, or a visitor
+    // who asked for reduced motion would see the underline vanish (Requirement 21.11 / 21.12).
+    const unconditional = withoutNoPreferenceBlocks(css);
+    expect(css).toMatch(/\.ngf-underline::after\s*\{[^}]*transform:\s*scaleX\(1\)/);
+    expect(unconditional).not.toMatch(/scaleX\(0\)/);
+    expect(css).toMatch(/scaleX\(0\)/);
+  });
+
   it('references no keyframed animation outside the gate', () => {
     // The counterpart of the assertion above: a keyframe definition is inert, so what matters is
     // that nothing *applies* one unconditionally. Every `animation:` in this file — the reveal, the
