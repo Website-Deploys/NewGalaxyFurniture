@@ -10,18 +10,25 @@ import { ProductImage, ProductSchema } from '@/schemas/product';
 import type { Product, ProductImageValue } from '@/schemas/product';
 
 /**
- * The two real DRAFT sofas, pinned to the behaviour the operator asked to be guaranteed.
+ * The two real sofas, pinned to the behaviour the operator asked to be guaranteed.
  *
- * These are the first real products in the catalogue and both ship image-less, on purpose:
- * the missing image is the single thing that keeps them out of the public catalogue and out
- * of a PUBLISHED status. This suite reads the committed JSON so it fails if a future change
+ * The Premium 3+1+1 Sofa Set (brown-sofa) is now PUBLISHED with its four real, recovered
+ * images: it is the first live catalogue product, so this suite reads the committed JSON and
+ * fails if a future change accidentally unpublishes it, drops or breaks its images, or breaks
+ * the product-specific WhatsApp templating. Corner Sofa remains an image-less DRAFT — the
+ * single missing image is what keeps it out of the public catalogue and off a PUBLISHED
+ * status — and this suite keeps guarding that.
+ *
+ * The suite reads the committed JSON so it fails if a future change
  *
  *   - breaks the product-specific WhatsApp templating (name/SKU no longer carried, or the
  *     wa.me URL stops single-decoding back to the message),
- *   - weakens the image requirement (something other than `images` starts blocking, or the
- *     gate stops blocking an image-less product), or
- *   - accidentally publishes the drafts (status flips off DRAFT / they leak into the
- *     public catalogue).
+ *   - weakens the image requirement for the draft (something other than `images` starts
+ *     blocking corner-sofa, or the gate stops blocking an image-less product),
+ *   - accidentally unpublishes brown-sofa (status flips off PUBLISHED / it leaves the public
+ *     catalogue / loses its images), or
+ *   - accidentally publishes the corner-sofa draft (status flips off DRAFT / it leaks into
+ *     the public catalogue).
  *
  * It does not modify the publish gate or the catalogue filter — it only observes them.
  */
@@ -33,7 +40,7 @@ function loadProduct(slug: string): Product {
   return ProductSchema.parse(raw);
 }
 
-/** A single synthetic, schema-valid image — the one thing each draft is missing. */
+/** A single synthetic, schema-valid image — the one thing the draft is missing. */
 const validImage: ProductImageValue = ProductImage.parse({
   id: 'img_abc1234567',
   key: 'products/synthetic/original.jpg',
@@ -54,7 +61,7 @@ const cases = [
   { label: 'Premium 3+1+1 Sofa Set', product: brownSofa, price: 41990 },
 ] as const;
 
-describe('real DRAFT sofas: the product-specific WhatsApp enquiry', () => {
+describe('real sofas: the product-specific WhatsApp enquiry', () => {
   it.each(cases)(
     'resolves to the exact required message for $label, carrying its real name and SKU',
     ({ product }) => {
@@ -98,57 +105,55 @@ describe('real DRAFT sofas: the product-specific WhatsApp enquiry', () => {
   );
 });
 
-describe('real DRAFT sofas: the publish gate blocks on the missing image and nothing else', () => {
-  it.each(cases)(
-    'refuses to publish $label with images as the SOLE failing field',
-    ({ product }) => {
-      const result = checkPublishGate(product);
+describe('Corner Sofa DRAFT: the publish gate blocks on the missing image and nothing else', () => {
+  it('refuses to publish Corner Sofa with images as the SOLE failing field', () => {
+    const result = checkPublishGate(cornerSofa);
 
-      expect(result.ok).toBe(false);
-      if (result.ok) throw new Error('An image-less draft must not pass the publish gate.');
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('An image-less draft must not pass the publish gate.');
 
-      // Every other publish-gate field is already satisfied, so the only blocker is images.
-      expect(Object.keys(result.fields)).toEqual(['images']);
-      expect(result.fields.images).toContain('At least one image required');
-    },
-  );
+    // Every other publish-gate field is already satisfied, so the only blocker is images.
+    expect(Object.keys(result.fields)).toEqual(['images']);
+    expect(result.fields.images).toContain('At least one image required');
+  });
 
-  it.each(cases)(
-    'passes the publish gate for $label the moment one real image exists',
-    ({ product }) => {
-      // Shallow clone with a single valid image added — proving REVIEW→PUBLISH becomes reachable.
-      const clone: Product = {
-        ...product,
-        images: [validImage],
-        primaryImage: validImage.id,
-      };
+  it('passes the publish gate for Corner Sofa the moment one real image exists', () => {
+    // Shallow clone with a single valid image added — proving REVIEW→PUBLISH becomes reachable.
+    const clone: Product = {
+      ...cornerSofa,
+      images: [validImage],
+      primaryImage: validImage.id,
+    };
 
-      expect(checkPublishGate(clone).ok).toBe(true);
-    },
-  );
-});
-
-describe('real DRAFT sofas: excluded from the public catalogue until published', () => {
-  it.each(cases)('does not surface $label on any public page/search/category', ({ product }) => {
-    expect(product.status).toBe('DRAFT');
-    expect(isCatalogueProduct(product)).toBe(false);
+    expect(checkPublishGate(clone).ok).toBe(true);
   });
 });
 
-describe('real DRAFT sofas: the committed content is exactly what was authored', () => {
-  it.each(cases)(
-    'pins $label price, currency, lifecycle and image marker',
-    ({ product, price }) => {
-      expect(product.price).toBe(price);
-      expect(product.currency).toBe('INR');
-      expect(product.status).toBe('DRAFT');
-      expect(product.published).toBe(false);
-      expect(product.category).toBe('sofas');
-      expect(product.images).toHaveLength(0);
-      // The em dash is verbatim — this marker documents the manual admin upload requirement.
-      expect(product.imageStatus).toBe('IMAGE REQUIRED — MANUAL ADMIN UPLOAD');
-    },
-  );
+describe('catalogue membership: brown-sofa is live, corner-sofa is not', () => {
+  it('excludes the Corner Sofa DRAFT from any public page/search/category', () => {
+    expect(cornerSofa.status).toBe('DRAFT');
+    expect(cornerSofa.published).toBe(false);
+    expect(isCatalogueProduct(cornerSofa)).toBe(false);
+  });
+
+  it('includes the PUBLISHED Premium 3+1+1 Sofa Set in the public catalogue', () => {
+    expect(brownSofa.status).toBe('PUBLISHED');
+    expect(brownSofa.published).toBe(true);
+    expect(isCatalogueProduct(brownSofa)).toBe(true);
+  });
+});
+
+describe('Corner Sofa DRAFT: the committed content is exactly what was authored', () => {
+  it('pins Corner Sofa price, currency, lifecycle and image marker', () => {
+    expect(cornerSofa.price).toBe(44990);
+    expect(cornerSofa.currency).toBe('INR');
+    expect(cornerSofa.status).toBe('DRAFT');
+    expect(cornerSofa.published).toBe(false);
+    expect(cornerSofa.category).toBe('sofas');
+    expect(cornerSofa.images).toHaveLength(0);
+    // The em dash is verbatim — this marker documents the manual admin upload requirement.
+    expect(cornerSofa.imageStatus).toBe('IMAGE REQUIRED — MANUAL ADMIN UPLOAD');
+  });
 
   it('gives the two sofas distinct, well-formed NGF-SOF SKUs', () => {
     for (const { product } of cases) {
@@ -158,12 +163,14 @@ describe('real DRAFT sofas: the committed content is exactly what was authored',
   });
 });
 
-describe('Premium 3+1+1 Sofa Set: the verified record and its WhatsApp enquiry', () => {
+describe('Premium 3+1+1 Sofa Set: the published record, its images and its WhatsApp enquiry', () => {
   it('carries the verified, renamed customer-facing identity and attributes', () => {
     expect(brownSofa.name).toBe('Premium 3+1+1 Sofa Set');
     expect(brownSofa.sku).toBe('NGF-SOF-WBJZX0');
     expect(brownSofa.slug).toBe('brown-sofa');
     expect(brownSofa.price).toBe(41990);
+    expect(brownSofa.currency).toBe('INR');
+    expect(brownSofa.category).toBe('sofas');
     expect(brownSofa.material).toContain('Neem Wood');
     // 'Brown Sofa' is retained as a searchable alias in the search-consumed `tags`.
     expect(brownSofa.tags).toContain('Brown Sofa');
@@ -172,9 +179,26 @@ describe('Premium 3+1+1 Sofa Set: the verified record and its WhatsApp enquiry',
     expect(brownSofa.imageAltText).toBe('Premium 3+1+1 Sofa Set by New Galaxy Furniture');
   });
 
-  it('records the approved manual-upload image order as inert passthrough metadata', () => {
-    const record = brownSofa as Product & { pendingImageOrder?: unknown };
-    expect(record.pendingImageOrder).toEqual(['front', 'top', 'left', 'right']);
+  it('is PUBLISHED with its four real recovered images and passes the publish gate', () => {
+    expect(brownSofa.status).toBe('PUBLISHED');
+    expect(brownSofa.published).toBe(true);
+    expect(brownSofa.stockStatus).toBe('IN_STOCK');
+    expect(brownSofa.images).toHaveLength(4);
+    expect(brownSofa.primaryImage).toBe('img_tchmzkuoeb');
+    expect(isCatalogueProduct(brownSofa)).toBe(true);
+    expect(checkPublishGate(brownSofa).ok).toBe(true);
+  });
+
+  it('gives every image a non-empty alt and a well-formed R2 original key under its product id', () => {
+    const keyPattern = /^products\/p_322e7n6mth\/img_[a-z0-9]{10}\/original\.webp$/;
+    for (const image of brownSofa.images) {
+      expect(image.alt.trim().length).toBeGreaterThan(0);
+      expect(image.key).toMatch(keyPattern);
+    }
+    // primaryImage references one of the product's own images.
+    expect(brownSofa.images.some((image) => image.id === brownSofa.primaryImage)).toBe(true);
+    // Image order is a contiguous 0..3 permutation.
+    expect(brownSofa.images.map((image) => image.order).sort((a, b) => a - b)).toEqual([0, 1, 2, 3]);
   });
 
   it('produces the exact required WhatsApp message, never mentioning Corner Sofa', () => {
