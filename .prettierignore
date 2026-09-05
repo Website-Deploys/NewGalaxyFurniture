@@ -8,6 +8,7 @@ coverage/
 package-lock.json
 public/fonts/
 .kiro/
+.agents/
 
 # Verbatim transcription of the design's token blocks. Prettier lowercases hex
 # digits (#3B2A21 → #3b2a21) and trims 0.30 → 0.3 in the easing curves, and these
