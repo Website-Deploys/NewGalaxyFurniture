@@ -15,7 +15,23 @@
   "discount": null,
   "featured": false,
   "id": "p_eg3vtxpioj",
-  "images": [],
+  "images": [
+    {
+      "alt": "",
+      "altSource": "admin",
+      "derivativeFormats": [],
+      "derivativeWidths": [],
+      "derivativesReady": false,
+      "filename": "front.png",
+      "height": 1070,
+      "id": "img_emkgdux824",
+      "key": "products/p_eg3vtxpioj/img_emkgdux824/original.webp",
+      "lqip": "data:image/webp;base64,UklGRhAEAABXRUJQVlA4TAQEAAAvFwAEEM1VICICHggAEOMGAIAkn0vTbJEmuSX//X/dHm2n28Oq2EybWdk2Y2/b1MzoAGAAAIABAAAAADDQ2dbSgX2tm/b3zPrf9990+TRJ/nP39//ZJRkAAMADAcqB7AAAOP83M5nsZu/+3RVf4QMUAAAAAEABAAAAUAAAAABQAAAAAAAAFCgAKKDVu95tN5tNkhkPBCgLjgMA4Pzfm5nd/UlyzbVbVCkKCgAAAAAAAAAAAAAAAAAAAAAAAAAAAABAKW2OpHfJbrL/z/yJfP/5Brhz3AVOHgBIAKZO1oQbZIcJXQUjAHJgDuAIOWRM6YVoTc8B99L6cm/b943uEK+b09UZ8tfFMXrGPnAG9IB2aG31dmzdWG2tPa2nU21N9be2EyClvFV1uQiinDBUSqqNTjWdt1ltqnQcK+CQ42Uxl1LL+QaBfUZDkk7nxsVG1XV1GBrsAsgzZzIYm0jRC9f/C7dz/vx+iZ2gM+FdDJusT/70kVx/M7ICUE9L+e1qnG+idNqVMZ1xMgBnyJz/Or29gN6XWtAu/lHooSdvfzvx7dvff83v3/2fhQ9Gyjh0qlZhHlGZ4qbTYRyQQigxQcacrmFSVPszu/l1bCY5JTtkv34wP35m5SjQzBy7GNkgIWU07qfzXJu/1/6ekiNzzHkCZswoSqaB9fdLfrlkafVoh++/ottX/2sdfDs3v0yHGJwlqtRI2r5+/JnSA7HGqpGCQ/4h+6Hlux5/yWHio33sXcnD5bGjtj9zT21HbdfLZ7XdZTiYpwSGypH2QbwN2cf8Uz9tv8uni7WcrgsvScw+7F+O+qG+v3TKK2sUB2eHpA55CDcoVtjF9v1w3MtF/9weM27IGUTTxoRqdmWPqPdRR7eMR/lb55idsuedmDMKwRI89Vg6lgw86sf0sZy+9BMVoUbe5FEebh4cXsKQp1+hCJeTcmI4emThVw6rBA2DirDR7wwb/MFkuMB5XIPUDpis8SzFmOF03dt3EXBK2ctCt6yssrnRWtV6ifWy9adZD7Eeevspd1autFRaspn2LucHw5Dd8BzytmBY01pqXn1wc+VWxt2t3CephXgiWaP+nPIZ8gXw0vkW3Ci7h1t5V+XVpo+3XP3vT//Fau7r0Wtp2wI2LJeCK+pMiLEDA2MgIo4IhDBCTh2JUR5SMF2BPnB73ac3ebgx8jJURgZ5H9YREULXYCgZnBrJEDRIjMiInNgFgx54AQSA47CRXcqGjQe1ICfj1LWWz3dzWSrX69qn89Xzh5lW47TMp6U43wvTasaHkdb8vJbnxTzdrl8u//NpKc5LZb6bITKnDBSkaeKQ+xVyQx2KQw5dHHIooasSkEMn1yQgBZQ+J6FyahJQOuS8ZtCcAA==",
+      "mime": "image/webp",
+      "order": 0,
+      "width": 1470
+    }
+  ],
   "keywords": [],
   "madeToOrder": false,
   "material": "Neem Wood Frame",
@@ -24,6 +40,7 @@
   "originalPrice": null,
   "price": 41990,
   "priceOnEnquiry": false,
+  "primaryImage": "img_emkgdux824",
   "published": false,
   "relatedProductIds": [],
   "seoDescription": "Premium 3+1+1 sofa set with a termite-resistant Neem Wood frame, high-density foam and 410 GSM water-resistant fabric. Custom sizes, colours and fabric options available.",
@@ -36,6 +53,6 @@
     "Brown Sofa 3+1+1"
   ],
   "trending": false,
-  "updatedAt": "2026-09-05T13:07:23.472Z",
+  "updatedAt": "2026-09-05T13:08:05.850Z",
   "variants": []
 }
