@@ -44,9 +44,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "left.png",
       "height": 1071,
       "id": "img_839bbi5nk8",
@@ -59,9 +69,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "right.png",
       "height": 1071,
       "id": "img_tc7u0l1vbu",
@@ -74,9 +94,19 @@
     {
       "alt": "",
       "altSource": "admin",
-      "derivativeFormats": [],
-      "derivativeWidths": [],
-      "derivativesReady": false,
+      "derivativeFormats": [
+        "avif",
+        "webp",
+        "jpeg"
+      ],
+      "derivativeWidths": [
+        320,
+        480,
+        640,
+        960,
+        1280
+      ],
+      "derivativesReady": true,
       "filename": "top.png",
       "height": 1071,
       "id": "img_r3t55im2fo",
