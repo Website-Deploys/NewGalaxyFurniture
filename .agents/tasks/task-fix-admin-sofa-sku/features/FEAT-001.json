@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Establish a green baseline for the fix. Confirm the committed source of truth is already correct and that the existing regression tests pass before any change. This is an existing project, so verify dependencies are installed and the unit suite runs clean.",
+  "status": "completed",
+  "steps": [
+    "If node_modules is missing, run `npm install`.",
+    "Read data/products/brown-sofa.json and confirm the verified record is intact: id 'p_322e7n6mth', sku 'NGF-SOF-WBJZX0', slug 'brown-sofa', name 'Premium 3+1+1 Sofa Set', price 41990, status 'DRAFT', published false. Do NOT modify this file.",
+    "Run the targeted regression test: `npx vitest run tests/unit/real-content-sofas.test.ts` and confirm all cases pass.",
+    "Run the full unit suite `npm test` and record the result. If anything unrelated fails in this environment, note it in findings but do not attempt to fix unrelated failures."
+  ],
+  "acceptance_criteria": [
+    "data/products/brown-sofa.json is confirmed unchanged and carries id p_322e7n6mth and sku NGF-SOF-WBJZX0",
+    "`npx vitest run tests/unit/real-content-sofas.test.ts` passes",
+    "The full `npm test` result is recorded in findings (pass, or a list of any pre-existing unrelated failures)"
+  ],
+  "verification": [
+    "npx vitest run tests/unit/real-content-sofas.test.ts",
+    "npm test"
+  ],
+  "blocked_reason": null,
+  "findings": "Baseline established. Workspace: node_modules present (no npm install needed). Git clean vs HEAD e0cc374; only untracked path is .agents/ (task state). No tracked source file was modified — confirmed `git diff --stat data/products/brown-sofa.json` empty.\n\nSource of truth confirmed INTACT and unmodified: data/products/brown-sofa.json has id 'p_322e7n6mth', sku 'NGF-SOF-WBJZX0', slug 'brown-sofa', name 'Premium 3+1+1 Sofa Set', price 41990, currency INR, status 'DRAFT', published false. No premium-3-1-1-sofa-set.json exists in data/products/.\n\nTargeted regression: `npx vitest run tests/unit/real-content-sofas.test.ts` => 17/17 PASS. These pin brownSofa.sku === 'NGF-SOF-WBJZX0', name === 'Premium 3+1+1 Sofa Set', slug === 'brown-sofa', price 41990, and the WhatsApp enquiry '(SKU: NGF-SOF-WBJZX0)'.\n\nFull suite `npm test` (vitest run): 969 passed, 5 FAILED across 4 files (58 files total). The 5 failures are PRE-EXISTING and UNRELATED to the sofa/SKU fix — they exist on the clean base commit HEAD (no code was changed). All are build-output/artifact dependent, not product-identity related:\n  1. tests/unit/analytics.snapshot.test.ts > Worker entry — expects configured entry ./dist/_worker.js/index.js (needs a fresh `npm run build`).\n  2. tests/unit/security.build-output.test.ts > 'finds nothing in the real build output' — scans dist build output (needs fresh build).\n  3. tests/unit/security.build-output.test.ts > 'allows credential names in the server bundle' — same build-output dependency.\n  4. tests/unit/seo.meta.test.ts > 'reads the site URL variable in exactly two resolvers' — domain/PUBLIC_SITE_URL resolver assertion.\n  5. tests/unit/supporting-pages-showroom.test.ts > reviews aggregateRating/testimonial note — asserts a specific whitespace-sensitive substring in src/pages/reviews.astro.\nNone reference product SKU, sofas, the KV resolver, or data/products. They do not block FEAT-002.\n\nConstraints honored: no commit, no push, no --remote wrangler, no modification of brown-sofa.json or any tracked identity. FEAT-002 (KV state repair) intentionally NOT started."
+}

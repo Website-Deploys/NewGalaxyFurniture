@@ -93,22 +93,22 @@ PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
 #            caps, 10-minute upload caps) plus the short write locks.
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "REPLACE_WITH_SESSIONS_KV_NAMESPACE_ID"
+id = "12dbd6986fb0434dbd6a244041d4bab2"
 
 [[kv_namespaces]]
 binding = "DRAFTS"
-id = "REPLACE_WITH_DRAFTS_KV_NAMESPACE_ID"
+id = "d2bb84a05a0344efa8eaec891c825c00"
 
 [[kv_namespaces]]
 binding = "RATELIMIT"
-id = "REPLACE_WITH_RATELIMIT_KV_NAMESPACE_ID"
+id = "ef014bce32e44987b01d283b18878c51"
 
 # --- D1 ---------------------------------------------------------------------
 # Leads, analytics events and daily rollups, admin users, login attempts.
 [[d1_databases]]
 binding = "DB"
 database_name = "ngf-content"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "13e7e7cd-3e8c-4313-baa5-414440002e3b"
 migrations_dir = "migrations"
 
 # --- R2 ---------------------------------------------------------------------

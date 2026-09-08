@@ -173,6 +173,12 @@ const ratio = `${image.width} / ${image.height}`;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /*
+     * Centred by default. Explicit rather than relying on the initial value so the framing is a
+     * stated decision, and overridable per surface through `--ngf-image-position` (e.g. a card that
+     * wants to bias toward the top of a tall photograph) without touching this rule.
+     */
+    object-position: var(--ngf-image-position, center);
   }
 
   .ngf-image-fallback {

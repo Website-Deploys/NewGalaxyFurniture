@@ -44,6 +44,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getAnalyticsSnapshot } from '@/lib/content/analytics-snapshot';
 import { heroImagePreload } from '@/lib/images/preload';
 import { heroImageOf } from '@/lib/site/hero-image';
+import { heroShowcaseFrom, heroSlidesFrom, type HeroSlide } from '@/lib/site/hero-showcase';
 import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
 import { getPublishedReviews } from '@/lib/content/reviews';
 import { getEnabledSections, getHomepage, getRankings, getSiteSettings } from '@/lib/content/site';
@@ -110,8 +111,56 @@ const trendingMeasuredAsOf =
  * emits only what Settings actually holds; the address, hours, price range and coordinates are
  * absent until the operator supplies them rather than guessed (Requirement 19.6).
  */
-/** The same image the hero renders, resolved from the same function. */
-const heroPreload = heroImagePreload(heroImageOf(settings).src);
+/*
+ * The hero's editorial visual. When the catalogue has a real published photograph, the hero shows
+ * it (a genuine piece we make, not a fabricated showroom scene); otherwise it falls back to the
+ * project's own hairline composition via `heroImageOf`. `site.heroImage` in Settings is a separate,
+ * still-unsupplied concern, so this is an editorial choice made from real assets, not an operator
+ * hero photograph.
+ *
+ * The preload hint is built from the same resolution the hero paints, so the page preloads exactly
+ * one image and it is the one the hero renders (Requirement 22.10).
+ */
+/*
+ * The operator's supplied showroom photograph (`site.heroImage` → `/brand/hero.png`) is the hero's
+ * editorial visual and it wins outright: it is the full styled living-room scene the homepage is
+ * meant to open on, not a single product crop. `heroShowcaseFrom` — which picks the first published
+ * product photo — is kept only as the fallback for installs that have *not* supplied a hero image,
+ * so the hero is never empty. When a hero image is supplied the page preloads exactly that file.
+ */
+const suppliedHero = heroImageOf(settings);
+const heroShowcase = suppliedHero.supplied ? null : heroShowcaseFrom(products);
+const heroPreload =
+  heroShowcase !== null ? heroShowcase.preload : heroImagePreload(suppliedHero.src);
+
+/*
+ * The hero carousel's slides.
+ *
+ * Slide 1 is always the first image the hero would otherwise paint on its own — the operator's
+ * supplied `hero.png` when set, else the product showcase, else the composition — so the carefully
+ * prepared opening frame is unchanged and stays the LCP image the page preloads. After it come the
+ * real published product photographs (`heroSlidesFrom`), deduped so the same asset never repeats
+ * (the showcase, if it carried slide 1, is dropped from the tail).
+ *
+ * With no supplied hero image and no products this is a single slide, and the carousel degrades to
+ * the static hero it already was — no indicators, no autoplay.
+ */
+const firstSlide: HeroSlide = {
+  src: (heroShowcase?.image ?? suppliedHero).src,
+  width: (heroShowcase?.image ?? suppliedHero).width,
+  height: (heroShowcase?.image ?? suppliedHero).height,
+  alt: (heroShowcase?.image ?? suppliedHero).alt,
+  ...((heroShowcase?.image ?? suppliedHero).lqip === undefined
+    ? {}
+    : { lqip: (heroShowcase?.image ?? suppliedHero).lqip }),
+  ...(heroShowcase !== null
+    ? { srcset: heroShowcase.image.srcset, sizes: heroShowcase.image.sizes }
+    : {}),
+};
+const heroSlides: HeroSlide[] = [
+  firstSlide,
+  ...heroSlidesFrom(products).filter((slide) => slide.src !== firstSlide.src),
+];
 
 const origin = siteOrigin(Astro);
 const meta = pageMeta(Astro, {
@@ -125,7 +174,7 @@ const meta = pageMeta(Astro, {
 });
 ---
 
-<BaseLayout meta={meta} heroHeader mainClass="ngf-home">
+<BaseLayout meta={meta} mainClass="ngf-home">
   {
     /*
     The homepage's one image preload: the hero, which is its largest contentful element and is
@@ -147,7 +196,14 @@ const meta = pageMeta(Astro, {
       .map((section) => {
         switch (section.key) {
           case 'hero':
-            return <HeroSection section={section} tagline={tagline} />;
+            return (
+              <HeroSection
+                section={section}
+                tagline={tagline}
+                showcase={heroShowcase?.image ?? null}
+                slides={heroSlides}
+              />
+            );
           case 'shopByCategory':
             return <ShopByCategory section={section} categories={categoryTiles} />;
           case 'featuredProducts':
@@ -255,6 +311,22 @@ const meta = pageMeta(Astro, {
     .ngf-home > .ngf-home-section {
       padding-inline: 2rem;
     }
+  }
+
+  /*
+   * The band directly after the hero enters on a shorter top gap.
+   *
+   * The hero already carries its own generous bottom padding (`.ngf-hero`, clamp(3rem, 8vh, 5.5rem)),
+   * and the next band's own top padding of clamp(3rem, 8vh, 6rem) stacked on top of it — up to
+   * ~11.5rem of dead vertical space before the first content section on a tall viewport, which is
+   * the accidental gap the polish pass targets. The two paddings are not margins, so nothing
+   * collapses them; the fix is to have the first band own a smaller top padding so the sequence
+   * reads as one composition rather than two widely separated blocks. It applies whichever band
+   * follows the hero (the section order is data-driven), and only the *top* padding is trimmed so
+   * the band keeps its full bottom rhythm into whatever follows it.
+   */
+  .ngf-home > .ngf-hero + .ngf-home-section:not([data-surface]) {
+    padding-top: clamp(1.5rem, 3vh, 2.75rem);
   }
 
   /*

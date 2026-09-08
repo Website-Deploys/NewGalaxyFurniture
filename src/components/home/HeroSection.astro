@@ -1,72 +1,126 @@
 ---
 /**
- * The homepage hero.
+ * The homepage hero — one large showroom photograph with a soft left-to-right white fade, the copy
+ * sitting over the faded left space. It reads as a single continuous photograph, not a split.
  *
  * Everything Requirements 7.3, 7.4, 7.5, 7.6, 7.11, and 7.12 pin down, and why each is structured
  * the way it is:
  *
- * - **The positioning line is the `<h1>`, and the brand mark is not.** It used to be the other way
- *   round: the wordmark was the heading and the operator's line was a small paragraph under it. That
- *   put the site's least informative element — a logotype already fixed in the header of every page
- *   — in the one slot a search engine and a screen-reader user weight most heavily, and it left the
- *   page with no headline at all. The wordmark is still here, as the eyebrow's sibling, because a
- *   visitor arriving from a search result should see who they have landed on; it is simply no longer
- *   pretending to be the page's subject.
- * - **Exactly three CTAs** — Explore Collection, Order or Enquire on WhatsApp, Call Now. Three, and a
- *   fourth is impossible rather than discouraged: the CTA row is not a slot and takes no props, so
- *   there is no way to pass another one in (7.3). Each is ≥ 44 px through `.ngf-hero-cta`.
- * - **Exactly one image, and it is the largest painted element.** One `<img>`, with its intrinsic
- *   width and height emitted so the box is reserved before a byte arrives (7.4, 15.10). Everything
- *   else in the hero is type, a hairline rule, a small ornament, or a text-only floating card —
- *   nothing paints larger at any width from 320 px to 1920 px.
+ * - **The positioning line is the `<h1>`, and the brand mark is not.** The operator's line is the
+ *   page's subject; the wordmark is a small eyebrow sibling so a visitor arriving from a search
+ *   result sees who they have landed on, without the logotype pretending to be the heading.
+ * - **Exactly two CTAs** — a loud primary (Explore the collection) and a quiet secondary (Custom
+ *   furniture). WhatsApp and Call stay one tap away everywhere else (the header enquiry control, the
+ *   WhatsApp band below, the sticky mobile action bar), so the hero stays uncluttered.
+ * - **Exactly one image, and it is the largest painted element.** One `<img>` filling the panel as
+ *   its ground, with its intrinsic width and height emitted so the box is reserved before a byte
+ *   arrives (7.4, 15.10). The panel's `aspect-ratio` reserves the box and the LQIP fills it until
+ *   the photograph decodes, so nothing shifts (7.12). Everything overlaid on it is type, a hairline
+ *   rule, or a soft fade — nothing paints larger at any width from 320 px to 1920 px.
  * - **No video. Anywhere** (7.5).
- * - **Three parallax planes, transform and opacity only** (7.6, 21.8).
+ * - **Two parallax planes, transform and opacity only** (7.6, 21.8).
  * - **Reduced motion renders the final drawn state on first paint** (7.11).
- * - **The LQIP fills the slot at the final layout dimensions until load, with no shift** (7.12).
+ *
+ * **The soft fade, not a panel.** A left-anchored warm-white gradient is painted over the
+ * photograph so the copy stays legible; it fades smoothly to fully transparent before the centre,
+ * so the furniture on the right is untouched and there is no rectangular overlay and no hard edge.
+ * The photograph is positioned toward its right so the open hallway/floor on its left sits under the
+ * copy — the headline never lands on the sofa.
  *
  * **The assurance row states nothing the operator has not supplied.** "Custom sizes and finishes"
  * and "Direct from the workshop" are the operator's own homepage sections restated as a line; the
  * delivery line is `settings.serviceArea` verbatim, and it renders only when that array is
- * non-empty. There is no lead time, no price, no capacity, and no history here, because none has
- * been supplied (7.10).
+ * non-empty. There is no lead time, no price, no capacity, and no history here (7.10).
  *
- * **On the image asset.** No photograph has been supplied — Open Items item 5 — and one will not be
- * invented here. So the hero renders the project's own hairline room composition
- * (`public/brand/hero-composition.svg`), which is a design asset in the established visual language
- * rather than a claim about the business, and it is a real responsive image: vector, so it is
- * resolution-independent at every viewport width without a `srcset`, with intrinsic dimensions
- * emitted. When the operator supplies a photograph, `settings.heroImage` swaps it in with no code
- * change.
+ * **On the image asset.** The hero paints the operator-supplied showroom photograph
+ * (`settings.heroImage` → `/brand/hero.png`) as its dominant visual. When one is *not* supplied the
+ * page passes a real product photograph as `showcase`, and failing that this falls back to the
+ * project's own hairline room composition. Whichever it is, the homepage preloads the exact
+ * resolution the hero paints (22.10).
  *
  * Requirements: 7.3, 7.4, 7.5, 7.6, 7.8, 7.10, 7.11, 7.12, 15.10, 15.11, 24.3.
  */
-import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
 import TextReveal from '@/components/motion/TextReveal.astro';
-import BrandMark from '@/components/ui/BrandMark.astro';
-import CallLink from '@/components/ui/CallLink.astro';
-import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import { getSiteSettings } from '@/lib/content/site';
 import { loadingAttributes } from '@/lib/images/staging';
 import { heroImageOf } from '@/lib/site/hero-image';
 import type { HomepageSection } from '@/schemas/homepage';
 
+interface HeroShowcaseImage {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  lqip?: string;
+  srcset: string;
+  sizes: string;
+}
+
+interface HeroSlide {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  lqip?: string;
+  srcset?: string;
+  sizes?: string;
+}
+
 interface Props {
   section: HomepageSection;
   /** The positioning line in force — `effectiveTagline(settings, homepage)`. */
   tagline: string | null;
+  /**
+   * A real product photograph to carry the hero when no `settings.heroImage` is supplied, resolved
+   * by the page from the published catalogue. `null` when the operator has supplied a hero
+   * photograph (which wins) or when the catalogue has none (the composition answers instead).
+   */
+  showcase?: HeroShowcaseImage | null;
+  /**
+   * The carousel's slides, built by the page: slide 1 is the prepared opening frame (the supplied
+   * `hero.png`, else the showcase, else the composition), followed by real published product
+   * photographs. Absent or single-entry → the hero is the static single image it always was.
+   */
+  slides?: HeroSlide[];
 }
 
-const { section, tagline } = Astro.props;
+const { section, tagline, showcase = null, slides } = Astro.props;
 const settings = getSiteSettings();
 
 /*
- * The hero image is resolved by `heroImageOf` rather than here, because the homepage preloads the
- * same image and the two must not resolve it separately (Requirement 22.10).
+ * The hero image. The operator's supplied showroom photograph wins; otherwise the page's product
+ * showcase; otherwise the designed composition. `heroImageOf` answers the first and third, and the
+ * page decides whether to pass a `showcase` (it passes `null` whenever a hero image is supplied).
  */
-const image = heroImageOf(settings);
+const supplied = heroImageOf(settings);
+const image = supplied.supplied ? supplied : (showcase ?? supplied);
+/*
+ * "Photo" means the panel paints a real photograph edge to edge (cover) with the fade over it;
+ * "composition" means the hairline fallback drawing, which is contained on cream with no fade. The
+ * supplied hero photo and a product showcase are both photos; only the `HERO_COMPOSITION` fallback
+ * (never supplied, never a showcase) is a composition.
+ */
+const isPhoto = supplied.supplied || showcase !== null;
+
+/*
+ * The slides to paint. When the page supplied a list, use it; otherwise fall back to the single
+ * `image` the hero resolved, so the component still renders standalone. The composition fallback is
+ * never carouselled — a hairline drawing is not a product photograph — so it stays a single slide.
+ */
+const firstFallback: HeroSlide = {
+  src: image.src,
+  width: image.width,
+  height: image.height,
+  alt: image.alt,
+  ...(image.lqip === undefined ? {} : { lqip: image.lqip }),
+  ...(showcase !== null ? { srcset: showcase.srcset, sizes: showcase.sizes } : {}),
+};
+const heroSlides: HeroSlide[] =
+  isPhoto && slides !== undefined && slides.length > 0 ? slides : [firstFallback];
+const isCarousel = heroSlides.length > 1;
 const loading = loadingAttributes({ priority: true });
 
-const ctaLabel = section.ctaLabel ?? 'Explore Collection';
+const ctaLabel = section.ctaLabel ?? 'Explore the collection';
 const ctaHref = section.ctaHref ?? '/collection';
 
 /**
@@ -95,159 +149,340 @@ const headingLines =
   class="ngf-hero"
   aria-labelledby="ngf-hero-heading"
   data-ngf-section="hero"
+  data-hero-mode={isPhoto ? 'photo' : 'composition'}
   data-parallax-root
 >
   {
     /*
-    Plane 0 — the deepest ground, and the slowest parallax. It carries the layered `AnimatedRoom`
-    and `CraftsmanshipLines` assembly: both are decorative (no `title`, so both are `aria-hidden`),
-    both draw once on entry, and neither is the hero's image — the `<img>` on plane 1 remains the
-    largest painted element at every width.
+    One large rounded showroom panel. The photograph fills it as the ground; a soft left-to-right
+    white fade lays over it so the copy on the left stays legible; the copy overlays both. It reads
+    as a single continuous photograph — no split, no boxed panel, no hard edge.
   */
   }
   <div
-    class="ngf-hero-plane"
-    data-parallax-plane="0"
-    style="--plane-depth: 0.15;"
-    aria-hidden="true"
+    class="ngf-hero-panel"
+    data-ngf-carousel={isCarousel ? 'true' : undefined}
+    data-hero-count={heroSlides.length}
   >
-    <span class="ngf-hero-room">
-      <AnimatedRoom strokeWidth={1} />
-    </span>
-  </div>
+    {
+      /*
+      Plane 1 — the image, filling the panel as its ground. When there is more than one slide the
+      figure holds them stacked, each absolutely filling the same box, crossfaded by opacity only —
+      so every slide occupies the identical area and nothing reflows between them (no layout shift).
+      Slide 0 is the prepared opening frame: visible on first paint, eager and high-priority, and it
+      is the image the page preloads. The rest are lazy and start transparent, decoded off the
+      critical path, so a long collection never hurts LCP.
 
-  {/* Plane 2 — the nearest plane: type and controls. Never moves under reduced motion. */}
-  <div
-    class="ngf-hero-plane ngf-hero-plane-copy"
-    data-parallax-plane="2"
-    style="--plane-depth: 0.6;"
-  >
-    <div class="ngf-hero-copy" data-reveal data-motion-group>
-      <p class="ngf-hero-eyebrow">
-        <BrandMark size="sm" tone="dark" href={null} />
-        {section.eyebrow !== undefined && <span class="ngf-hero-kicker">{section.eyebrow}</span>}
-      </p>
-
-      {
-        /*
-        The positioning line, revealed line by line with a `clip-path` wipe. The lines are the
-        operator's own — whatever they typed in Admin → Homepage, split on the newlines they wrote —
-        so nothing is re-flowed by JavaScript and nothing is split per character. A single-line
-        tagline is one line, which wipes once (Requirement 21.6).
-
-        Requirement 7.11: under reduced motion the line renders unclipped on the first paint, so it
-        is visible and legible for the whole visit.
-      */
-        headingLines.length > 0 ? (
-          <TextReveal as="h1" class="ngf-hero-heading" lines={headingLines} />
-        ) : (
-          /* No tagline supplied. The page still needs one `h1`, and the business name is the one
-             thing always known — never an invented headline. */
-          <h1 class="ngf-hero-heading">{settings.businessName}</h1>
-        )
-      }
-      <span class="ngf-hero-rule" aria-hidden="true"></span>
-
-      {section.subheading !== undefined && <p class="ngf-hero-sub">{section.subheading}</p>}
-
-      {
-        /*
-        Exactly three controls. Requirement 7.3 names them, and there is no slot here through which
-        a fourth could be added.
-      */
-      }
-      <div class="ngf-hero-ctas">
-        <a class="ngf-hero-cta ngf-hero-cta-primary" href={ctaHref}>{ctaLabel}</a>
-        <WhatsAppLink
-          context={{ kind: 'general' }}
-          label="Order or Enquire on WhatsApp"
-          variant="outline"
-          class="ngf-hero-cta"
-        />
-        <CallLink label="Call Now" variant="outline" class="ngf-hero-cta" />
-      </div>
-
-      {
-        assurances.length > 0 && (
-          <ul class="ngf-hero-assurances">
-            {assurances.map((item) => (
-              <li>{item}</li>
-            ))}
-          </ul>
-        )
-      }
-    </div>
-  </div>
-
-  {/* Plane 1 — the one image. */}
-  <div
-    class="ngf-hero-plane ngf-hero-plane-media"
-    data-parallax-plane="1"
-    style="--plane-depth: 0.35;"
-  >
+      The `.ngf-hero-figure` class and the intrinsic width/height on each `<img>` keep the box
+      reserved for the image-loading audit and for CLS.
+    */
+    }
     <figure
-      class="ngf-hero-figure"
-      style={`aspect-ratio: ${image.width} / ${image.height};${
-        image.lqip === undefined ? '' : `background-image:url(${image.lqip});`
+      class="ngf-hero-figure ngf-hero-plane"
+      data-parallax-plane="1"
+      style={`--plane-depth: 0.15;${
+        heroSlides[0]?.lqip === undefined ? '' : `background-image:url(${heroSlides[0].lqip});`
       }`}
-      data-has-lqip={image.lqip === undefined ? 'false' : 'true'}
+      data-has-lqip={heroSlides[0]?.lqip === undefined ? 'false' : 'true'}
+      aria-hidden={isPhoto ? undefined : 'true'}
     >
-      <img
-        src={image.src}
-        width={image.width}
-        height={image.height}
-        alt={image.alt}
-        loading={loading.loading}
-        fetchpriority={loading.fetchpriority}
-        decoding={loading.decoding}
-        data-ngf-hero-image
-      />
+      {
+        heroSlides.map((slide, index) => (
+          <img
+            class="ngf-hero-slide"
+            src={slide.src}
+            srcset={slide.srcset}
+            sizes={slide.sizes}
+            width={slide.width}
+            height={slide.height}
+            alt={slide.alt}
+            loading={index === 0 ? loading.loading : 'lazy'}
+            fetchpriority={index === 0 ? loading.fetchpriority : 'auto'}
+            decoding={index === 0 ? loading.decoding : 'async'}
+            data-ngf-hero-image={index === 0 ? '' : undefined}
+            data-hero-slide={index}
+            data-active={index === 0 ? 'true' : 'false'}
+          />
+        ))
+      }
     </figure>
 
     {
       /*
-      One floating card, overlapping the media frame. Type only — no painted area that could
-      compete with the image (7.4) — and it says nothing that is not already on the page: the
-      operator's own custom-furniture section is what it points at.
+      The soft left fade. A left-anchored warm-white gradient that starts near-opaque at the extreme
+      left — where the copy sits, over the photograph's open hallway/floor — and eases to fully
+      transparent before the centre, so the furniture on the right is completely untouched. Many
+      closely-spaced stops make the transition smooth with no visible boundary. Only over a photo;
+      the composition fallback keeps dark type on its cream ground with no fade.
     */
     }
-    <p class="ngf-hero-badge" data-reveal="right">
-      <span class="ngf-hero-badge-label">Made to order</span>
-      <span class="ngf-hero-badge-value">Your size, your finish</span>
-    </p>
+    {isPhoto && <div class="ngf-hero-fade" aria-hidden="true" />}
+
+    {/* Plane 2 — the copy, overlaid on the faded left space. Never moves under reduced motion. */}
+    <div class="ngf-hero-plane ngf-hero-copy" data-parallax-plane="2" style="--plane-depth: 0.35;">
+      <div class="ngf-hero-copy-inner" data-reveal data-motion-group>
+        <p class="ngf-hero-eyebrow">
+          {section.eyebrow !== undefined && <span class="ngf-hero-kicker">{section.eyebrow}</span>}
+        </p>
+
+        {
+          /*
+          The positioning line, revealed line by line with a `clip-path` wipe (Requirement 21.6),
+          and unclipped on first paint under reduced motion (Requirement 7.11). The lines are the
+          operator's own breaks.
+        */
+          headingLines.length > 0 ? (
+            <TextReveal
+              as="h1"
+              id="ngf-hero-heading"
+              class="ngf-hero-heading"
+              lines={headingLines}
+            />
+          ) : (
+            <h1 id="ngf-hero-heading" class="ngf-hero-heading">
+              {settings.businessName}
+            </h1>
+          )
+        }
+
+        {section.subheading !== undefined && <p class="ngf-hero-sub">{section.subheading}</p>}
+
+        {
+          /*
+          One prominent primary CTA (Explore the collection) and one elegant secondary (Custom
+          furniture). Two, and a third is impossible rather than discouraged: the row takes no
+          props. Each is ≥ 48 px through `.ngf-hero-cta` (Requirements 7.3, 24.3).
+        */
+        }
+        <div class="ngf-hero-ctas">
+          <a class="ngf-hero-cta ngf-hero-cta-primary" href={ctaHref}>
+            {ctaLabel}
+            <svg
+              class="ngf-hero-cta-arrow"
+              viewBox="0 0 20 12"
+              width="18"
+              height="11"
+              aria-hidden="true"
+              focusable="false"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M1 6h17M13 1l5 5-5 5"></path>
+            </svg>
+          </a>
+          <a class="ngf-hero-cta ngf-hero-cta-secondary" href="/custom-furniture">
+            Custom furniture
+          </a>
+        </div>
+
+        {
+          assurances.length > 0 && (
+            <ul class="ngf-hero-assurances">
+              {assurances.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+    </div>
+
+    {
+      /*
+      The slider indicators: understated horizontal bars at the bottom-centre of the panel, the
+      active one longer and brighter. Real `<button>`s in a labelled group, so they are keyboard
+      operable and announced; `aria-current` marks the active slide. Only rendered when there is
+      more than one slide. The carousel behaviour (autoplay, click, keyboard, reduced motion) is
+      wired by the script below; with no JavaScript these still show slide 1, which is correct.
+    */
+    }
+    {
+      isCarousel && (
+        <div class="ngf-hero-dots" role="group" aria-label="Choose a showroom image">
+          {heroSlides.map((slide, index) => (
+            <button
+              type="button"
+              class="ngf-hero-dot"
+              data-hero-dot={index}
+              data-active={index === 0 ? 'true' : 'false'}
+              aria-current={index === 0 ? 'true' : undefined}
+              aria-label={`Show image ${index + 1} of ${heroSlides.length}: ${slide.alt}`}
+            />
+          ))}
+        </div>
+      )
+    }
   </div>
 </section>
 
+<script>
+  /**
+   * The hero crossfade carousel.
+   *
+   * A processed (bundled, hashed) module script — never `is:inline` — so it satisfies the
+   * deployment's `script-src 'self'` policy the same way the header's script does. It self-guards on
+   * `[data-ngf-carousel="true"]`, so it is a no-op on every page that has no carousel and on a hero
+   * with a single slide.
+   *
+   * It autoplays through the slides on a slow premium interval, crossfading by opacity only (the CSS
+   * does the fade) so the panel, the fade and the copy never move. The indicators are clickable,
+   * arrow keys step when the panel is focused, and any deliberate interaction pauses autoplay for the
+   * rest of the visit so it never fights the visitor. A resting pointer and a hidden tab pause it
+   * too. Under reduced motion (or with the motion toggle off) autoplay does not start and the CSS
+   * drops the crossfade, so slides switch instantly. Everything degrades to a static slide 1 with no
+   * JavaScript.
+   */
+  const INTERVAL = 6000;
+  for (const root of document.querySelectorAll<HTMLElement>('[data-ngf-carousel="true"]')) {
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-hero-slide]'));
+    const dots = Array.from(root.querySelectorAll<HTMLElement>('[data-hero-dot]'));
+    if (slides.length < 2 || dots.length !== slides.length) continue;
+
+    let current = 0;
+    let timer = 0;
+    let paused = false;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const motionOff = (): boolean =>
+      reduce.matches || document.documentElement.getAttribute('data-motion') === 'off';
+
+    const show = (next: number): void => {
+      const target = (next + slides.length) % slides.length;
+      if (target === current) return;
+      slides[current]?.setAttribute('data-active', 'false');
+      dots[current]?.setAttribute('data-active', 'false');
+      dots[current]?.removeAttribute('aria-current');
+      current = target;
+      slides[current]?.setAttribute('data-active', 'true');
+      dots[current]?.setAttribute('data-active', 'true');
+      dots[current]?.setAttribute('aria-current', 'true');
+    };
+
+    const stop = (): void => {
+      if (timer !== 0) {
+        window.clearInterval(timer);
+        timer = 0;
+      }
+    };
+    const start = (): void => {
+      if (paused || timer !== 0 || motionOff()) return;
+      timer = window.setInterval(() => show(current + 1), INTERVAL);
+    };
+    const pauseForVisit = (): void => {
+      paused = true;
+      stop();
+    };
+
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', () => {
+        pauseForVisit();
+        show(index);
+      });
+    });
+
+    root.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') {
+        pauseForVisit();
+        show(current + 1);
+        event.preventDefault();
+      } else if (event.key === 'ArrowLeft') {
+        pauseForVisit();
+        show(current - 1);
+        event.preventDefault();
+      }
+    });
+
+    // Pause while a pointer rests on the hero; resume on leave unless a deliberate interaction has
+    // paused it for the visit.
+    root.addEventListener('pointerenter', stop);
+    root.addEventListener('pointerleave', start);
+
+    // Pause while the tab is hidden, so nothing advances off-screen.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else start();
+    });
+
+    start();
+  }
+</script>
+
 <style>
+  /*
+   * The hero is one large photograph. The outer element is just the page gutter and the vertical
+   * rhythm; the panel inside it holds the photograph, the fade, and the copy.
+   */
   .ngf-hero {
     position: relative;
-    display: grid;
-    gap: clamp(2rem, 5vw, 3.5rem);
-    align-items: center;
     max-width: var(--container-content);
     margin-inline: auto;
-    padding: clamp(2.5rem, 7vh, 5rem) 1.25rem clamp(3rem, 8vh, 5.5rem);
+    /* A small deliberate gap under the floating header, then generous air before the next band. */
+    padding: clamp(1rem, 2.5vh, 2rem) 1.25rem clamp(2rem, 5vh, 3.5rem);
     isolation: isolate;
   }
 
   @media (min-width: 1024px) {
     .ngf-hero {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-      gap: clamp(2.5rem, 4vw, 4.5rem);
       padding-inline: 2rem;
     }
   }
 
   /*
-   * The three planes.
+   * The one large rounded showroom panel: the photograph fills it, the fade and copy overlay it.
    *
-   * `will-change` is still deliberately absent from this stylesheet: the parallax loop applies it
-   * when it starts and removes it when it stops (see `frame-loop.ts`), so three layers are promoted
-   * only while they are actually being written to. A standing `will-change` here would cost the
-   * memory on every visit including the reduced-motion ones, where nothing ever moves.
+   * The box is reserved by `aspect-ratio`, not a fixed height, so the panel holds its height from
+   * its width before the photograph loads and there is no shift (Requirement 7.12). A portrait-ish
+   * ratio on a phone reads well; a wide cinematic ratio on desktop lets the whole living-room scene
+   * read at once. `min-height`/`max-height` keep it substantial but never enormous.
+   */
+  .ngf-hero-panel {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    min-height: 28rem;
+    max-height: 34rem;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    /* Ivory ground matches the fade, so the faded region and the frame read as one warm surface. */
+    background-color: var(--color-ivory);
+    box-shadow: var(--shadow-lift);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-hero-panel {
+      aspect-ratio: 3 / 2;
+      min-height: 30rem;
+      max-height: 40rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-hero-panel {
+      /* Close to the supplied photograph's own 1470×827 (~16:9) crop, so it fills the panel with
+         no letterbox, and tall enough to dominate the first viewport. */
+      aspect-ratio: 16 / 8;
+      min-height: 32rem;
+      max-height: 42rem;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .ngf-hero-panel {
+      aspect-ratio: 16 / 7.5;
+      max-height: 46rem;
+    }
+  }
+
+  /*
+   * The planes.
    *
-   * Only `transform` and `opacity` are transitioned, which is the constraint the motion system
-   * inherits from Requirement 21.8.
+   * `will-change` is deliberately absent: the parallax loop applies it when it starts and removes it
+   * when it stops (`frame-loop.ts`), so a layer is promoted only while it is being written to. Only
+   * `transform` and `opacity` are transitioned (Requirement 21.8).
    */
   .ngf-hero-plane {
     transform: translate3d(0, 0, 0);
@@ -269,87 +504,208 @@ const headingLines =
     transition: none;
   }
 
+  /* ------------------------------------------------------------------ *
+   * The photograph — the panel's ground
+   * ------------------------------------------------------------------ */
+
   /*
-   * Plane 0 is a hairline wash, not media: it paints a rule, not an area.
-   *
-   * `overflow: clip` contains the decorative room ornament to the hero's own box. The ornament is
-   * anchored near the right edge (`right: -1%`, `width: 26vw`) and at some viewport widths its box
-   * extends a few pixels past the viewport — enough to add a horizontal scrollbar even though it is
-   * `aria-hidden` and `pointer-events: none`. Clipping the plane means the ornament can never widen
-   * the page at any width, which is cheaper and more robust than hand-tuning its offset per
-   * breakpoint. `clip` (not `hidden`) so no scroll container is created on this decorative layer.
+   * The photograph fills the panel absolutely; `object-fit: cover` so the furniture fills the frame
+   * without distortion. `object-position` is pushed toward the right so the photograph's open
+   * hallway/floor on its left sits under the copy and the sofa moves toward the centre/right — which
+   * is what reserves the readable left space without cropping the furniture away. Scaled a touch
+   * beyond the frame so the parallax drift never reveals an edge. The LQIP paints the same box until
+   * the photograph decodes (Requirement 7.12).
    */
-  .ngf-hero-plane[data-parallax-plane='0'] {
+  .ngf-hero-figure {
     position: absolute;
     inset: 0;
-    z-index: -1;
-    overflow: clip;
-    pointer-events: none;
+    z-index: 0;
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--color-cream);
+    background-position: center;
+    background-size: cover;
   }
 
   /*
-   * The one ornament on plane 0: a positioned line drawing at low contrast, sized in `vw` so it
-   * scales with the composition rather than being re-laid out at breakpoints.
-   *
-   * It is anchored to the bottom-right, which is *behind the media card*, so the part of it a
-   * visitor sees is the part that escapes below and beside the card. It used to be anchored at
-   * `right: 44%` — the middle of the composition — where it ran straight through the assurance row
-   * and read as a rendering fault rather than as an ornament. There is no version of "a line drawing
-   * of a sofa crossing the words 'Delivered across Karnataka'" that looks deliberate.
-   *
-   * The craftsmanship detail that used to sit on this plane is gone for the same reason: at
-   * every width there was text behind it or in front of it.
-   *
-   * Hidden below 1024 px: on a phone and a tablet the hero is type and one image, and a line drawing
-   * behind the headline is noise at that width.
+   * Every slide is absolutely stacked in the same box, so they occupy the identical area and the
+   * panel never reflows between them (no layout shift). Only the active slide is opaque; the rest
+   * are transparent. `object-fit: cover` fills the frame; `object-position` toward the LEFT keeps
+   * the photograph's open, bright hallway/floor — its left ~third — in frame, exactly where the copy
+   * sits, so the furniture reads in the centre/right. A single, non-carousel hero has one slide,
+   * which is simply always active.
    */
-  .ngf-hero-room {
-    display: none;
+  .ngf-hero-slide {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0;
+    /* Crossfade by opacity only — transform/opacity are the only animated properties (21.8). */
+    transition: opacity var(--dur-normal) var(--ease-standard);
   }
 
-  @media (min-width: 1024px) {
-    .ngf-hero-room {
-      position: absolute;
-      right: -1%;
-      bottom: -6%;
-      display: block;
-      width: 26vw;
-      max-width: 360px;
-      color: var(--color-taupe);
-      opacity: 0.4;
-      pointer-events: none;
+  .ngf-hero-slide[data-active='true'] {
+    opacity: 1;
+  }
+
+  /* Reduced motion / motion off: no crossfade, slides switch instantly (Requirement 7.11, 21.11). */
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-hero-slide {
+      transition: none;
+    }
+  }
+
+  :global([data-motion='off']) .ngf-hero-slide {
+    transition: none;
+  }
+
+  @media (min-width: 768px) {
+    .ngf-hero-slide {
+      object-position: 22% center;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .ngf-hero-slide {
+      object-position: 14% center;
     }
   }
 
   /*
-   * Below 1024 px the copy comes first and the media second, so the page opens on the headline and
-   * the three CTAs rather than on the image — and, more concretely, so the media card's floating
-   * badge does not land on top of the eyebrow, which is what a media-first single column produced
-   * at tablet width.
+   * The composition fallback is a hairline drawing on cream, not a photograph — it must not be
+   * cropped to the panel. So it is contained and centred on its cream ground, with no fade over it.
+   * (It is never carouselled, so it is always the single active slide.)
    */
-  .ngf-hero-plane-copy {
-    order: 0;
+  .ngf-hero[data-hero-mode='composition'] .ngf-hero-slide {
+    object-fit: contain;
+    object-position: center;
+    padding: clamp(1.5rem, 5vw, 3.5rem);
   }
 
-  .ngf-hero-plane-media {
-    position: relative;
-    order: 1;
+  /* ------------------------------------------------------------------ *
+   * The soft left fade
+   * ------------------------------------------------------------------ */
+
+  /*
+   * A left-anchored warm-white wash over the photograph. Near-opaque at the extreme left where the
+   * copy sits, easing to fully transparent before the centre so the furniture on the right is
+   * untouched. The stops are many and closely spaced so there is no visible boundary — it looks like
+   * the photograph itself brightens toward the left, not like a panel laid on top. Warm white
+   * (`--color-ivory`, 250 248 244) keeps the hero light and airy; charcoal copy sits on top.
+   */
+  .ngf-hero-fade {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    /*
+     * Two layers, so the transition never reads as one straight vertical seam:
+     *
+     * 1. The primary left→right ivory wash. Solid ivory holds across the left where the copy sits,
+     *    then eases through many closely-spaced stops to fully transparent past the centre. The long,
+     *    gentle ramp is what makes it look like the photograph itself brightening into the ground,
+     *    not a panel with an edge.
+     * 2. A faint radial lift centred on the lower-left, feathering the wash so its right boundary is
+     *    a soft curve rather than a vertical line — the tell that gives a flat CSS gradient away.
+     *
+     * The ivory (250 248 244) matches the panel's own ground, so the faded region and the frame read
+     * as one continuous warm surface.
+     */
+    background:
+      radial-gradient(
+        120% 130% at 12% 78%,
+        rgb(250 248 244 / 0.5) 0%,
+        rgb(250 248 244 / 0.22) 34%,
+        rgb(250 248 244 / 0) 60%
+      ),
+      linear-gradient(
+        90deg,
+        rgb(250 248 244 / 0.98) 0%,
+        rgb(250 248 244 / 0.97) 20%,
+        rgb(250 248 244 / 0.92) 32%,
+        rgb(250 248 244 / 0.82) 42%,
+        rgb(250 248 244 / 0.64) 52%,
+        rgb(250 248 244 / 0.42) 62%,
+        rgb(250 248 244 / 0.22) 72%,
+        rgb(250 248 244 / 0.08) 82%,
+        rgb(250 248 244 / 0) 92%
+      );
   }
+
+  /*
+   * On a phone the copy is a full-width block anchored to the bottom, so the fade becomes a smooth
+   * bottom-to-top warm-white wash instead of a left one — lighter where the copy sits, fading up
+   * into the photograph, keeping the furniture visible above and every line of copy legible.
+   */
+  @media (max-width: 767px) {
+    .ngf-hero-fade {
+      background: linear-gradient(
+        to top,
+        rgb(250 248 244 / 0.96) 0%,
+        rgb(250 248 244 / 0.9) 26%,
+        rgb(250 248 244 / 0.66) 48%,
+        rgb(250 248 244 / 0.32) 68%,
+        rgb(250 248 244 / 0.1) 84%,
+        rgb(250 248 244 / 0) 100%
+      );
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The copy, overlaid on the faded left space
+   * ------------------------------------------------------------------ */
 
   .ngf-hero-copy {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    /* Phone: the copy sits in the lower warm wash. Wider viewports centre it on the left (below). */
+    justify-content: flex-end;
+    padding: clamp(1.5rem, 5vw, 4rem);
+  }
+
+  .ngf-hero-copy-inner {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.25rem;
+    gap: clamp(0.9rem, 1.6vw, 1.35rem);
+    max-width: 34rem;
   }
 
-  /* The eyebrow: the wordmark, then the operator's kicker after a hairline dash. */
+  /*
+   * From the tablet breakpoint up the copy is anchored to the left and vertically centred, sitting
+   * over the faded open space. Held to a comfortable measure so the headline breaks well and never
+   * runs toward the furniture.
+   */
+  @media (min-width: 768px) {
+    .ngf-hero[data-hero-mode='photo'] .ngf-hero-copy {
+      justify-content: center;
+      padding-inline: clamp(2rem, 5vw, 4.5rem);
+    }
+
+    .ngf-hero[data-hero-mode='photo'] .ngf-hero-copy-inner {
+      max-width: min(46%, 32rem);
+    }
+  }
+
+  /* The composition fallback anchors its copy to the lower band on its cream ground. */
+  .ngf-hero[data-hero-mode='composition'] .ngf-hero-copy {
+    justify-content: flex-end;
+  }
+
+  /* The eyebrow: the operator's kicker after a hairline dash. */
   .ngf-hero-eyebrow {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
-    margin: 0;
+    margin: 0 0 0.15rem;
   }
 
   .ngf-hero-kicker {
@@ -371,54 +727,38 @@ const headingLines =
   }
 
   /*
-   * Astro forwards the scope class through a component's `class` prop, so this scoped selector
-   * still matches the element `TextReveal` renders.
+   * The headline: the editorial display serif, large and confident, on the warm faded ground. Astro
+   * forwards the scope class through `TextReveal`'s `class` prop, so this scoped selector still
+   * matches the element it renders.
+   *
+   * ~68px at the reference's wide viewport (the spec's premium 56-72px band), fluid down to 40px on a
+   * phone; capped so it never overpowers the composition on very wide windows.
    */
   .ngf-hero-heading {
     margin: 0;
-    max-width: 18ch;
+    max-width: 15ch;
     color: var(--color-obsidian);
     font-family: var(--font-display);
-    font-size: var(--text-h1);
+    font-size: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
     font-weight: 400;
-    line-height: 1.04;
-    letter-spacing: -0.015em;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
     text-wrap: balance;
-  }
-
-  /*
-   * The one champagne element in this band (Requirement 21.2): a 1 px rule that scales out from the
-   * left as the copy arrives. `transform` only, so it costs no layout.
-   */
-  .ngf-hero-rule {
-    display: block;
-    width: clamp(4rem, 12vw, 7rem);
-    height: 1px;
-    background-color: var(--color-champagne);
-    transform: scaleX(1);
-    transform-origin: left center;
-    transition: transform var(--dur-story) var(--ease-draw);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    :global([data-reveal]:not([data-revealed])) .ngf-hero-rule {
-      transform: scaleX(0);
-    }
   }
 
   .ngf-hero-sub {
     margin: 0;
-    max-width: 46ch;
-    color: var(--color-walnut);
-    font-size: 1.0625rem;
-    line-height: 1.65;
+    max-width: 40ch;
+    color: var(--color-espresso);
+    font-size: clamp(1rem, 0.95rem + 0.4vw, 1.1875rem);
+    line-height: 1.6;
   }
 
   .ngf-hero-ctas {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    margin-top: 0.25rem;
+    margin-top: 0.4rem;
   }
 
   /* Requirement 7.3 / 24.3: every hero control is at least 44 px in each dimension. */
@@ -426,22 +766,38 @@ const headingLines =
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.6rem;
     min-width: 44px;
-    min-height: 48px;
-    padding: 0.75rem 1.5rem;
+    min-height: 52px;
+    padding: 0.85rem 1.75rem;
     border-radius: var(--radius-pill);
     font-size: var(--text-body);
+    font-weight: 500;
     text-decoration: none;
     transition:
       transform var(--dur-fast) var(--ease-standard),
       box-shadow var(--dur-fast) var(--ease-standard),
-      background-color var(--dur-fast) var(--ease-standard);
+      background-color var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
   }
 
+  /* The primary: the obsidian pill, the one loud element, with white text. */
   .ngf-hero-cta-primary {
     background-color: var(--color-obsidian);
     color: var(--color-ivory);
     box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-hero-cta-arrow {
+    flex: none;
+    transition: transform var(--dur-fast) var(--ease-standard);
+  }
+
+  /* The secondary: a quiet dark outline on the light ground, understated beside the primary. */
+  .ngf-hero-cta-secondary {
+    border: 1px solid var(--color-taupe);
+    color: var(--color-obsidian);
+    background-color: color-mix(in srgb, var(--color-white) 70%, transparent);
   }
 
   @media (hover: hover) {
@@ -453,14 +809,28 @@ const headingLines =
     .ngf-hero-cta-primary:hover {
       background-color: var(--color-espresso);
     }
+
+    .ngf-hero-cta-primary:hover .ngf-hero-cta-arrow {
+      transform: translateX(3px);
+    }
+
+    .ngf-hero-cta-secondary:hover {
+      border-color: var(--color-walnut);
+      background-color: var(--color-white);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ngf-hero-ctas :global(.ngf-hero-cta) {
+    .ngf-hero-ctas :global(.ngf-hero-cta),
+    .ngf-hero-cta-arrow {
       transition: none;
     }
 
     .ngf-hero-ctas :global(.ngf-hero-cta:hover) {
+      transform: none;
+    }
+
+    .ngf-hero-cta-primary:hover .ngf-hero-cta-arrow {
       transform: none;
     }
   }
@@ -468,8 +838,8 @@ const headingLines =
   .ngf-hero-assurances {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-    margin: 0.5rem 0 0;
+    gap: 0.6rem 1.75rem;
+    margin: 0.75rem 0 0;
     padding: 0;
     color: var(--color-walnut);
     font-size: var(--text-small);
@@ -493,63 +863,86 @@ const headingLines =
     content: '';
   }
 
+  /* ------------------------------------------------------------------ *
+   * The slider indicators
+   * ------------------------------------------------------------------ */
+
   /*
-   * Requirement 7.12: the slot is reserved at the image's final layout dimensions and painted
-   * before the image arrives, so nothing shifts when it completes.
+   * Understated horizontal bars at the bottom-centre of the panel — the reference's quiet indicator,
+   * not ecommerce dots. The active bar is longer and darker; the rest are short and faint. They sit
+   * above the fade and copy (z-index 3) so they read on any slide. On a phone the copy is a lower
+   * band, so the rail nudges up out of the way of the assurance row.
    */
-  .ngf-hero-figure {
-    position: relative;
-    display: block;
-    width: 100%;
-    margin: 0;
-    overflow: hidden;
-    border-radius: var(--radius-xl);
-    background-color: var(--color-cream);
-    background-position: center;
-    background-size: cover;
-    box-shadow: var(--shadow-lift);
-  }
-
-  .ngf-hero-figure > img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* The floating card. Text only — it has no painted area that competes with the image. */
-  .ngf-hero-badge {
+  .ngf-hero-dots {
+    position: absolute;
+    z-index: 3;
+    bottom: clamp(1rem, 2.5vw, 1.75rem);
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    margin: -1.75rem 0 0 1.25rem;
-    width: fit-content;
-    padding: 0.85rem 1.25rem;
-    border: 1px solid var(--color-taupe);
-    border-radius: var(--radius-lg);
-    background-color: var(--color-white);
-    box-shadow: var(--shadow-level2);
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  @media (min-width: 1024px) {
-    .ngf-hero-badge {
-      position: absolute;
-      right: -0.5rem;
-      bottom: -1.25rem;
-      margin: 0;
+  /* Desktop: the copy is centred on the left, so the rail can sit centred at the bottom. On a phone
+     the copy fills the lower band, so pull the rail to the right of centre to clear the text. */
+  @media (max-width: 767px) {
+    .ngf-hero-dots {
+      left: auto;
+      right: clamp(1rem, 4vw, 1.5rem);
+      transform: none;
     }
   }
 
-  .ngf-hero-badge-label {
-    color: var(--color-walnut);
-    font-size: 0.75rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+  .ngf-hero-dot {
+    display: block;
+    width: 0.85rem;
+    height: 0.3rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-obsidian) 26%, transparent);
+    cursor: pointer;
+    transition:
+      width var(--dur-normal) var(--ease-standard),
+      background-color var(--dur-fast) var(--ease-standard);
   }
 
-  .ngf-hero-badge-value {
-    color: var(--color-obsidian);
-    font-family: var(--font-display);
-    font-size: var(--text-body);
+  /* The touch target is a comfortable 44px without enlarging the visible bar (Requirement 24.3). */
+  .ngf-hero-dot::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    content: '';
+  }
+
+  .ngf-hero-dot {
+    position: relative;
+  }
+
+  .ngf-hero-dot[data-active='true'] {
+    width: 1.85rem;
+    background-color: color-mix(in srgb, var(--color-obsidian) 66%, transparent);
+  }
+
+  @media (hover: hover) {
+    .ngf-hero-dot:hover {
+      background-color: color-mix(in srgb, var(--color-obsidian) 50%, transparent);
+    }
+  }
+
+  .ngf-hero-dot:focus-visible {
+    outline: 2px solid var(--color-obsidian);
+    outline-offset: 3px;
+  }
+
+  /* The width animation is a nicety, not information — drop it under reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-hero-dot {
+      transition: none;
+    }
   }
 </style>

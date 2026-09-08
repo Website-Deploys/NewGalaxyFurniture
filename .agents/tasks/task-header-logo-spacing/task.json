@@ -1,0 +1,23 @@
+{
+  "task_id": "task-header-logo-spacing",
+  "task_description": "Wire the real brand logo (public/brand/new-galaxy-furniture-logo.jpeg) into the site header via the existing BrandMark.astro asset support (set data/site/settings.json logo.src + intrinsic width/height, reconcile the placeholders checklist and the pinning test), and remove the excessive empty space below the header with the smallest correct change. Preserve the logo artwork, aspect ratio, homepage link, accessible alt, responsive behavior, and the rest of the header design. Verify via npm run check, npm run build (all postbuild audits), and unit tests. Do NOT commit or push.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "summary": "npm run check => 0 errors, 21 pre-existing hints. npm run build => exit 0, all 7 postbuild audits pass; audit-image-loading reports 25 pages/67 images with every box reserved and every non-priority image lazy+async (the new logo img included). Built dist/client/index.html shows the logo wrapped in <a href='/' aria-label='New Galaxy Furniture home'> with <img src='/brand/new-galaxy-furniture-logo.jpeg' alt='New Galaxy Furniture' width=736 height=918 loading=lazy decoding=async class=ngf-brand-asset> (width:auto preserves aspect ratio). npm test => 5 failed | 967 passed; the 5 failures are exactly the documented FEAT-001 pre-existing Windows/CRLF/local-.dev.vars failures (analytics.snapshot, security.build-output x2, seo.meta, supporting-pages-showroom), no new regressions. Reconciled tests/unit/homepage.contracts.test.ts asserts the real logo path, positive-int width/height, and that 'site.logo.src' is no longer a placeholder while keeping the 'site.heroImage' assertion; it would fail if the logo were reverted to null, so it is meaningful. Responsive behavior verified by CSS/DOM inspection only (no live browser): human eyeball still needed for subjective visual balance of the trimmed 32px mark and the over-hero/scrolled header states."
+  },
+  "review": {
+    "verdict": "APPROVED",
+    "pass": "v1",
+    "artifact": ".agents/tasks/task-header-logo-spacing/2026-09-06-172144-review.md",
+    "non_blocking_notes": [
+      "The settings swap replaces the wordmark with the image everywhere BrandMark is used: header, footer, and the hero eyebrow (size=sm, inline). This is the designed consequence of enabling the asset (no unrelated component was edited), but it is a broader visual change than header-only; worth a confirming glance that the small inline logo in the hero eyebrow reads as intended.",
+      "The <=767px '.ngf-brand { min-height:44px }' touch-target rule still applies in asset mode, so on mobile there is a 44px floor around the 32px image. Intended as an accessible tap target; confirm on a phone it does not reintroduce visible space below the header.",
+      "Responsive/visual correctness (aspect ratio, 320-1280px layout, excess-space-removed) is reasoned from built CSS/DOM only; a human eyeball at mobile and desktop widths in a real browser is the remaining check."
+    ]
+  }
+}

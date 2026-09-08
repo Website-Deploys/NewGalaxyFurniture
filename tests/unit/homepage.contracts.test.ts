@@ -343,10 +343,15 @@ describe('placeholder discipline (Requirements 7.10, 8.4, 8.8)', () => {
     }
   });
 
-  it('tracks the unsupplied hero image and logo, so the hero is a swap and not a redraw', () => {
-    expect(settings.placeholders).toContain('site.logo.src');
-    expect(settings.placeholders).toContain('site.heroImage');
-    expect(settings.logo.src).toBeNull();
+  it('tracks the now-supplied hero image and logo as real assets, not checklist placeholders', () => {
+    // The hero photograph is now supplied, so it is off the checklist and no longer a placeholder.
+    expect(settings.placeholders).not.toContain('site.heroImage');
+    // The logo is the real asset: a path, with positive-integer intrinsic dimensions,
+    // and it is no longer an unsupplied placeholder.
+    expect(settings.logo.src).toBe('/brand/logo.png');
+    expect(Number.isInteger(settings.logo.width) && (settings.logo.width ?? 0) > 0).toBe(true);
+    expect(Number.isInteger(settings.logo.height) && (settings.logo.height ?? 0) > 0).toBe(true);
+    expect(settings.placeholders).not.toContain('site.logo.src');
   });
 
   it('states no address, opening hours, or map link, because none is supplied', () => {

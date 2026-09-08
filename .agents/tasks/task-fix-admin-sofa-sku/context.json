@@ -1,0 +1,26 @@
+{
+  "project_type": "Astro 7 + React 19 islands catalogue site deployed to Cloudflare Workers; admin surface uses KV (drafts + product index) as a working cache with the git repository (data/products/*.json) as the source of truth",
+  "language": "TypeScript",
+  "build_system": "npm scripts wrapping astro + tsx; wrangler for local Worker/KV/D1 state",
+  "test_framework": "Vitest (unit, `vitest run`) and Playwright (e2e, `playwright test`)",
+  "build_command": "npm run build (runs validate:content, astro build, then postbuild audits). For this task, prefer `npm run check` (astro check && tsc --noEmit) as a lighter typecheck.",
+  "test_command": "npm test  (equivalent to `vitest run`). Targeted: `npx vitest run tests/unit/real-content-sofas.test.ts`",
+  "verification_instructions": "1) Run `npx vitest run tests/unit/real-content-sofas.test.ts` and confirm all cases pass (these pin brownSofa.sku === 'NGF-SOF-WBJZX0', name === 'Premium 3+1+1 Sofa Set', slug === 'brown-sofa', price === 41990, and the WhatsApp enquiry message '(SKU: NGF-SOF-WBJZX0)'). 2) Run the full unit suite `npm test` and confirm green. 3) Confirm the committed data/products/brown-sofa.json is unchanged (id p_322e7n6mth, sku NGF-SOF-WBJZX0, status DRAFT, price 41990). 4) Confirm no new committed product file was created (no data/products/premium-3-1-1-sofa-set.json).",
+  "snapshot_or_generated_files": "The KV/D1 working state under .wrangler/state/ is git-ignored and rebuildable from the repository via `POST /api/admin/rehydrate` (see src/lib/github/drafts.ts rehydrateFromRepository). .e2e/ and test-results/ are also git-ignored fixtures produced by `npm run e2e:prepare`.",
+  "setup_instructions": "Node >=22.12.0. `npm install` if node_modules is missing. Unit tests need no Worker/DB. e2e (not required for this fix) uses `npm run e2e:prepare` which is --local only and safe.",
+  "environment_constraints": "Do NOT commit or push (orchestrator + user constraint). Do NOT run any --remote wrangler command. .wrangler/state is local and disposable. Do not touch the git-tracked data/products/brown-sofa.json identity fields.",
+  "contribution_requirements": "Smallest safe change. Preserve the verified draft's id (p_322e7n6mth), sku (NGF-SOF-WBJZX0), name, price and content exactly. Do not publish. Do not create a second product.",
+  "key_patterns": "resolveProduct (src/lib/github/drafts.ts) is DRAFT-FIRST: it reads the KV draft:<id> key before the repo, and uses the KV index:products entry (productSlugFor) to locate the repo file when there is no draft. The admin list and editor both flow through the KV index. ProductForm.tsx has NO editable SKU field by design; SKU is displayed read-only in src/pages/admin/products/[id].astro from the resolved record. Therefore the admin showing NGF-SOF-9E2HP8 means it resolved a DIFFERENT record than the verified one.",
+  "relevant_files": [
+    "data/products/brown-sofa.json",
+    "tests/unit/real-content-sofas.test.ts",
+    "src/lib/github/drafts.ts",
+    "src/lib/products/index-store.ts",
+    "src/pages/admin/products/[id].astro",
+    "src/components/admin/ProductForm.tsx",
+    "src/pages/api/admin/rehydrate.ts",
+    ".wrangler/state/v3/kv/REPLACE_WITH_DRAFTS_KV_NAMESPACE_ID/blobs"
+  ],
+  "directory_structure": "data/products/ holds committed product JSON (source of truth). src/lib/github/drafts.ts is the KV<->repo mapping and the resolver. src/lib/products/index-store.ts is the KV product index. src/pages/admin/products/[id].astro is the editor page; src/components/admin/ProductForm.tsx is the shared form. .wrangler/state/v3/kv/ holds the local (git-ignored) KV blobs; the DRAFTS namespace dir is REPLACE_WITH_DRAFTS_KV_NAMESPACE_ID.",
+  "root_cause_diagnosis": "A duplicate product exists ONLY in local KV state: id p_eg3vtxpioj, slug premium-3-1-1-sofa-set, sku NGF-SOF-9E2HP8, name 'Premium 3+1+1 Sofa Set', status REVIEW, 4 images. It was auto-generated (its own id/slug/sku) as a separate draft and is what the admin editor was loading, hence the wrong auto-generated SKU that 'cannot be edited' (ProductForm has no SKU field). The verified product p_322e7n6mth (slug brown-sofa, sku NGF-SOF-WBJZX0) is committed to data/products/brown-sofa.json and present as a KV draft (blob 9b11). The KV index:products blob (0f8a) currently maps ONLY p_eg3vtxpioj, not p_322e7n6mth, so the duplicate shadows the verified product in the admin list/editor. There is NO repo file for premium-3-1-1-sofa-set (confirmed: file_search found none). The stray auto SKU NGF-SOF-9E2HP8 appears nowhere in tracked files. Fix = remove the stray duplicate from local KV state and rebuild the index from the repository so the admin resolves p_322e7n6mth / NGF-SOF-WBJZX0. No source identity edits."
+}

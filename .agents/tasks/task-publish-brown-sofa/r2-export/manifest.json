@@ -1,0 +1,341 @@
+{
+  "productId": "p_322e7n6mth",
+  "objects": [
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/1280.avif",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/1280.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 47232
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/1280.jpeg",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/1280.jpeg",
+      "contentType": "image/jpeg",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 203210
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/1280.webp",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/1280.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1513120
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/320.avif",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/320.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 5805
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/320.webp",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/320.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 104014
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/480.avif",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/480.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 10295
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/480.webp",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/480.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 218054
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/640.avif",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/640.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 15155
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/640.webp",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/640.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 376712
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/960.avif",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/960.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 27388
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/960.webp",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/960.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 853146
+    },
+    {
+      "key": "products/p_322e7n6mth/img_ey2dy4u4kt/original.webp",
+      "file": "products/p_322e7n6mth/img_ey2dy4u4kt/original.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1958594
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/1280.avif",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/1280.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 57558
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/1280.jpeg",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/1280.jpeg",
+      "contentType": "image/jpeg",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 217392
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/1280.webp",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/1280.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1547692
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/320.avif",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/320.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 6680
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/320.webp",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/320.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 107860
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/480.avif",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/480.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 12249
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/480.webp",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/480.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 228136
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/640.avif",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/640.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 18879
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/640.webp",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/640.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 394744
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/960.avif",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/960.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 36800
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/960.webp",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/960.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 884302
+    },
+    {
+      "key": "products/p_322e7n6mth/img_s8k3oxoflo/original.webp",
+      "file": "products/p_322e7n6mth/img_s8k3oxoflo/original.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1989948
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/1280.avif",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/1280.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 44815
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/1280.jpeg",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/1280.jpeg",
+      "contentType": "image/jpeg",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 198049
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/1280.webp",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/1280.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1490342
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/320.avif",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/320.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 5574
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/320.webp",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/320.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 106222
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/480.avif",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/480.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 9446
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/480.webp",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/480.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 223478
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/640.avif",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/640.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 14567
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/640.webp",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/640.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 385100
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/960.avif",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/960.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 28095
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/960.webp",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/960.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 852938
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tchmzkuoeb/original.webp",
+      "file": "products/p_322e7n6mth/img_tchmzkuoeb/original.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1910148
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/1280.avif",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/1280.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 50945
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/1280.jpeg",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/1280.jpeg",
+      "contentType": "image/jpeg",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 208045
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/1280.webp",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/1280.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1506470
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/320.avif",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/320.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 6344
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/320.webp",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/320.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 108038
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/480.avif",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/480.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 11198
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/480.webp",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/480.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 227298
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/640.avif",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/640.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 17037
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/640.webp",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/640.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 390254
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/960.avif",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/960.avif",
+      "contentType": "image/avif",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 33205
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/960.webp",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/960.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 864816
+    },
+    {
+      "key": "products/p_322e7n6mth/img_tlutq0cci2/original.webp",
+      "file": "products/p_322e7n6mth/img_tlutq0cci2/original.webp",
+      "contentType": "image/webp",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "size": 1933884
+    }
+  ]
+}

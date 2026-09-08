@@ -1,0 +1,50 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Establish a green baseline before changing anything. Confirm dependencies install, the typecheck passes, and record which unit tests already fail on the current base commit so a later 'no new failures' judgement is grounded in fact rather than assumption. This project has known pre-existing failures unrelated to product content (a prior task recorded: analytics.snapshot Worker-entry, security.build-output x2, seo.meta, supporting-pages-showroom).",
+  "status": "completed",
+  "steps": [
+    "Ensure node_modules is present: run `npm ci` (or `npm install` if npm ci fails on the lockfile). Node must be >=22.12.0.",
+    "Run `npm run check` (astro check && tsc --noEmit) and record the result.",
+    "Run the targeted regression test `npx vitest run tests/unit/real-content-sofas.test.ts` and record its current pass/fail state (it currently PINS the product as an image-less DRAFT, so it passes today and WILL be rewritten in FEAT-002).",
+    "Run the full unit suite `npm test` and record the exact list of failing tests as the baseline. Do not attempt to fix pre-existing failures unrelated to the sofa/catalogue/publish-gate area.",
+    "Write the baseline findings (typecheck result, targeted test result, full-suite failing-test list) into this feature file's `findings` field."
+  ],
+  "acceptance_criteria": [
+    "npm ci (or npm install) completes and node_modules exists",
+    "npm run check result is recorded in findings",
+    "The full-suite baseline failing-test list is recorded in findings so FEAT-002 can prove it introduced no new failures"
+  ],
+  "verification": [
+    "npm run check exits and its result is captured",
+    "npm test runs to completion and the failing-test set is captured verbatim in findings"
+  ],
+  "blocked_reason": null,
+  "findings": {
+    "environment": {
+      "node_version": "v24.18.0 (satisfies >=22.12.0)",
+      "install": "npm ci succeeded (added 494 packages). NOTE: initial `npm ci` and `npm install` both failed with EBUSY on node_modules/miniflare/dist/local-explorer-ui because a `wrangler dev` session (port 8788; node PIDs 8476/10200/9616 + workerd PIDs 11364/18044) held a lock. With user approval those dev-server processes were stopped (the unrelated Adobe node PID 14604 was left alone), after which `npm ci` completed cleanly and node_modules/.package-lock.json + node_modules/.bin/vitest are present.",
+      "install_script_warning": "npm reported 3 postinstall scripts not run under allow-scripts policy: esbuild@0.28.2, workerd@1.20260831.1, esbuild@0.28.1. This did NOT affect typecheck or the unit suite. It may matter for `npm run build` (workerd/esbuild native binaries) in a later feature; flagging for FEAT-002/FEAT-003."
+    },
+    "typecheck": {
+      "command": "npm run check (astro check && tsc --noEmit)",
+      "result": "PASS. astro check: 378 files, 0 errors, 0 warnings, 21 hints (unused Props interfaces, is:inline script hints, zod deprecation hints). tsc --noEmit: 0 errors, exit code 0."
+    },
+    "targeted_test": {
+      "command": "npx vitest run tests/unit/real-content-sofas.test.ts",
+      "result": "PASS. 1 file, 17/17 tests passed. This currently PINS brown-sofa as an image-less DRAFT and is expected to be rewritten in FEAT-002."
+    },
+    "full_suite": {
+      "command": "npm test (vitest run)",
+      "totals": "58 test files, 974 tests. 4 files failed / 54 passed. 5 tests failed / 969 passed. Ran to completion (exit code 1 due to the failures).",
+      "failing_tests_verbatim": [
+        "tests/unit/analytics.snapshot.test.ts > the Worker entry > is the configured entry, with a nightly trigger on production and none on preview -- AssertionError: received wrangler config string did not match /\\[triggers\\]\\ncrons = \\[\"30 19 \\* \\* \\*\"\\]/ (the config text is present but the regex/line-ending expectation does not match on this environment).",
+        "tests/unit/security.build-output.test.ts > Property 51: no secret pattern appears in the build output > allows credential names in the server bundle, where naming a binding is how it is read -- AssertionError: expected [ AI_API_KEY finding in server/chunks/env.js ] to deeply equal []. Reads a STALE local dist build output.",
+        "tests/unit/security.build-output.test.ts > Property 51: no secret pattern appears in the build output > finds nothing in the real build output -- AssertionError: server\\.dev.vars:4 'GitHub fine-grained token' finding, expected []. Reads a stale/local dist server\\.dev.vars artifact (the open .dev.vars file) that is not part of a clean build.",
+        "tests/unit/seo.meta.test.ts > the domain appears only in PUBLIC_SITE_URL > reads the site URL variable in exactly two resolvers -- AssertionError: expected ['lib\\\\env.ts','lib\\\\seo\\\\site-url.ts'] to deeply equal ['lib/env.ts','lib/seo/site-url.ts']. Windows path-separator artifact (backslash vs forward slash).",
+        "tests/unit/supporting-pages-showroom.test.ts > reviews -- admin-controlled, no aggregate rating, honest empty state > emits no aggregateRating structured data and keeps the testimonial note -- AssertionError: expected reviews page source to contain 'We\\n      publish no overall rating and emit no rating markup'; source contains the CRLF form 'We\\r\\n publish no overall rating...'. CRLF/whitespace artifact on Windows."
+      ],
+      "baseline_assessment": "These 5 failures match the known pre-existing baseline named in the task context (analytics.snapshot Worker-entry, security.build-output x2, seo.meta, supporting-pages-showroom). None are in the sofa/catalogue/publish-gate area. Several are clearly Windows-specific (path separators, CRLF line endings) or read stale local build/dev artifacts (dist/, .dev.vars), confirming they are environmental/pre-existing and NOT introduced by product content. FEAT-002 must reproduce EXACTLY this set (same 5) to prove it introduced no new failures; any additional failing test beyond these 5 is a regression to investigate."
+    }
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "id": "FEAT-003",
+  "type": "chore",
+  "description": "Produce a ready-to-run script that uploads the 4 product images (originals + all derivatives) from the local git-ignored R2 bucket to PRODUCTION R2, so the published product's images resolve on the live site instead of 404ing. This environment cannot and must not run the production upload (no verified production credentials, live bucket); the script is handed to the user to run. R2 binaries are not shipped by the git commit, so without this step the storefront would render the product with broken images.",
+  "status": "completed",
+  "steps": [
+    "Read src/lib/images/srcset.ts to confirm the exact R2 key conventions: originalKey() = products/{productId}/{imageId}/original.{ext}, and the derivative key format for each width/format. Confirm the production R2 bucket name from wrangler.toml (the [[r2_buckets]] binding MEDIA -> bucket_name, e.g. ngf-media).",
+    "Enumerate the local R2 objects for product p_322e7n6mth. The blobs live under .wrangler/state/v3/r2/ngf-media/blobs and the key->blob_id map is in the per-bucket sqlite at .wrangler/state/v3/r2/miniflare-R2BucketObject/*.sqlite (table _mf_objects: columns key, blob_id, http_metadata). For each of the 4 images img_tchmzkuoeb, img_ey2dy4u4kt, img_s8k3oxoflo, img_tlutq0cci2 there are: original.webp, plus {320,480,640,960,1280}.{avif,webp} and 1280.jpeg. Export each object's bytes to a local staging folder (e.g. .agents/tasks/task-publish-brown-sofa/r2-export/{key}) preserving the key path, using a small tsx or python script that reads _mf_objects and copies blobs/{blob_id} to the key path.",
+    "Generate scripts/upload-brown-sofa-images-to-r2.ts (or a .ps1/.sh alongside) that, for every exported object, runs `wrangler r2 object put <BUCKET>/<key> --file <staged-file> --content-type <type> --remote`, with the correct content types (image/webp, image/avif, image/jpeg) and cache-control 'public, max-age=31536000, immutable' where the API supports it. The bucket name must come from wrangler.toml, not be hard-coded blindly. Include a header comment stating this hits PRODUCTION R2 and must be run by the operator with their Cloudflare credentials, and that it is safe/idempotent (content-addressed keys, immutable).",
+    "Do NOT execute the upload against production. If a --local upload is used purely to validate the script's syntax against the local bucket, that is acceptable, but do not touch --remote.",
+    "Write into findings: the exact list of R2 keys to be uploaded (4 images x 12 objects = 48 objects, adjust to the actual count found), the staging path, the generated script path, and the exact command the user must run. Also note that the images already exist in local R2, so if production R2 already has them (from an earlier partial upload) the puts are idempotent."
+  ],
+  "acceptance_criteria": [
+    "A script exists that uploads exactly the p_322e7n6mth image objects (originals + derivatives) to the production R2 bucket named in wrangler.toml, with correct content types",
+    "The objects have been exported/staged locally so the script has real files to upload",
+    "findings lists the full set of R2 keys, the staging path, the script path, and the exact user-run command",
+    "No production/--remote wrangler command was executed by the agent"
+  ],
+  "verification": [
+    "npm run check (the generated .ts script, if any, typechecks)",
+    "Confirm the staging export contains one file per R2 key for the 4 images and that key paths match products/p_322e7n6mth/{imageId}/... ",
+    "Dry inspect the generated script to confirm it references the wrangler.toml bucket name and correct content types"
+  ],
+  "blocked_reason": null,
+  "findings": {
+    "summary": "Staged all 48 R2 objects for product p_322e7n6mth out of the local git-ignored miniflare R2 bucket and generated an idempotent, operator-run script that uploads them to PRODUCTION R2. No --remote / production wrangler command was executed by the agent (only a local --dry-run to validate the script shape).",
+    "key_conventions_confirmed": {
+      "source": "src/lib/images/srcset.ts",
+      "originalKey": "products/{productId}/{imageId}/original.{ext}",
+      "derivativeKey": "products/{productId}/{imageId}/{width}.{format}",
+      "production_bucket_name": "ngf-media (wrangler.toml top-level [[r2_buckets]] binding MEDIA -> bucket_name; preview bucket is ngf-media-preview under [env.preview] and is deliberately NOT used)"
+    },
+    "object_count": "48 objects = 4 images x 12 objects each (1 original.webp + {320,480,640,960,1280} in avif+webp = 10 + 1280.jpeg fallback = 1).",
+    "r2_keys": [
+      "products/p_322e7n6mth/img_tchmzkuoeb/original.webp",
+      "products/p_322e7n6mth/img_tchmzkuoeb/320.avif",
+      "products/p_322e7n6mth/img_tchmzkuoeb/320.webp",
+      "products/p_322e7n6mth/img_tchmzkuoeb/480.avif",
+      "products/p_322e7n6mth/img_tchmzkuoeb/480.webp",
+      "products/p_322e7n6mth/img_tchmzkuoeb/640.avif",
+      "products/p_322e7n6mth/img_tchmzkuoeb/640.webp",
+      "products/p_322e7n6mth/img_tchmzkuoeb/960.avif",
+      "products/p_322e7n6mth/img_tchmzkuoeb/960.webp",
+      "products/p_322e7n6mth/img_tchmzkuoeb/1280.avif",
+      "products/p_322e7n6mth/img_tchmzkuoeb/1280.webp",
+      "products/p_322e7n6mth/img_tchmzkuoeb/1280.jpeg",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/original.webp",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/320.avif",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/320.webp",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/480.avif",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/480.webp",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/640.avif",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/640.webp",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/960.avif",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/960.webp",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/1280.avif",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/1280.webp",
+      "products/p_322e7n6mth/img_ey2dy4u4kt/1280.jpeg",
+      "products/p_322e7n6mth/img_s8k3oxoflo/original.webp",
+      "products/p_322e7n6mth/img_s8k3oxoflo/320.avif",
+      "products/p_322e7n6mth/img_s8k3oxoflo/320.webp",
+      "products/p_322e7n6mth/img_s8k3oxoflo/480.avif",
+      "products/p_322e7n6mth/img_s8k3oxoflo/480.webp",
+      "products/p_322e7n6mth/img_s8k3oxoflo/640.avif",
+      "products/p_322e7n6mth/img_s8k3oxoflo/640.webp",
+      "products/p_322e7n6mth/img_s8k3oxoflo/960.avif",
+      "products/p_322e7n6mth/img_s8k3oxoflo/960.webp",
+      "products/p_322e7n6mth/img_s8k3oxoflo/1280.avif",
+      "products/p_322e7n6mth/img_s8k3oxoflo/1280.webp",
+      "products/p_322e7n6mth/img_s8k3oxoflo/1280.jpeg",
+      "products/p_322e7n6mth/img_tlutq0cci2/original.webp",
+      "products/p_322e7n6mth/img_tlutq0cci2/320.avif",
+      "products/p_322e7n6mth/img_tlutq0cci2/320.webp",
+      "products/p_322e7n6mth/img_tlutq0cci2/480.avif",
+      "products/p_322e7n6mth/img_tlutq0cci2/480.webp",
+      "products/p_322e7n6mth/img_tlutq0cci2/640.avif",
+      "products/p_322e7n6mth/img_tlutq0cci2/640.webp",
+      "products/p_322e7n6mth/img_tlutq0cci2/960.avif",
+      "products/p_322e7n6mth/img_tlutq0cci2/960.webp",
+      "products/p_322e7n6mth/img_tlutq0cci2/1280.avif",
+      "products/p_322e7n6mth/img_tlutq0cci2/1280.webp",
+      "products/p_322e7n6mth/img_tlutq0cci2/1280.jpeg"
+    ],
+    "content_types": "image/webp for original + *.webp derivatives; image/avif for *.avif; image/jpeg for the 1280.jpeg fallback. Every object also carries cache-control 'public, max-age=31536000, immutable' (recorded in miniflare http_metadata and re-applied via --cache-control).",
+    "staging_path": ".agents/tasks/task-publish-brown-sofa/r2-export/  (48 binaries under products/p_322e7n6mth/{imageId}/... plus manifest.json; ~21.4 MB total). This is a LOCAL, DISPOSABLE working artifact and must NOT be committed to git — regenerate it with the export script. Do not `git add` this folder.",
+    "generated_scripts": {
+      "export_helper": "scripts/export-brown-sofa-r2-objects.mjs  — reads local .wrangler R2 (_mf_objects + blobs) and stages bytes to the staging path plus a manifest.json. Local-only, no network. (.mjs, not .ts, because it uses Node's experimental node:sqlite which does not typecheck cleanly under strict tsc.)",
+      "upload_script": "scripts/upload-brown-sofa-images-to-r2.ts  — reads manifest.json and runs `wrangler r2 object put <bucket>/<key> --file <staged> --content-type <type> --cache-control <cc> --remote` per object. Bucket name is parsed from wrangler.toml (production MEDIA binding, never the preview bucket, never hard-coded). Header comment warns it hits PRODUCTION R2 and is idempotent. Supports --dry-run."
+    },
+    "exact_commands_user_must_run": [
+      "node scripts/export-brown-sofa-r2-objects.mjs   # (only needed if .agents/tasks/task-publish-brown-sofa/r2-export was cleaned; regenerates the 48 staged files from local R2)",
+      "npx wrangler login   # or export CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID for the production account",
+      "npx tsx scripts/upload-brown-sofa-images-to-r2.ts --dry-run   # optional: prints the 48 wrangler put commands, uploads nothing",
+      "npx tsx scripts/upload-brown-sofa-images-to-r2.ts   # PRODUCTION upload of all 48 objects to bucket ngf-media"
+    ],
+    "idempotency_note": "Keys are content-addressed and immutable, so re-running the upload is safe: puts overwrite with identical bytes. If production R2 already has some/all objects from an earlier partial upload, the puts are no-op-equivalent. Nothing is deleted.",
+    "verification": {
+      "npm_run_check": "PASS — 0 errors, 0 warnings, 21 pre-existing hints (Zod deprecations in src/schemas/*). The generated upload .ts typechecks under strict tsc + astro check.",
+      "staging_check": "PASS — 48 files staged, one per R2 key, all under products/p_322e7n6mth/{imageId}/... (verified by directory listing).",
+      "dry_run": "PASS — --dry-run emits 48 `wrangler r2 object put ngf-media/...` commands with correct --content-type and --remote; bucket name resolved from wrangler.toml.",
+      "no_production_command_executed": "TRUE — only local reads and a --dry-run were performed by the agent."
+    }
+  }
+}

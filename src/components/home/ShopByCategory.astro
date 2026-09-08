@@ -60,21 +60,28 @@ const { section, categories } = Astro.props;
         {categories.map((category) => (
           <li>
             <a href={`/collection/${category.slug}`} class="ngf-category-tile" data-motion-lift>
-              <span class="ngf-category-glyph">
-                {/*
-                  `trigger="none"`: the glyph renders its final drawn state and the tile's own
-                  reveal — inherited from the grid's single group animation — carries the motion.
-                  Nine glyphs each drawing themselves would be nine simultaneously animating
-                  elements, which is most of Requirement 21.9's budget spent on decoration.
-                */}
-                <CategoryIllustration
-                  illustration={category.illustration}
-                  strokeWidth={1}
-                  trigger="none"
-                />
+              <span class="ngf-category-frame">
+                <span class="ngf-category-glyph">
+                  {/*
+                    `trigger="none"`: the glyph renders its final drawn state and the tile's own
+                    reveal — inherited from the grid's single group animation — carries the motion.
+                    Nine glyphs each drawing themselves would be nine simultaneously animating
+                    elements, which is most of Requirement 21.9's budget spent on decoration.
+                  */}
+                  <CategoryIllustration
+                    illustration={category.illustration}
+                    strokeWidth={1}
+                    trigger="none"
+                  />
+                </span>
               </span>
               <span class="ngf-category-foot">
-                <span class="ngf-category-name">{category.name}</span>
+                <span class="ngf-category-foot-row">
+                  <span class="ngf-category-name">{category.name}</span>
+                  <span class="ngf-category-arrow">
+                    <ArrowMotion size={16} />
+                  </span>
+                </span>
                 {/*
                   "Explore", not a count.
 
@@ -85,9 +92,6 @@ const { section, categories } = Astro.props;
                   category with four pieces and one with forty are both simply worth opening.
                 */}
                 <span class="ngf-category-count">Explore</span>
-              </span>
-              <span class="ngf-category-arrow">
-                <ArrowMotion size={16} />
               </span>
             </a>
           </li>
@@ -145,9 +149,8 @@ const { section, categories } = Astro.props;
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 0.75rem;
-    min-height: 200px;
-    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    gap: 1rem;
+    padding: clamp(1rem, 2vw, 1.25rem);
     overflow: hidden;
     border: 1px solid var(--color-taupe);
     border-radius: var(--radius-lg);
@@ -158,6 +161,54 @@ const { section, categories } = Astro.props;
       transform var(--dur-normal) var(--ease-standard),
       box-shadow var(--dur-normal) var(--ease-standard),
       border-color var(--dur-normal) var(--ease-standard);
+  }
+
+  /*
+   * The illustration frame — a drawing board inside the tile, the same ruled-cream language as the
+   * story and catalogue-hero panels. Giving the glyph its own framed field is what lets it read as
+   * the subject of the tile rather than a small mark floating in a mostly empty box: the frame fills
+   * the card's width at a fixed 5/4 landscape ratio, so every tile is the same shape at every column
+   * count, and the glyph sits centred at showroom scale within it.
+   */
+  .ngf-category-frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 5 / 4;
+    padding: clamp(1rem, 3vw, 1.75rem);
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background-color: var(--color-cream);
+    background-image:
+      linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
+    background-position: center;
+    background-size: 20px 20px;
+  }
+
+  /* The architect's registration ticks, matching the site's other drawing-board panels. */
+  .ngf-category-frame::before,
+  .ngf-category-frame::after {
+    position: absolute;
+    width: 0.6rem;
+    height: 0.6rem;
+    border: 0 solid var(--color-taupe);
+    content: '';
+    pointer-events: none;
+  }
+
+  .ngf-category-frame::before {
+    top: 0.6rem;
+    left: 0.6rem;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+
+  .ngf-category-frame::after {
+    right: 0.6rem;
+    bottom: 0.6rem;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
   }
 
   @media (hover: hover) {
@@ -186,7 +237,15 @@ const { section, categories } = Astro.props;
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
-    margin-top: auto;
+    padding-inline: 0.25rem;
+  }
+
+  /* The name and the arrow share one baseline: identity on the left, the way in on the right. */
+  .ngf-category-foot-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
 
   .ngf-category-name {
@@ -198,30 +257,32 @@ const { section, categories } = Astro.props;
   .ngf-category-count {
     color: var(--color-walnut);
     font-size: var(--text-small);
+    letter-spacing: 0.02em;
   }
 
   /*
-   * The one champagne element in this band (Requirement 21.2): a 16 px arrow stroke. Not a fill,
-   * not body text, and the tile's name and count are both obsidian/walnut.
+   * The one champagne element in this band (Requirement 21.2): a 16 px arrow stroke, now sitting
+   * beside the category name so the tile reads name → way-in on one line. Not a fill, not body
+   * text, and the tile's name and count are both obsidian/walnut.
    */
   .ngf-category-arrow {
-    position: absolute;
-    top: clamp(1.25rem, 2.5vw, 1.75rem);
-    right: clamp(1.25rem, 2.5vw, 1.75rem);
     display: inline-flex;
+    flex: none;
     color: var(--color-champagne);
     transition: transform var(--dur-normal) var(--ease-standard);
   }
 
   /*
-   * The glyph is the tile's subject, so it is given room and enough contrast to be seen. It was
-   * 72 px wide in taupe, which at card size read as a smudge.
+   * The glyph is the tile's subject, so it fills its framed field and is set in walnut — the same
+   * legible line colour the story and catalogue-hero panels use — rather than the faint taupe that
+   * read as a smudge at card size. The cap is generous so the illustration has real presence inside
+   * the frame at every column count.
    */
   .ngf-category-glyph {
     display: block;
     width: 100%;
-    max-width: 132px;
-    color: var(--color-taupe);
+    max-width: 200px;
+    color: var(--color-walnut);
     transition:
       color var(--dur-normal) var(--ease-standard),
       transform var(--dur-normal) var(--ease-standard);

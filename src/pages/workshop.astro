@@ -192,9 +192,14 @@ const meta = pageMeta(Astro, {
   /* connecting line and reduced-motion contract, kept scoped to this page.      */
   /* -------------------------------------------------------------------------- */
 
+  /*
+   * The gap below the drawn sequence used to be a full `--spacing-section` (up to 9rem), which left
+   * a dead screen of whitespace before "How we make it". A tighter, premium gap keeps the sequence
+   * and the making copy reading as one page rather than two distant blocks.
+   */
   .ngf-process {
     max-width: none;
-    margin: 0 0 var(--spacing-section, 4rem);
+    margin: 0 0 clamp(2.5rem, 6vw, 4rem);
   }
 
   .ngf-process > h2 {
@@ -204,13 +209,13 @@ const meta = pageMeta(Astro, {
 
   .ngf-process-lead {
     max-width: var(--measure-prose);
-    margin: 0.75rem 0 2rem;
+    margin: 0.75rem 0 1.75rem;
     color: var(--color-walnut);
   }
 
   .ngf-process-steps {
     display: grid;
-    gap: 2rem 1.5rem;
+    gap: 1.5rem 1.5rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -237,13 +242,19 @@ const meta = pageMeta(Astro, {
     min-width: 0;
   }
 
+  /*
+   * The drawing-board panel keeps the shared 4/3 frame (a codified design contract). The excessive
+   * whitespace this page showed came from a small glyph stranded in that frame, so the fix is to
+   * give the illustration more of the panel — a larger glyph and tighter panel padding — rather
+   * than reshaping the frame.
+   */
   .ngf-process-panel {
     position: relative;
     display: grid;
     place-items: center;
     width: 100%;
     aspect-ratio: 4 / 3;
-    padding: clamp(1rem, 4vw, 1.75rem);
+    padding: clamp(0.75rem, 3vw, 1.5rem);
     overflow: hidden;
     border: 1px solid var(--color-taupe);
     border-radius: var(--radius-xl);
@@ -283,7 +294,7 @@ const meta = pageMeta(Astro, {
   .ngf-process-glyph {
     display: block;
     width: 100%;
-    max-width: 200px;
+    max-width: 240px;
     color: var(--color-walnut);
   }
 

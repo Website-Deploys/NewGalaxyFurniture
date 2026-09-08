@@ -25,12 +25,14 @@ interface Props {
   /** The element to render. A heading passes `h1`/`h2`; prose passes `p`. */
   as?: 'h1' | 'h2' | 'h3' | 'p' | 'div';
   class?: string;
+  /** Optional element id, so a landmark can name itself with `aria-labelledby`. */
+  id?: string;
 }
 
-const { lines, as: Tag = 'p', class: className } = Astro.props;
+const { lines, as: Tag = 'p', class: className, id } = Astro.props;
 ---
 
-<Tag class={className} data-reveal="lines">
+<Tag class={className} data-reveal="lines" {...id === undefined ? {} : { id }}>
   {
     lines.map((line: string) => (
       <span class="ngf-line">

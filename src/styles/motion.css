@@ -288,6 +288,21 @@
   stroke-dashoffset: 0;
 }
 
+/*
+ * Line-weight hierarchy for the drawn primitives.
+ *
+ * `.ngf-draw` is the construction outline — the piece itself — and `.ngf-part` is the detail and
+ * the dimension/blueprint hairlines that arrive on top of it. Giving the detail strokes a lighter
+ * weight is what makes a glyph read as a considered technical drawing (heavy contour, fine
+ * annotation) rather than one uniform wire. Scoped to `data-variant='draw'` because the `assemble`
+ * variant (`FurnitureAssembly`) is built *entirely* from `.ngf-part` construction pieces — those
+ * are the drawing, not annotation, so they must keep their full weight. The primitive still sets
+ * the base `stroke-width` on the `<svg>`; this only thins the annotation layer relative to it.
+ */
+[data-ngf-primitive][data-variant='draw'] .ngf-part {
+  stroke-width: 0.75;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   :where(:not([data-motion='off']))
     [data-ngf-primitive][data-reveal]:not([data-revealed])

@@ -226,9 +226,49 @@ const cta =
     box-shadow: var(--shadow-level1);
   }
 
-  /* On a tinted band the ground inverts, so the panel keeps its edge against the cream. */
+  /*
+   * The architect's registration ticks in two corners — the same restrained technical treatment the
+   * catalogue heroes and the PDP spec panel already carry (`.ngf-cathero-panel`, `.ngf-pdp-specpanel`).
+   * Drawn in CSS as two inset L-marks, purely decorative, so the four editorial panels down the page
+   * read as one consistent drawing-board language rather than four plain framed boxes.
+   */
+  .ngf-story-panel::before,
+  .ngf-story-panel::after {
+    position: absolute;
+    z-index: 1;
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 0 solid var(--color-taupe);
+    content: '';
+    pointer-events: none;
+  }
+
+  .ngf-story-panel::before {
+    top: 0.7rem;
+    left: 0.7rem;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+
+  .ngf-story-panel::after {
+    right: 0.7rem;
+    bottom: 0.7rem;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+  }
+
+  /*
+   * On a tinted band the ground inverts so the panel keeps its edge against the cream — but to warm
+   * ivory rather than pure white. A flat #FFFFFF panel on the warm palette read as a plain empty
+   * container that did not belong to the rest of the page; ivory keeps the needed contrast against
+   * the cream band while staying inside the ivory/cream/off-white family. The hairline grid below is
+   * lifted a touch on this ground so the drawing board still reads as ruled paper, not a blank box.
+   */
   .ngf-home-story[data-surface='tint'] .ngf-story-panel {
-    background-color: var(--color-white);
+    background-color: var(--color-ivory);
+    background-image:
+      linear-gradient(to right, rgb(107 101 92 / 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(107 101 92 / 0.07) 1px, transparent 1px);
   }
 
   .ngf-story-ornament {

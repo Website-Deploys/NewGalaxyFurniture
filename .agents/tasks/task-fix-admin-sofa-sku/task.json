@@ -1,0 +1,13 @@
+{
+  "task_id": "task-fix-admin-sofa-sku",
+  "task_description": "The admin product editor showed the auto-generated SKU NGF-SOF-9E2HP8 for the 'Premium 3+1+1 Sofa Set' instead of the verified NGF-SOF-WBJZX0, and the field appeared uneditable. Root cause: a duplicate product (id p_eg3vtxpioj, slug premium-3-1-1-sofa-set, sku NGF-SOF-9E2HP8, status REVIEW) exists only in local KV working state and shadows the verified committed product (id p_322e7n6mth, slug brown-sofa, sku NGF-SOF-WBJZX0). Fix: remove the stray duplicate from local KV state and rebuild the index from the repository so the editor resolves the verified draft. No source identity edits, no new product, no publish, no commit until verified.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "summary": "npx vitest run tests/unit/real-content-sofas.test.ts => 17/17 pass (pins sku NGF-SOF-WBJZX0, name 'Premium 3+1+1 Sofa Set', slug brown-sofa, price 41990, WhatsApp '(SKU: NGF-SOF-WBJZX0)'). npm run check (astro check && tsc --noEmit) => 0 errors, 0 warnings (new scripts/repair-sofa-kv.ts typechecks clean). npm test => 969 passed, 5 failed — IDENTICAL count and nature to the pre-change FEAT-001 baseline (analytics.snapshot Worker-entry, security.build-output x2, seo.meta, supporting-pages-showroom); all are build-artifact/SEO/showroom tests unrelated to the SKU/sofa/KV change and fail on the clean base commit too. Local DRAFTS KV state now contains only the two verified products (p_322e7n6mth/NGF-SOF-WBJZX0 and p_qrmfww7uiz/NGF-SOF-YAM8K3); the stray duplicate p_eg3vtxpioj/NGF-SOF-9E2HP8 is gone from both draft keys and index:products. No tracked source file modified (git status: only untracked .agents/ and scripts/repair-sofa-kv.ts); data/products/brown-sofa.json unchanged; no premium-3-1-1-sofa-set.json created; nothing published; nothing committed. test_quality: tests/unit/real-content-sofas.test.ts reads the committed brown-sofa.json and asserts the exact SKU/name/price and the assembled WhatsApp message, so it would fail if the verified identity were reverted — a meaningful regression anchor for this fix."
+  }
+}

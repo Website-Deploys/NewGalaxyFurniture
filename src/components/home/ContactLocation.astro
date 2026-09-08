@@ -51,7 +51,10 @@ const hasAddress = addressLines.length > 0 || location.city.trim() !== '';
       numbers are for, and the shared caption directly above them repeated it word for word.
     */
     }
-    <ContactNumbers layout="stack" showCaption={false} />
+    <div class="ngf-contact-numbers-card">
+      <p class="ngf-contact-numbers-eyebrow">Call or message us</p>
+      <ContactNumbers layout="stack" showCaption={false} />
+    </div>
 
     <div class="ngf-contact-place">
       {
@@ -116,6 +119,40 @@ const hasAddress = addressLines.length > 0 || location.city.trim() !== '';
     .ngf-contact-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
+
+  /*
+   * The numbers, framed as a quiet ivory card so the two ways to reach the business read as one
+   * clear, trustworthy block rather than two floating lines. Warm ivory (not white) with a hairline
+   * taupe border and the soft card radius keeps it inside the palette and consistent with the other
+   * surfaces on the page.
+   */
+  .ngf-contact-numbers-card {
+    align-self: start;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-ivory);
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-contact-numbers-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-contact-numbers-eyebrow::before {
+    display: block;
+    width: 1.75rem;
+    height: 1px;
+    background-color: var(--color-taupe);
+    content: '';
   }
 
   .ngf-contact-place {

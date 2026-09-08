@@ -80,16 +80,28 @@ const wrapperProps = href === null ? {} : { href, 'aria-label': `${settings.busi
         rather than shifting sideways when it does. It is not the page's largest contentful element
         on any route, so it loads like everything else that is not: deferred, decoded off the
         critical path.
+
+        The mark is a full lockup on a cream ground (the monogram over the "New Galaxy Furniture"
+        wordmark). It is a *portrait* asset, so it is contained inside a size-appropriate box rather
+        than sized by height alone: a tall canvas scaled to a 32 px header height rendered ~26 px
+        wide — technically present, visually absent. The box gives it real presence and the canvas
+        reads as part of the ivory surface, so no empty rectangle floats in the header.
+
+        `data-fade` opts the asset into the restrained one-shot opacity reveal defined below: it
+        fades up once on load and holds, with no movement, and is fully visible immediately under
+        reduced motion, `[data-motion='off']`, or with no JavaScript.
       */
-      <img
-        src={src}
-        alt={settings.businessName}
-        class="ngf-brand-asset"
-        {...(width === null ? {} : { width })}
-        {...(height === null ? {} : { height })}
-        loading={assetLoading.loading}
-        decoding={assetLoading.decoding}
-      />
+      <span class="ngf-brand-frame" data-fade>
+        <img
+          src={src}
+          alt={settings.businessName}
+          class="ngf-brand-asset"
+          {...(width === null ? {} : { width })}
+          {...(height === null ? {} : { height })}
+          loading={assetLoading.loading}
+          decoding={assetLoading.decoding}
+        />
+      </span>
     )
   }
 </Wrapper>
@@ -98,9 +110,17 @@ const wrapperProps = href === null ? {} : { href, 'aria-label': `${settings.busi
   .ngf-brand {
     display: inline-flex;
     flex-direction: column;
-    gap: 0.375rem;
     text-decoration: none;
     color: inherit;
+  }
+
+  /*
+    The column gap is the vertical rhythm between the wordmark's lettering and the champagne
+    hairline beneath it. It belongs to the wordmark lockup only; the supplied asset is a single
+    child, so an inherited column gap there is dead space that pads the header for no reason.
+  */
+  .ngf-brand[data-brand-source='wordmark'] {
+    gap: 0.375rem;
   }
 
   /*
@@ -167,20 +187,83 @@ const wrapperProps = href === null ? {} : { href, 'aria-label': `${settings.busi
     color: var(--color-obsidian);
   }
 
+  /*
+   * The asset frame. A fixed box the mark is *contained* within, rather than a bare height on a
+   * portrait image. `object-fit: contain` keeps the lockup crisp and undistorted; the box height is
+   * the header's rhythm and the width is capped so a very tall canvas cannot push the row wide. The
+   * cream ground of the artwork sits on the ivory header, so the two read as one surface and there
+   * is no floating rectangle.
+   */
+  .ngf-brand-frame {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
   .ngf-brand-asset {
     display: block;
     width: auto;
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
   }
 
-  .ngf-brand-sm .ngf-brand-asset {
-    height: 24px;
+  /* The mobile bar and footer: recognizable but compact. */
+  .ngf-brand-sm .ngf-brand-frame {
+    height: 40px;
+    max-width: 132px;
   }
 
-  .ngf-brand-md .ngf-brand-asset {
-    height: 32px;
+  /*
+   * The desktop header: real presence without a tall bar. The asset is the tightly-trimmed lockup
+   * (no intrinsic whitespace), so it fills the frame at its natural landscape ratio with a plain
+   * `contain` — no scale hack, no clipping.
+   */
+  .ngf-brand-md .ngf-brand-frame {
+    height: 52px;
+    max-width: 200px;
   }
 
-  .ngf-brand-lg .ngf-brand-asset {
-    height: 56px;
+  /* The hero: the largest lockup, still contained so the wordmark stays legible. */
+  .ngf-brand-lg .ngf-brand-frame {
+    height: 72px;
+    max-width: 240px;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-brand-md .ngf-brand-frame {
+      height: 56px;
+      max-width: 216px;
+    }
+  }
+
+  /*
+   * The restrained premium reveal: opacity only, once, no movement. The DRAWN (visible) state is the
+   * default, so with no JavaScript, under reduced motion, or with the motion toggle off the mark is
+   * simply present. The from-state lives only inside the no-preference gate.
+   */
+  .ngf-brand-frame[data-fade] {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-motion='off']) .ngf-brand-frame[data-fade] {
+      opacity: 1;
+      animation: none;
+    }
+
+    .ngf-brand-frame[data-fade] {
+      animation: ngf-brand-fade var(--dur-reveal) var(--ease-entrance) both;
+    }
+  }
+
+  @keyframes ngf-brand-fade {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 </style>

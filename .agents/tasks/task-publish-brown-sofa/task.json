@@ -1,0 +1,38 @@
+{
+  "task_id": "task-publish-brown-sofa",
+  "task_description": "The live storefront shows 0 products because data/products/brown-sofa.json (the verified 'Premium 3+1+1 Sofa Set', id p_322e7n6mth, sku NGF-SOF-WBJZX0, slug brown-sofa, price 41990) is committed as status DRAFT with no images, so getCatalogue()'s public-status filter excludes it from every prerendered surface. The admin 'Published' state and the 4 uploaded images lived only in local git-ignored KV/R2 and were never persisted to the committed JSON on GitHub, which is what Netlify/Cloudflare build from. Fix: persist the published state into the committed JSON by adding the 4 real image records recovered from local R2 (with alt text), setting status PUBLISHED + published true, keeping every verified identity/content field unchanged; rewrite the regression test that pinned the draft state to guard the published state instead; verify build + local storefront; and produce a script to upload the R2 originals to production. Then commit and push. Live Netlify verification is expected to require the user (external, unverifiable from here).",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null,
+  "review": {
+    "verdict": "APPROVED",
+    "file": ".agents/tasks/task-publish-brown-sofa/2026-09-05-200426-review.md",
+    "actioned": "Review issue 4 (stale draft-era image markers on a now-published product) fixed: removed imageStatus/pendingImageOrder/pendingImageAlt from brown-sofa.json, kept imageAltText. Re-verified validate:content, targeted test 15/15, check, and full build pass. Remaining review notes are commit-scoping (handled: staged only the 4 intended files; repair-sofa-kv.ts left out) and the known R2-upload dependency."
+  },
+  "commit_and_push": {
+    "branch": "fix/publish-brown-sofa",
+    "commit": "b587c60",
+    "pushed_to": "origin (https://github.com/Website-Deploys/NewGalaxyFurniture.git)",
+    "identity": "Website-Deploys <anojmr2008@gmail.com> (via per-invocation -c flags; git config unchanged)",
+    "files": ["data/products/brown-sofa.json", "tests/unit/real-content-sofas.test.ts", "scripts/export-brown-sofa-r2-objects.mjs", "scripts/upload-brown-sofa-images-to-r2.ts"],
+    "excluded": ".agents/ and r2-export/ (git-ignored); scripts/repair-sofa-kv.ts (out of scope, prior task)",
+    "pr_url": "https://github.com/Website-Deploys/NewGalaxyFurniture/pull/new/fix/publish-brown-sofa"
+  },
+  "live_verification": {
+    "status": "UNVERIFIED",
+    "reason": "Cannot verify the live customer URL from this environment. (1) External egress failed: DNS for the production host newgalaxyfurniture.com does not resolve here (getaddrinfo ENOTFOUND). (2) The Netlify preview deploy URL is not recorded in repo config (Netlify auto-generates a *.netlify.app subdomain). (3) The push landed on branch fix/publish-brown-sofa, NOT main; production (Cloudflare Workers Builds and the Netlify production context) deploys on push to main, so a branch push yields at most a deploy-preview, not the live customer site.",
+    "production_url": "https://newgalaxyfurniture.com (from wrangler.toml [vars] PUBLIC_SITE_URL)",
+    "user_must_do": [
+      "Run the production R2 image upload so live images resolve: authenticate wrangler to the production Cloudflare account, then `npx tsx scripts/upload-brown-sofa-images-to-r2.ts` (or --dry-run first). Regenerate staging with `node scripts/export-brown-sofa-r2-objects.mjs` if .agents/.../r2-export was cleaned. Without this, the product is live but its images 404.",
+      "Merge fix/publish-brown-sofa into main (open the PR at the pr_url) so Cloudflare Workers Builds + Netlify production deploy. A branch push alone does not update the live customer site.",
+      "After the deploy completes (README: publish latency 60-150s), load https://newgalaxyfurniture.com/collection and https://newgalaxyfurniture.com/product/brown-sofa and confirm the product and its images render for a customer, and the WhatsApp button carries 'Premium 3+1+1 Sofa Set (SKU: NGF-SOF-WBJZX0)'."
+    ]
+  },
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "summary": "validate:content => 15 files valid. npx vitest run tests/unit/real-content-sofas.test.ts => 15/15 pass (rewritten to guard the PUBLISHED state: status PUBLISHED, published true, 4 images, isCatalogueProduct true, checkPublishGate ok, primaryImage img_tchmzkuoeb, per-image non-empty alt + R2 key regex; corner-sofa still an image-less DRAFT; WhatsApp message still ends '(SKU: NGF-SOF-WBJZX0).'). npm test full suite (FEAT-002) => 966/972; the only failures are the 5 pre-existing FEAT-001 baseline failures (analytics.snapshot trigger regex, security.build-output x2 stale-artifact, seo.meta Windows path-sep, supporting-pages-showroom CRLF) plus one confirmed pre-existing auth.session.integration timing flake that passes in isolation (19/19); zero new catalogue-related failures. npm run build => SUCCESS through all 7 postbuild audits (now 25 pages vs 24 on the empty-catalogue base), including audit-image-loading and keyword-density. Independently re-verified the built storefront: dist/client/product/brown-sofa/index.html exists and contains 'Premium 3+1+1 Sofa Set'; dist/client/collection/index.html lists it; the product enquiry CTA carries a wa.me link whose text single-decodes to \"Hi New Galaxy Furniture, I'm interested in the Premium 3+1+1 Sofa Set (SKU: NGF-SOF-WBJZX0).\\nI would like to enquire about the price, availability and order details.\" for both configured numbers. No duplicate: SKU NGF-SOF-WBJZX0 / id p_322e7n6mth / slug brown-sofa each resolve to exactly one file (brown-sofa.json); no premium-3-1-1-sofa-set.json. test_quality: the regression test reads the committed brown-sofa.json and asserts the exact published state + identity + WhatsApp message, so it would fail if the publish were reverted or the SKU/name changed — a meaningful anchor. IN-SCOPE DEVIATION (coder, documented): gallery image alt text dropped the redundant 'by New Galaxy Furniture' brand suffix because it tripped the build-gating keyword-density audit on 3 pages (confirmed not pre-existing); alt remains non-empty/descriptive and the publish gate still passes.",
+    "outstanding": "R2 image binaries for p_322e7n6mth exist only in local git-ignored R2; scripts/upload-brown-sofa-images-to-r2.ts (+ export helper) generated for the operator to push them to production R2, NOT run by the agent. Until that upload runs, live <img> URLs will 404 though the product itself is live. Live Netlify/Cloudflare customer-URL verification cannot be performed from this environment."
+  }
+}

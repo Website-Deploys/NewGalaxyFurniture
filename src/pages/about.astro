@@ -71,63 +71,50 @@ const meta = pageMeta(Astro, {
       </div>
     </div>
 
-    <div class="ngf-page-columns">
-      <div class="ngf-page-body">
-        <h2>What we do</h2>
-        <p>
-          We make furniture and we sell it directly. There is no reseller between the workshop and
-          your room, which is why every enquiry on this site reaches us rather than a marketplace.
+    {
+      /*
+      Orientation first. Three compact facts a customer wants immediately — what we make, where we
+      are, how to reach us — as a scannable row rather than three separated paragraphs. Every line
+      here is a fact the specification establishes (manufacturer + showroom, Bengaluru, serving the
+      operator's service area, both numbers reach us) with nothing invented.
+    */
+    }
+    <section class="ngf-about-facts" aria-label="At a glance" data-reveal data-motion-group>
+      <div class="ngf-about-fact">
+        <p class="ngf-about-fact-label">What we make</p>
+        <p class="ngf-about-fact-body">
+          Sofas, beds, dining tables and chairs, storage and custom pieces — the range in our <a
+            href="/collection">collection</a
+          > is what we build.
         </p>
-        <p>
-          The catalogue on this site is the range we make. Sizes, timber, finishes and upholstery
-          can be changed on most pieces, and pieces can be built to a drawing or a measurement you
-          give us — that is what the <a href="/custom-furniture">custom furniture</a> page is for.
-        </p>
-
-        <h2>Where we are</h2>
-        <p>
-          We are based in Bengaluru and we deliver and install across {serviceArea}. Our address,
-          our opening hours and a map link appear on the <a href="/contact">contact page</a> as soon as
-          they are confirmed; until then, both numbers reach us directly.
-        </p>
-
-        <h2>Our story</h2>
-        {
-          /*
-          Requirement 8.8 / design Open Items item 1: nothing about the workshop's history, scale, or
-          achievements has been supplied, so nothing is claimed. The placeholder is visible and
-          labelled rather than filled with plausible copy.
-        */
-        }
-        <PlaceholderCopy
-          body="[PLACEHOLDER — the story of the business: when it started, who runs it, and what it has built. No date, scale, capability, or achievement has been supplied, and none has been invented here.]"
-          contentKey="page.about.body"
-        />
       </div>
-
-      <aside class="ngf-page-body">
-        <h2>Talk to us</h2>
-        <p>
-          The fastest way to get a price, a photograph, or an honest delivery date is to ask. Both
-          numbers are for orders and enquiries.
+      <div class="ngf-about-fact">
+        <p class="ngf-about-fact-label">Where we are</p>
+        <p class="ngf-about-fact-body">
+          A manufacturer and showroom in Bengaluru, delivering and installing across {serviceArea}.
         </p>
-        <div class="ngf-page-actions" style="margin-top: 1rem;">
-          <WhatsAppLink context={{ kind: 'general' }} />
-          <CallLink variant="outline" />
-        </div>
-      </aside>
-    </div>
+      </div>
+      <div class="ngf-about-fact">
+        <p class="ngf-about-fact-label">How to order</p>
+        <p class="ngf-about-fact-body">
+          Message or call us and we reply directly — no marketplace, no reseller in between.
+        </p>
+      </div>
+    </section>
 
     {
       /*
-      A values band. Every value is claim-free positioning that the specification already
-      establishes — made to order, direct from the workshop, serving Karnataka — and NOT one of the
-      facts that has not been supplied: no years, no counts, no certifications, no production
-      numbers, no delivery guarantees. Its own <section> so its reveal budget is isolated.
+      What makes the business different. Claim-free positioning the specification already
+      establishes — made to order, direct from the workshop, serving the operator's area — and NOT
+      any of the facts that have not been supplied: no years, no counts, no certifications, no
+      production numbers, no guarantees. Its own <section> so its reveal budget is isolated.
     */
     }
     <section class="ngf-about-values" aria-labelledby="ngf-about-values-heading">
-      <h2 id="ngf-about-values-heading">How we work</h2>
+      <h2 id="ngf-about-values-heading">What makes us different</h2>
+      <p class="ngf-about-values-lead">
+        We are the people who build the furniture, so the answers you get are first-hand.
+      </p>
       <ul class="ngf-about-values-list" data-reveal data-motion-group>
         <li class="ngf-about-value">
           <h3>Made to order</h3>
@@ -152,17 +139,153 @@ const meta = pageMeta(Astro, {
         </li>
       </ul>
     </section>
+
+    {
+      /*
+      How custom furniture works, and what visiting means — grouped as two clear next steps rather
+      than loose paragraphs. Each points to the page that owns the detail, so nothing is duplicated
+      or invented here.
+    */
+    }
+    <section
+      class="ngf-about-steps"
+      aria-label="Custom furniture and visiting"
+      data-reveal
+      data-motion-group
+    >
+      <div class="ngf-about-step">
+        <h2>Custom furniture</h2>
+        <p>
+          Most of the catalogue can be built to a size, timber or finish you choose rather than the
+          one shown, and a piece can be made to a drawing or a measurement you give us. Start from
+          the <a href="/custom-furniture">custom furniture</a> page and tell us what the room needs.
+        </p>
+      </div>
+      <div class="ngf-about-step">
+        <h2>Visiting the workshop</h2>
+        <p>
+          The furniture is made in our Bengaluru workshop — see it drawn out on the <a
+            href="/workshop">workshop</a
+          > page. Our address, opening hours and a map link appear on the <a href="/contact"
+            >contact page</a
+          > as soon as they are confirmed; until then, message or call and we will arrange a time.
+        </p>
+      </div>
+    </section>
+
+    {
+      /*
+      The primary action, made unmistakable: one card, one clear pair of controls. This is the
+      obvious CTA the page builds toward.
+    */
+    }
+    <section class="ngf-about-cta" aria-labelledby="ngf-about-cta-heading">
+      <div class="ngf-about-cta-inner">
+        <div>
+          <h2 id="ngf-about-cta-heading">Talk to us</h2>
+          <p>
+            The fastest way to get a price, a photograph, or an honest delivery date is to ask. Both
+            numbers are for orders and enquiries.
+          </p>
+        </div>
+        <div class="ngf-page-actions">
+          <WhatsAppLink context={{ kind: 'general' }} variant="solid" />
+          <CallLink variant="outline" />
+        </div>
+      </div>
+    </section>
+
+    {
+      /*
+      Our story, last and quiet. Requirement 8.8 / design Open Items item 1: nothing about the
+      workshop's history, scale, or achievements has been supplied, so nothing is claimed. The
+      placeholder is visible and labelled rather than filled with plausible copy, and it sits at the
+      end so the unbuilt section never dominates the page.
+    */
+    }
+    <section class="ngf-about-story ngf-page-body" aria-labelledby="ngf-about-story-heading">
+      <h2 id="ngf-about-story-heading">Our story</h2>
+      <PlaceholderCopy
+        body="[PLACEHOLDER — the story of the business: when it started, who runs it, and what it has built. No date, scale, capability, or achievement has been supplied, and none has been invented here.]"
+        contentKey="page.about.body"
+      />
+    </section>
   </div>
 </BaseLayout>
 
 <style>
-  .ngf-about-values {
-    margin-top: var(--spacing-section, 4rem);
+  /*
+   * One consistent vertical rhythm for the About page's blocks. The sections used to be separated by
+   * a full `--spacing-section` (up to 9rem), which stranded each block in its own screen of
+   * whitespace; a tighter, uniform gap groups the page into one readable sequence while keeping a
+   * premium amount of air between blocks.
+   */
+  .ngf-about-facts,
+  .ngf-about-values,
+  .ngf-about-steps,
+  .ngf-about-cta,
+  .ngf-about-story {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
   }
+
+  /* At-a-glance facts row -------------------------------------------------- */
+
+  .ngf-about-facts {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-about-facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-about-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: clamp(1.1rem, 2.5vw, 1.5rem);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-ivory);
+  }
+
+  .ngf-about-fact-label {
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-about-fact-body {
+    margin: 0;
+    color: var(--color-espresso);
+    line-height: 1.55;
+  }
+
+  .ngf-about-fact-body a {
+    color: var(--color-obsidian);
+  }
+
+  /* What makes us different ------------------------------------------------ */
 
   .ngf-about-values > h2 {
     margin: 0;
     font-size: var(--text-h2);
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+
+  .ngf-about-values-lead {
+    margin: 0.5rem 0 0;
+    max-width: var(--measure-prose);
+    color: var(--color-espresso);
+    font-size: var(--text-h3);
+    font-family: var(--font-display);
+    line-height: 1.35;
   }
 
   .ngf-about-values-list {
@@ -203,5 +326,95 @@ const meta = pageMeta(Astro, {
     color: var(--color-espresso);
     font-size: var(--text-small);
     line-height: 1.6;
+  }
+
+  /* Custom furniture + visiting (two grouped next steps) ------------------- */
+
+  .ngf-about-steps {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-about-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-about-step {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-about-step h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 400;
+  }
+
+  .ngf-about-step p {
+    margin: 0;
+    color: var(--color-espresso);
+    line-height: 1.65;
+  }
+
+  .ngf-about-step a {
+    color: var(--color-obsidian);
+  }
+
+  /* Primary contact CTA ---------------------------------------------------- */
+
+  .ngf-about-cta-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-cream);
+    box-shadow: var(--shadow-level1);
+  }
+
+  @media (min-width: 768px) {
+    .ngf-about-cta-inner {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .ngf-about-cta h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 400;
+  }
+
+  .ngf-about-cta p {
+    margin: 0.5rem 0 0;
+    max-width: 46ch;
+    color: var(--color-espresso);
+    line-height: 1.6;
+  }
+
+  .ngf-about-cta .ngf-page-actions {
+    flex: none;
+  }
+
+  /* Our story (quiet, last) ------------------------------------------------ */
+
+  .ngf-about-story h2 {
+    margin: 0 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 400;
   }
 </style>

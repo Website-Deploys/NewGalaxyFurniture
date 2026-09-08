@@ -206,7 +206,8 @@ describe('the content checklist', () => {
 describe('the positioning line', () => {
   it('falls back to the hero’s value until one is saved in settings', () => {
     expect(taglineOf(SETTINGS)).toBeNull();
-    expect(effectiveTagline(SETTINGS, HOMEPAGE)).toBe('Furniture made for beautiful living');
+    // The seeded hero line carries an explicit break, so the headline renders on two lines.
+    expect(effectiveTagline(SETTINGS, HOMEPAGE)).toBe('Furniture made\nfor beautiful living');
   });
 
   it('accepts 1 to 120 characters and refuses either side of that', () => {
@@ -231,7 +232,7 @@ describe('the positioning line', () => {
     }
 
     // Already equal: null, so a settings save that did not touch the line makes no commit.
-    expect(applyTaglineToHomepage(HOMEPAGE, 'Furniture made for beautiful living')).toBeNull();
+    expect(applyTaglineToHomepage(HOMEPAGE, 'Furniture made\nfor beautiful living')).toBeNull();
     expect(applyTaglineToHomepage(HOMEPAGE, null)).toBeNull();
   });
 });

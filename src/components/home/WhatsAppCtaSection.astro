@@ -153,12 +153,17 @@ const { section } = Astro.props;
     }
   }
 
-  /* The numbers sit on a card, so they read as the band's subject rather than as a footer. */
+  /*
+   * The numbers sit on a quiet ivory card — the direct-line reference beside the band's primary
+   * action rather than a second competing panel. The big "Message on WhatsApp" button in the copy
+   * column is the one obvious focal point; the card is warm ivory (not stark white) with a soft
+   * shadow so it supports that focus instead of competing with it.
+   */
   .ngf-whatsapp-card {
     padding: clamp(1.5rem, 3vw, 2.25rem);
     border: 1px solid var(--color-taupe);
     border-radius: var(--radius-xl);
-    background-color: var(--color-white);
+    background-color: var(--color-ivory);
     box-shadow: var(--shadow-level1);
   }
 </style>
