@@ -125,15 +125,18 @@ const ctaLabel = section.ctaLabel ?? 'Explore the collection';
 const ctaHref = section.ctaHref ?? '/collection';
 
 /**
- * The three assurances. Each one restates something already supplied — two of the operator's own
- * homepage sections and `settings.serviceArea` — so the row adds emphasis, never a new claim.
+ * The three assurances, as an inline icon row beneath the CTAs. Each one restates something already
+ * supplied — two of the operator's own homepage sections and `settings.serviceArea` — so the row
+ * adds emphasis, never a new claim. The delivery line renders only when `serviceArea` is non-empty,
+ * and it sits in the middle to match the reference's order (sizes · delivery · workshop). The `icon`
+ * selects a small hairline glyph drawn in the markup below; it carries no text of its own.
  */
-const assurances = [
-  'Custom sizes and finishes',
-  'Direct from the workshop',
+const assurances: { icon: 'ruler' | 'truck' | 'hammer'; label: string }[] = [
+  { icon: 'ruler', label: 'Custom sizes and finishes' },
   ...(settings.serviceArea.length > 0
-    ? [`Delivered across ${settings.serviceArea.join(', ')}`]
+    ? [{ icon: 'truck' as const, label: `Delivered across ${settings.serviceArea.join(', ')}` }]
     : []),
+  { icon: 'hammer', label: 'Direct from the workshop' },
 ];
 
 /** The heading's lines are the operator's own line breaks, exactly as `TextReveal` requires. */
@@ -155,15 +158,98 @@ const headingLines =
 >
   {
     /*
-    A full-width two-column hero. The copy column sits on the LEFT (eyebrow, heading, sub, CTAs,
-    assurances); the large showroom visual sits on the RIGHT in its own rounded panel. The two are
-    real grid columns — not an image with copy absolutely positioned over it — so each side owns its
-    own width and the previously empty horizontal space is used. On a phone the grid collapses to a
-    single column with the copy first and the visual stacked beneath it.
+    A full-bleed hero: one large showroom photograph runs edge to edge and up under the floating
+    header as the section's ground, and the copy is overlaid on the LEFT over a cream-to-transparent
+    scrim that keeps it legible against the image. The image is painted first (the background plane),
+    the copy second (the foreground plane); on a phone the same image still fills the section behind
+    the copy, with a stronger scrim so the text stays readable over a busy photograph.
   */
   }
   <div class="ngf-hero-inner">
-    {/* Plane 2 — the copy column, on the left. Never moves under reduced motion. */}
+    {
+      /*
+      Plane 1 — the photograph, the full-bleed background of the whole hero. When there is more than
+      one slide the figure holds them stacked, each absolutely filling the same box, crossfaded by
+      opacity only — so every slide occupies the identical area and nothing reflows between them (no
+      layout shift). Slide 0 is the prepared opening frame: visible on first paint, eager and
+      high-priority, and it is the image the page preloads. The rest are lazy and start transparent,
+      decoded off the critical path, so a long collection never hurts LCP.
+
+      The `.ngf-hero-figure` class and the intrinsic width/height on each `<img>` keep the box
+      reserved for the image-loading audit and for CLS.
+    */
+    }
+    <div
+      class="ngf-hero-panel"
+      data-ngf-carousel={isCarousel ? 'true' : undefined}
+      data-hero-count={heroSlides.length}
+    >
+      <figure
+        class="ngf-hero-figure ngf-hero-plane"
+        data-parallax-plane="1"
+        style={`--plane-depth: 0.15;${
+          heroSlides[0]?.lqip === undefined ? '' : `background-image:url(${heroSlides[0].lqip});`
+        }`}
+        data-has-lqip={heroSlides[0]?.lqip === undefined ? 'false' : 'true'}
+        aria-hidden={isPhoto ? undefined : 'true'}
+      >
+        {
+          heroSlides.map((slide, index) => (
+            <img
+              class="ngf-hero-slide"
+              src={slide.src}
+              srcset={slide.srcset}
+              sizes={slide.sizes}
+              width={slide.width}
+              height={slide.height}
+              alt={slide.alt}
+              loading={index === 0 ? loading.loading : 'lazy'}
+              fetchpriority={index === 0 ? loading.fetchpriority : 'auto'}
+              decoding={index === 0 ? loading.decoding : 'async'}
+              data-ngf-hero-image={index === 0 ? '' : undefined}
+              data-hero-slide={index}
+              data-active={index === 0 ? 'true' : 'false'}
+            />
+          ))
+        }
+      </figure>
+
+      {
+        /* The cream scrim: a left-to-right fade over the photograph that keeps the overlaid copy
+          legible without hiding the furniture on the right. Purely decorative. */
+      }
+      <div class="ngf-hero-scrim" aria-hidden="true"></div>
+
+      {
+        /*
+      The slider indicators: understated horizontal bars at the bottom-right of the hero, the active
+      one longer and darker. Real `<button>`s in a labelled group, so they are keyboard operable and
+      announced; `aria-current` marks the active slide. Only rendered when there is more than one
+      slide. The carousel behaviour (autoplay, click, keyboard, reduced motion) is wired by the
+      script below; with no JavaScript these still show slide 1, which is correct.
+    */
+      }
+      {
+        isCarousel && (
+          <div class="ngf-hero-dots" role="group" aria-label="Choose a showroom image">
+            {heroSlides.map((slide, index) => (
+              <button
+                type="button"
+                class="ngf-hero-dot"
+                data-hero-dot={index}
+                data-active={index === 0 ? 'true' : 'false'}
+                aria-current={index === 0 ? 'true' : undefined}
+                aria-label={`Show image ${index + 1} of ${heroSlides.length}: ${slide.alt}`}
+              />
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    {
+      /* Plane 2 — the copy, overlaid on the left over the scrim. Never moves under reduced motion. */
+    }
     <div class="ngf-hero-plane ngf-hero-copy" data-parallax-plane="2" style="--plane-depth: 0.35;">
       <div class="ngf-hero-copy-inner" data-reveal data-motion-group>
         <p class="ngf-hero-eyebrow">
@@ -224,98 +310,73 @@ const headingLines =
         </div>
 
         {
+          /*
+          The assurances, as an inline row of small hairline icons with a two-line label each
+          (sizes · delivery · workshop), matching the reference. Each glyph is decorative — the
+          label carries the meaning — so every `<svg>` is `aria-hidden`. The icons are drawn inline
+          rather than loaded, so the row adds no request.
+        */
           assurances.length > 0 && (
             <ul class="ngf-hero-assurances">
               {assurances.map((item) => (
-                <li>{item}</li>
+                <li>
+                  <span class="ngf-hero-assurance-icon" aria-hidden="true">
+                    {item.icon === 'ruler' && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        focusable="false"
+                      >
+                        <path d="M3 8.5 8.5 3 21 15.5 15.5 21z" />
+                        <path d="M7 8.5 8.75 10.25M10 5.5 11.75 7.25M13 8.5 14.75 10.25M16 5.5 17.75 7.25" />
+                      </svg>
+                    )}
+                    {item.icon === 'truck' && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        focusable="false"
+                      >
+                        <path d="M2 5h11v11H2zM13 8h4l3 3v5h-7z" />
+                        <circle cx="6.5" cy="18" r="1.75" />
+                        <circle cx="16.5" cy="18" r="1.75" />
+                      </svg>
+                    )}
+                    {item.icon === 'hammer' && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        focusable="false"
+                      >
+                        <path d="M14.5 5.5 18 9l-3 3-3.5-3.5zM11.5 8.5 4 16v4h4l7.5-7.5" />
+                      </svg>
+                    )}
+                  </span>
+                  <span class="ngf-hero-assurance-label">{item.label}</span>
+                </li>
               ))}
             </ul>
           )
         }
       </div>
-    </div>
-
-    {
-      /*
-      The large showroom panel on the RIGHT — the hero's dominant visual. The photograph fills it as
-      its ground and the box is reserved by `aspect-ratio` so nothing shifts before it decodes
-      (Requirement 7.12). No fade overlay now that the copy is its own column and never sits on top
-      of the image.
-    */
-    }
-    <div
-      class="ngf-hero-panel"
-      data-ngf-carousel={isCarousel ? 'true' : undefined}
-      data-hero-count={heroSlides.length}
-    >
-      {
-        /*
-      Plane 1 — the image, filling the panel as its ground. When there is more than one slide the
-      figure holds them stacked, each absolutely filling the same box, crossfaded by opacity only —
-      so every slide occupies the identical area and nothing reflows between them (no layout shift).
-      Slide 0 is the prepared opening frame: visible on first paint, eager and high-priority, and it
-      is the image the page preloads. The rest are lazy and start transparent, decoded off the
-      critical path, so a long collection never hurts LCP.
-
-      The `.ngf-hero-figure` class and the intrinsic width/height on each `<img>` keep the box
-      reserved for the image-loading audit and for CLS.
-    */
-      }
-      <figure
-        class="ngf-hero-figure ngf-hero-plane"
-        data-parallax-plane="1"
-        style={`--plane-depth: 0.15;${
-          heroSlides[0]?.lqip === undefined ? '' : `background-image:url(${heroSlides[0].lqip});`
-        }`}
-        data-has-lqip={heroSlides[0]?.lqip === undefined ? 'false' : 'true'}
-        aria-hidden={isPhoto ? undefined : 'true'}
-      >
-        {
-          heroSlides.map((slide, index) => (
-            <img
-              class="ngf-hero-slide"
-              src={slide.src}
-              srcset={slide.srcset}
-              sizes={slide.sizes}
-              width={slide.width}
-              height={slide.height}
-              alt={slide.alt}
-              loading={index === 0 ? loading.loading : 'lazy'}
-              fetchpriority={index === 0 ? loading.fetchpriority : 'auto'}
-              decoding={index === 0 ? loading.decoding : 'async'}
-              data-ngf-hero-image={index === 0 ? '' : undefined}
-              data-hero-slide={index}
-              data-active={index === 0 ? 'true' : 'false'}
-            />
-          ))
-        }
-      </figure>
-
-      {
-        /*
-      The slider indicators: understated horizontal bars at the bottom-centre of the panel, the
-      active one longer and brighter. Real `<button>`s in a labelled group, so they are keyboard
-      operable and announced; `aria-current` marks the active slide. Only rendered when there is
-      more than one slide. The carousel behaviour (autoplay, click, keyboard, reduced motion) is
-      wired by the script below; with no JavaScript these still show slide 1, which is correct.
-    */
-      }
-      {
-        isCarousel && (
-          <div class="ngf-hero-dots" role="group" aria-label="Choose a showroom image">
-            {heroSlides.map((slide, index) => (
-              <button
-                type="button"
-                class="ngf-hero-dot"
-                data-hero-dot={index}
-                data-active={index === 0 ? 'true' : 'false'}
-                aria-current={index === 0 ? 'true' : undefined}
-                aria-label={`Show image ${index + 1} of ${heroSlides.length}: ${slide.alt}`}
-              />
-            ))}
-          </div>
-        )
-      }
     </div>
   </div>
 </section>
@@ -414,135 +475,76 @@ const headingLines =
 
 <style>
   /*
-   * The hero is an immersive two-column composition: a compact copy column on the LEFT, held to the
-   * page's content measure, and one large showroom photograph on the RIGHT that dominates the frame
-   * and bleeds to the viewport's right edge on desktop — the reference's balance, where the image is
-   * the major element on the page rather than a card floated in a corner.
+   * The hero is one full-bleed showroom photograph with the copy overlaid on the left.
    *
-   * The outer element stays the vertical-rhythm owner. On a phone and tablet it keeps the page
-   * gutter and centres on the content measure; from the desktop breakpoint up it goes full-bleed
-   * (`max-width: none`) so the right column can reach the viewport edge, and the inner grid restores
-   * the left gutter itself. Vertical padding is deliberately tight so the hero opens with little
-   * empty space above and below the image.
+   * It runs edge to edge across the viewport and up under the floating header, so the header sits
+   * transparent over the image at the top of the page (the page passes `heroHeader`, which puts the
+   * header in its `overHero` state). To reach up under the header the section pulls itself up by the
+   * header's rendered height with a negative top margin, and restores that height as internal top
+   * padding so the copy still clears the bar. It is the section's own ground, so there is no card,
+   * no rounded panel, and no letterbox — the photograph is the background of the whole block.
    */
   .ngf-hero {
     position: relative;
-    max-width: var(--container-content);
-    margin-inline: auto;
-    /* A small deliberate gap under the floating header, then a tighter band before the next one. */
-    padding: clamp(0.75rem, 2vh, 1.5rem) 1.25rem clamp(1.5rem, 4vh, 2.75rem);
+    /* The header's rendered height, reserved so the copy clears the floating bar. Fluid because the
+       header itself is a little taller from the desktop breakpoint up. */
+    --ngf-hero-header-offset: 4.5rem;
+    margin-top: calc(-1 * var(--ngf-hero-header-offset));
     isolation: isolate;
   }
 
+  @media (min-width: 1024px) {
+    .ngf-hero {
+      --ngf-hero-header-offset: 5.5rem;
+    }
+  }
+
   /*
-   * The two-column layout.
+   * The layout.
    *
-   * A single column by default (a phone): the copy comes first in the source and the visual panel
-   * stacks beneath it, which is the required mobile order. From the tablet breakpoint up it becomes
-   * two real columns — copy on the left, the large showroom panel on the right — so the hero fills
-   * the whole content width instead of floating copy over a corner of the image. `align-items:
-   * center` balances the two sides vertically; the column gap gives the copy room to breathe beside
-   * the panel.
+   * The image panel and the copy are stacked in the same grid cell — the photograph is the
+   * background plane, the copy the foreground plane — so the copy sits over the image rather than
+   * beside it. The inner element is the full-bleed box; its own padding is the page gutter plus the
+   * reserved header height at the top, and it holds the copy to the content measure on the left.
    */
   .ngf-hero-inner {
     display: grid;
     grid-template-columns: 1fr;
-    gap: clamp(1.5rem, 4vw, 2.25rem);
-    align-items: center;
+    grid-template-areas: 'stack';
+    min-height: clamp(30rem, 82vh, 46rem);
+    padding: calc(var(--ngf-hero-header-offset) + clamp(1.5rem, 4vh, 3rem)) 1.25rem
+      clamp(2rem, 6vh, 4rem);
   }
 
-  @media (min-width: 768px) {
-    .ngf-hero-inner {
-      /* Tablet: a balanced split, the visual clearly the larger of the two columns. */
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
-      gap: clamp(1.75rem, 3.5vw, 2.75rem);
-    }
+  /* The copy is a grid item; the image panel is taken out of flow and pinned to the whole section
+     below, so only the copy participates in this grid. */
+  .ngf-hero-inner > .ngf-hero-copy {
+    grid-area: stack;
   }
 
   @media (min-width: 1024px) {
-    /*
-     * Desktop: go full-bleed so the image can reach the viewport's right edge, and rebuild the
-     * layout as three tracks —
-     *   1. a left gutter that matches the content container's own left margin, so the copy still
-     *      lines up with every band below it: `max(2rem, (100vw - container)/2)`;
-     *   2. the copy column, held to a comfortable measure;
-     *   3. the image column, which takes the rest of the row out to the right edge.
-     * This puts the photograph at ~62% of the visual width and lets it bleed off-screen right,
-     * while the copy stays inside the page's normal measure. `100vw` with `overflow: hidden` on the
-     * panel keeps a scrollbar's width from ever producing a horizontal scroll.
-     */
-    .ngf-hero {
-      max-width: none;
-      width: 100%;
-      padding-inline: 0;
-      padding-block: clamp(1rem, 2.5vh, 2rem) clamp(2rem, 5vh, 3.25rem);
-    }
-
     .ngf-hero-inner {
-      grid-template-columns:
-        [gutter] minmax(2rem, calc((100vw - var(--container-content)) / 2 + 2rem))
-        [copy] minmax(0, 27rem)
-        [image] minmax(0, 1fr) [edge];
-      /* No column gap: the gutter track is the exact left margin so the copy lines up with the
-         bands below, and the space between the copy and the image is owned by the copy's own
-         right padding instead — a gap here would push the copy past that alignment. */
-      column-gap: 0;
+      /* Hold the copy to the content measure and centre the whole block, while the image below still
+         fills the viewport edge to edge. The extra left/right is the page's own gutter. */
+      padding-inline: max(2rem, calc((100vw - var(--container-content)) / 2 + 2rem));
+      min-height: clamp(34rem, 86vh, 52rem);
     }
   }
 
   /*
-   * The large rounded showroom panel — the hero's dominant visual, in the right column. The
-   * photograph fills it; the box is reserved by `aspect-ratio`, not a fixed height, so the panel
-   * holds its height from its width before the photograph loads and there is no shift (Requirement
-   * 7.12). `min-height`/`max-height` keep it substantial but never enormous. It is deliberately the
-   * larger of the two columns so the visual reads as prominent, not pushed into a corner.
+   * The photograph — the full-bleed background of the hero. It is absolutely positioned to fill the
+   * whole section edge to edge (and up under the header), behind the scrim and the copy. `aspect-
+   * ratio` is kept on the figure so the image-loading audit still counts it as a box-reserving
+   * element and so the reserved box exists before the photograph decodes; `inset: 0` then stretches
+   * it to the section's real height. No rounded corners and no shadow — it is the ground, not a card.
    */
   .ngf-hero-panel {
-    position: relative;
-    display: block;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    min-height: 20rem;
-    max-height: 30rem;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    aspect-ratio: 16 / 9;
     overflow: hidden;
-    border-radius: var(--radius-xl);
-    /* Ivory ground under the photograph, so any letterbox reads as one warm surface. */
-    background-color: var(--color-ivory);
-    box-shadow: var(--shadow-lift);
-  }
-
-  @media (min-width: 768px) {
-    .ngf-hero-panel {
-      /* Tablet: a substantial box beside the copy, filling its column height without overpowering
-         the two-column balance. */
-      aspect-ratio: 5 / 4;
-      min-height: 22rem;
-      max-height: 32rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .ngf-hero-panel {
-      /*
-       * Desktop: the photograph is the dominant element and it bleeds to the viewport's right edge,
-       * so only its left corners are rounded — the right side runs off-screen with no visible
-       * corner, which is what makes it read as immersive rather than as a card. Its box is close to
-       * the supplied photograph's own 1470×827 (~16:9) crop so it fills with no letterbox, and it is
-       * tall enough to command the first viewport.
-       */
-      aspect-ratio: 16 / 11;
-      min-height: 30rem;
-      max-height: 44rem;
-      border-radius: var(--radius-xl) 0 0 var(--radius-xl);
-    }
-  }
-
-  @media (min-width: 1440px) {
-    .ngf-hero-panel {
-      aspect-ratio: 16 / 10;
-      min-height: 34rem;
-      max-height: 48rem;
-    }
+    background-color: var(--color-cream);
   }
 
   /*
@@ -577,12 +579,11 @@ const headingLines =
    * ------------------------------------------------------------------ */
 
   /*
-   * The photograph fills the panel absolutely; `object-fit: cover` so the furniture fills the frame
-   * without distortion. `object-position` is pushed toward the right so the photograph's open
-   * hallway/floor on its left sits under the copy and the sofa moves toward the centre/right — which
-   * is what reserves the readable left space without cropping the furniture away. Scaled a touch
-   * beyond the frame so the parallax drift never reveals an edge. The LQIP paints the same box until
-   * the photograph decodes (Requirement 7.12).
+   * The photograph fills the figure absolutely; `object-fit: cover` so the furniture fills the frame
+   * without distortion. `object-position` is pushed toward the right so the photograph's open,
+   * bright left third sits under the copy and its scrim, and the furniture reads in the centre/right
+   * where the overlay is clear. The LQIP paints the same box until the photograph decodes
+   * (Requirement 7.12).
    */
   .ngf-hero-figure {
     position: absolute;
@@ -597,11 +598,10 @@ const headingLines =
 
   /*
    * Every slide is absolutely stacked in the same box, so they occupy the identical area and the
-   * panel never reflows between them (no layout shift). Only the active slide is opaque; the rest
-   * are transparent. `object-fit: cover` fills the frame; `object-position` toward the LEFT keeps
-   * the photograph's open, bright hallway/floor — its left ~third — in frame, exactly where the copy
-   * sits, so the furniture reads in the centre/right. A single, non-carousel hero has one slide,
-   * which is simply always active.
+   * hero never reflows between them (no layout shift). Only the active slide is opaque; the rest are
+   * transparent. `object-fit: cover` fills the frame; `object-position` toward the RIGHT keeps the
+   * furniture in view while the photograph's brighter left sits under the copy. A single,
+   * non-carousel hero has one slide, which is simply always active.
    */
   .ngf-hero-slide {
     position: absolute;
@@ -610,7 +610,7 @@ const headingLines =
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
+    object-position: 70% center;
     opacity: 0;
     /* Crossfade by opacity only — transform/opacity are the only animated properties (21.8). */
     transition: opacity var(--dur-normal) var(--ease-standard);
@@ -633,7 +633,7 @@ const headingLines =
 
   @media (min-width: 768px) {
     .ngf-hero-slide {
-      object-position: center;
+      object-position: 65% center;
     }
   }
 
@@ -655,34 +655,56 @@ const headingLines =
   }
 
   /* ------------------------------------------------------------------ *
-   * The copy column — the left side of the two-column hero
+   * The scrim and the overlaid copy
    * ------------------------------------------------------------------ */
 
   /*
-   * The copy is a real grid column, not an overlay: it sits beside the image, so it needs no fade
-   * behind it and no absolute positioning. On a phone it is the first (top) row of the stacked
-   * grid; from the tablet breakpoint up it is the left column, vertically centred beside the panel
-   * by the grid's `align-items: center`.
+   * The scrim: a cream-to-transparent wash over the photograph, strongest at the left where the copy
+   * sits and clearing toward the right so the furniture reads. It sits above the image (z-index 1)
+   * and below the copy (z-index 2). On a phone the copy sits over the whole image, so the wash is a
+   * near-opaque vertical gradient that keeps the text legible over any part of the photograph; from
+   * the tablet breakpoint up it becomes the horizontal left-to-right fade of the reference.
+   */
+  .ngf-hero-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-ivory) 92%, transparent) 0%,
+      color-mix(in srgb, var(--color-ivory) 70%, transparent) 45%,
+      color-mix(in srgb, var(--color-ivory) 40%, transparent) 100%
+    );
+  }
+
+  @media (min-width: 768px) {
+    .ngf-hero-scrim {
+      background: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--color-ivory) 94%, transparent) 0%,
+        color-mix(in srgb, var(--color-ivory) 82%, transparent) 32%,
+        color-mix(in srgb, var(--color-ivory) 40%, transparent) 58%,
+        transparent 78%
+      );
+    }
+  }
+
+  /*
+   * The copy, overlaid on the left. It is the foreground plane (z-index 2), above the image and the
+   * scrim, held to a readable measure and vertically centred within the section. On a phone it fills
+   * the width over the whole image; from the tablet breakpoint up it is a left-hand column with the
+   * furniture visible to its right.
    */
   .ngf-hero-copy {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
-
-  @media (min-width: 1024px) {
-    /* Pin the copy to the middle track and the panel to the edge-reaching image track, so the
-       named three-track grid always places them the same way regardless of source order. */
-    .ngf-hero-copy {
-      grid-column: copy;
-      /* The breathing room between the copy and the image, owned here rather than by a column gap
-         so the copy's left edge stays flush with the content gutter. */
-      padding-right: clamp(2rem, 4vw, 3.5rem);
-    }
-
-    .ngf-hero-panel {
-      grid-column: image / edge;
-    }
+    align-self: center;
+    justify-self: start;
+    width: 100%;
   }
 
   .ngf-hero-copy-inner {
@@ -691,6 +713,18 @@ const headingLines =
     align-items: flex-start;
     gap: clamp(0.85rem, 1.4vw, 1.2rem);
     max-width: 34rem;
+  }
+
+  @media (min-width: 768px) {
+    .ngf-hero-copy-inner {
+      max-width: 32rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-hero-copy-inner {
+      max-width: 36rem;
+    }
   }
   .ngf-hero-eyebrow {
     display: flex;
@@ -828,13 +862,17 @@ const headingLines =
     }
   }
 
+  /*
+   * The assurances: an inline row of small hairline icons, each with a two-line label, matching the
+   * reference (sizes · delivery · workshop). It wraps on a narrow phone rather than overflowing.
+   */
   .ngf-hero-assurances {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem 1.75rem;
-    margin: 0.75rem 0 0;
+    gap: 0.9rem 1.75rem;
+    margin: 0.85rem 0 0;
     padding: 0;
-    color: var(--color-walnut);
+    color: var(--color-espresso);
     font-size: var(--text-small);
     list-style: none;
   }
@@ -842,18 +880,26 @@ const headingLines =
   .ngf-hero-assurances li {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
+    max-width: 14rem;
   }
 
-  /* A hairline tick, drawn in CSS: two borders rotated. No glyph, no icon font, no request. */
-  .ngf-hero-assurances li::before {
-    display: block;
-    width: 0.45rem;
-    height: 0.25rem;
-    border-bottom: 1px solid var(--color-sage);
-    border-left: 1px solid var(--color-sage);
-    transform: rotate(-45deg) translateY(-0.1rem);
-    content: '';
+  /* The glyph: a hairline sage icon in a small circle, decorative (the label carries the meaning). */
+  .ngf-hero-assurance-icon {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid color-mix(in srgb, var(--color-sage) 45%, transparent);
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-white) 55%, transparent);
+    color: var(--color-sage);
+  }
+
+  .ngf-hero-assurance-label {
+    line-height: 1.25;
   }
 
   /* ------------------------------------------------------------------ *
@@ -861,17 +907,16 @@ const headingLines =
    * ------------------------------------------------------------------ */
 
   /*
-   * Understated horizontal bars at the bottom-centre of the panel — the reference's quiet indicator,
+   * Understated horizontal bars at the bottom-right of the hero — the reference's quiet indicator,
    * not ecommerce dots. The active bar is longer and darker; the rest are short and faint. They sit
-   * above the image (z-index 3) so they read on any slide, centred at the bottom of the panel on
-   * every breakpoint now that the copy is its own column and never overlaps the image.
+   * above the image and the scrim (z-index 3) so they read on any slide, in the clear right area of
+   * the photograph away from the overlaid copy.
    */
   .ngf-hero-dots {
     position: absolute;
     z-index: 3;
     bottom: clamp(1rem, 2.5vw, 1.75rem);
-    left: 50%;
-    transform: translateX(-50%);
+    right: clamp(1.25rem, 4vw, 3rem);
     display: flex;
     align-items: center;
     gap: 0.5rem;

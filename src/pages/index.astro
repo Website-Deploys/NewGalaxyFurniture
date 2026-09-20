@@ -63,6 +63,15 @@ const homepage = getHomepage();
 const sections = getEnabledSections();
 const tagline = effectiveTagline(settings, homepage);
 
+/**
+ * The hero paints a full-bleed showroom photograph that runs edge to edge and up under the header,
+ * so the header floats transparent over it at the top of the page and commits to solid on scroll
+ * (`heroHeader` → `SiteHeader overHero`, Requirement 9.3). It is passed only when the hero section
+ * is actually enabled, so a homepage with the hero omitted keeps the ordinary solid header rather
+ * than a transparent bar over whatever section leads instead.
+ */
+const heroEnabled = sections.some((section) => section.key === 'hero');
+
 const [products, categories, reviews] = await Promise.all([
   getCatalogue(),
   getPublishedCategories(),
@@ -174,7 +183,7 @@ const meta = pageMeta(Astro, {
 });
 ---
 
-<BaseLayout meta={meta} mainClass="ngf-home">
+<BaseLayout meta={meta} mainClass="ngf-home" heroHeader={heroEnabled}>
   {
     /*
     The homepage's one image preload: the hero, which is its largest contentful element and is
@@ -186,10 +195,7 @@ const meta = pageMeta(Astro, {
     render.
   */
   }
-  <ImagePreload
-    slot="head"
-    hint={sections.some((section) => section.key === 'hero') ? heroPreload : null}
-  />
+  <ImagePreload slot="head" hint={heroEnabled ? heroPreload : null} />
   {
     sections
       .filter((section) => !SECTIONS_RENDERED_BY_LAYOUT.includes(section.key))
