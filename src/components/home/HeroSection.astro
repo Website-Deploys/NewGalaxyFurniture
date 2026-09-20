@@ -414,22 +414,24 @@ const headingLines =
 
 <style>
   /*
-   * The hero is one large photograph. The outer element is just the page gutter and the vertical
-   * rhythm; the panel inside it holds the photograph, the fade, and the copy.
+   * The hero is an immersive two-column composition: a compact copy column on the LEFT, held to the
+   * page's content measure, and one large showroom photograph on the RIGHT that dominates the frame
+   * and bleeds to the viewport's right edge on desktop — the reference's balance, where the image is
+   * the major element on the page rather than a card floated in a corner.
+   *
+   * The outer element stays the vertical-rhythm owner. On a phone and tablet it keeps the page
+   * gutter and centres on the content measure; from the desktop breakpoint up it goes full-bleed
+   * (`max-width: none`) so the right column can reach the viewport edge, and the inner grid restores
+   * the left gutter itself. Vertical padding is deliberately tight so the hero opens with little
+   * empty space above and below the image.
    */
   .ngf-hero {
     position: relative;
     max-width: var(--container-content);
     margin-inline: auto;
-    /* A small deliberate gap under the floating header, then generous air before the next band. */
-    padding: clamp(1rem, 2.5vh, 2rem) 1.25rem clamp(2rem, 5vh, 3.5rem);
+    /* A small deliberate gap under the floating header, then a tighter band before the next one. */
+    padding: clamp(0.75rem, 2vh, 1.5rem) 1.25rem clamp(1.5rem, 4vh, 2.75rem);
     isolation: isolate;
-  }
-
-  @media (min-width: 1024px) {
-    .ngf-hero {
-      padding-inline: 2rem;
-    }
   }
 
   /*
@@ -445,24 +447,46 @@ const headingLines =
   .ngf-hero-inner {
     display: grid;
     grid-template-columns: 1fr;
-    gap: clamp(1.5rem, 4vw, 2.5rem);
+    gap: clamp(1.5rem, 4vw, 2.25rem);
     align-items: center;
   }
 
   @media (min-width: 768px) {
     .ngf-hero-inner {
-      /* Tablet: a balanced split, the visual a little larger than the copy. */
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-      gap: clamp(2rem, 4vw, 3rem);
+      /* Tablet: a balanced split, the visual clearly the larger of the two columns. */
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+      gap: clamp(1.75rem, 3.5vw, 2.75rem);
     }
   }
 
   @media (min-width: 1024px) {
+    /*
+     * Desktop: go full-bleed so the image can reach the viewport's right edge, and rebuild the
+     * layout as three tracks —
+     *   1. a left gutter that matches the content container's own left margin, so the copy still
+     *      lines up with every band below it: `max(2rem, (100vw - container)/2)`;
+     *   2. the copy column, held to a comfortable measure;
+     *   3. the image column, which takes the rest of the row out to the right edge.
+     * This puts the photograph at ~62% of the visual width and lets it bleed off-screen right,
+     * while the copy stays inside the page's normal measure. `100vw` with `overflow: hidden` on the
+     * panel keeps a scrollbar's width from ever producing a horizontal scroll.
+     */
+    .ngf-hero {
+      max-width: none;
+      width: 100%;
+      padding-inline: 0;
+      padding-block: clamp(1rem, 2.5vh, 2rem) clamp(2rem, 5vh, 3.25rem);
+    }
+
     .ngf-hero-inner {
-      /* Desktop: the visual is the dominant column on the right; the copy holds a comfortable
-         measure on the left. */
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.3fr);
-      gap: clamp(2.5rem, 5vw, 4rem);
+      grid-template-columns:
+        [gutter] minmax(2rem, calc((100vw - var(--container-content)) / 2 + 2rem))
+        [copy] minmax(0, 27rem)
+        [image] minmax(0, 1fr) [edge];
+      /* No column gap: the gutter track is the exact left margin so the copy lines up with the
+         bands below, and the space between the copy and the image is owned by the copy's own
+         right padding instead — a gap here would push the copy past that alignment. */
+      column-gap: 0;
     }
   }
 
@@ -489,27 +513,35 @@ const headingLines =
 
   @media (min-width: 768px) {
     .ngf-hero-panel {
-      /* Tablet: a taller portrait-leaning box beside the copy, filling its column height. */
-      aspect-ratio: 4 / 4.2;
-      min-height: 24rem;
-      max-height: 34rem;
+      /* Tablet: a substantial box beside the copy, filling its column height without overpowering
+         the two-column balance. */
+      aspect-ratio: 5 / 4;
+      min-height: 22rem;
+      max-height: 32rem;
     }
   }
 
   @media (min-width: 1024px) {
     .ngf-hero-panel {
-      /* Desktop: close to the supplied photograph's own 1470×827 (~16:9) crop, so it fills the
-         panel with no letterbox, and large enough to dominate the first viewport. */
-      aspect-ratio: 16 / 10;
-      min-height: 26rem;
-      max-height: 36rem;
+      /*
+       * Desktop: the photograph is the dominant element and it bleeds to the viewport's right edge,
+       * so only its left corners are rounded — the right side runs off-screen with no visible
+       * corner, which is what makes it read as immersive rather than as a card. Its box is close to
+       * the supplied photograph's own 1470×827 (~16:9) crop so it fills with no letterbox, and it is
+       * tall enough to command the first viewport.
+       */
+      aspect-ratio: 16 / 11;
+      min-height: 30rem;
+      max-height: 44rem;
+      border-radius: var(--radius-xl) 0 0 var(--radius-xl);
     }
   }
 
   @media (min-width: 1440px) {
     .ngf-hero-panel {
-      aspect-ratio: 16 / 9.5;
-      max-height: 40rem;
+      aspect-ratio: 16 / 10;
+      min-height: 34rem;
+      max-height: 48rem;
     }
   }
 
@@ -638,11 +670,26 @@ const headingLines =
     justify-content: center;
   }
 
+  @media (min-width: 1024px) {
+    /* Pin the copy to the middle track and the panel to the edge-reaching image track, so the
+       named three-track grid always places them the same way regardless of source order. */
+    .ngf-hero-copy {
+      grid-column: copy;
+      /* The breathing room between the copy and the image, owned here rather than by a column gap
+         so the copy's left edge stays flush with the content gutter. */
+      padding-right: clamp(2rem, 4vw, 3.5rem);
+    }
+
+    .ngf-hero-panel {
+      grid-column: image / edge;
+    }
+  }
+
   .ngf-hero-copy-inner {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: clamp(0.9rem, 1.6vw, 1.35rem);
+    gap: clamp(0.85rem, 1.4vw, 1.2rem);
     max-width: 34rem;
   }
   .ngf-hero-eyebrow {
