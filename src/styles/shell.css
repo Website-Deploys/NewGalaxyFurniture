@@ -1426,12 +1426,32 @@
 .ngf-card-media {
   position: relative;
   overflow: hidden;
-  aspect-ratio: var(--ngf-card-ratio, 4 / 5);
+  aspect-ratio: var(--ngf-card-ratio, 4 / 3);
   background-color: var(--color-cream);
 }
 
 .ngf-card-media > * {
   height: 100%;
+}
+
+/*
+ * The listing photograph is shown whole, never cropped: `contain` fits the entire image inside the
+ * card's fixed 4/3 box, so a landscape sofa shot and a future portrait shot both appear in full and
+ * every card stays the same size. Any letterbox margin sits on the card's warm cream ground, which
+ * reads as an intentional frame rather than dead space.
+ */
+.ngf-card-media > .ngf-image img {
+  object-fit: contain;
+}
+
+/*
+ * The LQIP background is painted `cover` on the wrapper, which would stretch to fill the letterbox
+ * margins a contained image leaves. Contain it too so the blurred preview sits exactly under the
+ * photograph and the surrounding margin stays clean cream.
+ */
+.ngf-card-media > .ngf-image[data-has-lqip='true'] {
+  background-size: contain !important;
+  background-repeat: no-repeat;
 }
 
 /*
@@ -1461,7 +1481,8 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  background-size: cover;
+  background-size: contain;
+  background-repeat: no-repeat;
   background-position: center;
   transition: opacity var(--dur-normal) var(--ease-standard);
 }
