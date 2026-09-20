@@ -2395,6 +2395,333 @@
   font-size: var(--text-body);
 }
 
+/* Category pill ----------------------------------------------------------- *
+ *
+ * A single small-caps chip above the product name, linking to the category listing. It is the
+ * same one classification label the product card shows, promoted to a pill here so the PDP opens
+ * by naming what kind of piece this is — matching the reference. One label, never a row of chips.
+ */
+.ngf-pdp-category {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 70%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-cream);
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-pdp-category:hover {
+    background-color: var(--color-white);
+    color: var(--color-espresso);
+  }
+}
+
+/* Trust row --------------------------------------------------------------- *
+ *
+ * Four short reassurances beneath the conversion controls: an icon, a title and a one-line detail.
+ * Two columns on a phone, four across from 480px. Sits on the same cream drawing-board ground the
+ * spec panel uses so the panel reads as one considered surface rather than a stack of boxes.
+ */
+.ngf-pdp-trust {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0;
+  padding: 1rem;
+  list-style: none;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-cream);
+}
+
+@media (min-width: 480px) {
+  .ngf-pdp-trust {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.ngf-pdp-trust-item {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 0.15rem;
+  text-align: center;
+  justify-items: center;
+}
+
+.ngf-pdp-trust-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.25rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-white);
+  color: var(--color-espresso);
+  box-shadow: var(--shadow-level1);
+}
+
+.ngf-pdp-trust-title {
+  color: var(--color-obsidian);
+  font-size: var(--text-small);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ngf-pdp-trust-detail {
+  color: var(--color-walnut);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+/* The Discuss Customisation button — an outline CTA inside the customisation note. */
+.ngf-pdp-customise {
+  align-self: flex-start;
+  margin-top: 0.85rem;
+  border-radius: var(--radius-pill);
+}
+
+/* Feature strip (public PDP) --------------------------------------------- *
+ *
+ * The four-across band directly beneath the product detail. It spans the content width; each item
+ * is an icon beside a two-line label. Wraps to two columns on narrow screens and stacks to one on
+ * the smallest, so the labels never truncate.
+ */
+.ngf-pdp-features {
+  margin-top: var(--spacing-section);
+}
+
+.ngf-pdp-features-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .ngf-pdp-features-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ngf-pdp-features-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.ngf-pdp-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.ngf-pdp-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-cream);
+  color: var(--color-espresso);
+}
+
+.ngf-pdp-feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.ngf-pdp-feature-title {
+  color: var(--color-obsidian);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ngf-pdp-feature-detail {
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  line-height: 1.3;
+}
+
+/* Banner + quote band ----------------------------------------------------- *
+ *
+ * A wide photograph of the piece beside a quiet cream quote card. Stacks on a phone (image first),
+ * splits into image + card from 1024px with the image given the larger share. The image sits in a
+ * fixed-ratio frame so it cannot shift the page as it loads.
+ */
+.ngf-pdp-banner {
+  display: grid;
+  gap: 1rem;
+  margin-top: var(--spacing-section);
+}
+
+@media (min-width: 1024px) {
+  .ngf-pdp-banner {
+    grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+}
+
+.ngf-pdp-banner-media {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.ngf-pdp-banner-image {
+  aspect-ratio: 16 / 9;
+  height: 100%;
+}
+
+.ngf-pdp-banner-quote {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-cream);
+}
+
+.ngf-pdp-banner-line {
+  margin: 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h3);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-obsidian);
+  text-wrap: balance;
+}
+
+.ngf-pdp-banner-rule {
+  width: 2.5rem;
+  height: 1px;
+  background-color: var(--color-taupe);
+}
+
+.ngf-pdp-banner-sub {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}
+
+/* A Closer Look ----------------------------------------------------------- *
+ *
+ * The remaining product angles, shown as a small gallery beside the quote form. Two columns on a
+ * phone, three from 640px. Each thumbnail sits in a rounded, reserved-ratio frame.
+ */
+.ngf-pdp-closer-heading {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h2);
+  letter-spacing: -0.01em;
+  color: var(--color-obsidian);
+}
+
+.ngf-pdp-closer-sub {
+  margin: 0 0 1.25rem;
+  color: var(--color-walnut);
+  font-size: var(--text-body);
+}
+
+.ngf-pdp-closer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .ngf-pdp-closer-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ngf-pdp-closer-image {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* The quote column keeps the CraftsmanshipLines primitive above the form on a phone. */
+.ngf-pdp-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* Related section heading row: heading left, explore-more link right. */
+.ngf-related-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ngf-related-head > h2 {
+  margin: 0;
+  font-size: var(--text-h2);
+}
+
+.ngf-related-explore {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-related-explore > svg {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-related-explore:hover {
+    color: var(--color-obsidian);
+  }
+
+  .ngf-related-explore:hover > svg {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-related-explore > svg {
+    transition: none;
+  }
+
+  .ngf-related-explore:hover > svg {
+    transform: none;
+  }
+}
+
 /* Gallery ----------------------------------------------------------------- */
 
 .ngf-gallery {

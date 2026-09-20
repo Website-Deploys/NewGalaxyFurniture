@@ -2,176 +2,198 @@
 /**
  * `/gallery`.
  *
- * Every photograph the catalogue holds, each one linking to the piece it shows. There is no separate
- * gallery collection on purpose: a second place to upload the same photographs would drift from the
- * first within a month, and a gallery image that does not link to a buyable piece is a dead end.
+ * Every photograph the catalogue holds, grouped by the piece it shows, each board linking to that
+ * piece. There is no separate gallery collection on purpose: a second place to upload the same
+ * photographs would drift from the first within a month, and a gallery image that does not link to
+ * a buyable piece is a dead end. Because the boards are folded from `getCatalogue()`, a new
+ * product's photographs appear here the next build with no manual authoring.
  *
- * With no photography (design Open Items item 5) the page renders the designed "no images" empty state
- * required by Requirement 26.14 — composed, with a next action, not a blank grid.
+ * Each board is the interactive `GalleryBoard` island — filter tabs, a bento grid, hover, and a
+ * zoom overlay — mounted `client:visible`, so the server-rendered markup is complete and the page
+ * is useful before hydration. The first board's lead image is the page's one preloaded image.
+ *
+ * With no photography (design Open Items item 5) the page renders the designed "no images" empty
+ * state required by Requirement 26.14 — composed, with a next action, not a blank grid.
  *
  * Requirements: 8.1, 15.17, 26.14.
  */
+import GalleryBoard from '@/components/gallery/GalleryBoard';
 import CallLink from '@/components/ui/CallLink.astro';
 import EmptyState from '@/components/ui/EmptyState.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
-import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getCatalogue } from '@/lib/content/catalogue';
-import { cardImagePreload } from '@/lib/images/preload';
-import { isEagerCard } from '@/lib/images/staging';
+import { getSiteSettings } from '@/lib/content/site';
+import { galleryTilesOf } from '@/lib/products/gallery-tiles';
 import { pageMeta } from '@/lib/seo/page';
+import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import '@/styles/editorial.css';
 
+const settings = getSiteSettings();
 const products = await getCatalogue();
 
-/** Every image of every Catalogue product, in operator order within each product. */
-const tiles = products.flatMap((product) =>
-  [...product.images].sort((a, b) => a.order - b.order).map((image) => ({ product, image })),
-);
+/**
+ * One board per product that actually has photographs, in catalogue order. A product with no images
+ * contributes no board rather than an empty frame.
+ */
+const boards = products
+  .map((product) => ({ product, tiles: galleryTilesOf(product) }))
+  .filter((board) => board.tiles.length > 0);
+
+const hasImages = boards.length > 0;
+
+/** The WhatsApp enquiry URL for a product's "See it in your space" card. */
+function whatsappFor(productName: string, sku: string): string | null {
+  const number = settings.whatsapp[0];
+  if (number === undefined) return null;
+  return buildWhatsAppUrl(
+    number.e164,
+    buildEnquiryMessage({ kind: 'product', productName, sku }, settings),
+  );
+}
 
 /**
- * The one preloaded image: the first tile, which is this page's largest contentful element. The
- * remaining first-row tiles are eager but not prioritised, and everything below is lazy.
+ * The one preloaded image: the first board's lead tile, this page's largest contentful element.
+ * The hint is built from the tile's own resolved URLs so the preload and the rendered `<img>`
+ * resolve to the same candidate rather than fetching two. Everything else is lazy inside the
+ * islands.
  */
-const lead = tiles[0];
-const leadPreload = lead === undefined ? null : cardImagePreload(lead.product.id, lead.image);
+const leadTile = boards[0]?.tiles[0];
+const leadPreload =
+  leadTile === undefined
+    ? null
+    : { href: leadTile.src, srcset: leadTile.srcSet, sizes: leadTile.sizes };
 
 const meta = pageMeta(Astro, {
   title: 'Gallery',
   description:
-    'Photographs of furniture made by New Galaxy Furniture — sofas, beds, dining furniture, storage and custom pieces.',
+    'Photographs of furniture made by New Galaxy Furniture — sofas, beds, dining furniture, storage and custom pieces, from every angle.',
 });
 ---
 
 <BaseLayout meta={meta}>
   <ImagePreload slot="head" hint={leadPreload} />
-  <div class="ngf-page">
-    <div class="ngf-page-head">
-      <p class="ngf-page-eyebrow">Our work</p>
-      <h1>Gallery</h1>
-      <p class="ngf-page-lead">
-        {
-          tiles.length === 0
-            ? 'Our pieces are being photographed. Ask us and we will send photographs of comparable work today.'
-            : 'Every photograph here is a piece we made. Tap one to see its page.'
-        }
-      </p>
-    </div>
+  <div class="ngf-page ngf-gallery-page">
+    {
+      !hasImages ? (
+        <>
+          <div class="ngf-page-head">
+            <p class="ngf-page-eyebrow">Our gallery</p>
+            <h1>Gallery</h1>
+            <p class="ngf-page-lead">
+              Our pieces are being photographed. Ask us and we will send photographs of comparable
+              work today.
+            </p>
+          </div>
+          <EmptyState
+            tone="page"
+            heading="Photography is in progress"
+            message="Tell us what you are looking for — a sofa for a particular room, a bed in a particular timber — and we will send photographs of work we have done."
+          >
+            <WhatsAppLink slot="action" context={{ kind: 'general' }} label="Ask for photographs" />
+            <CallLink slot="action" variant="outline" />
+          </EmptyState>
+        </>
+      ) : (
+        boards.map((board, boardIndex) => (
+          <GalleryBoard
+            client:visible
+            productName={board.product.name}
+            productSlug={board.product.slug}
+            productHref={`/product/${board.product.slug}`}
+            intro={`Explore the ${board.product.name} from every angle. See how it looks in real spaces, detailed close-ups, and different perspectives.`}
+            tiles={board.tiles}
+            whatsappHref={whatsappFor(board.product.name, board.product.sku)}
+            leadTileId={boardIndex === 0 ? board.tiles[0]?.id : undefined}
+          />
+        ))
+      )
+    }
 
     {
-      tiles.length === 0 ? (
-        <EmptyState
-          tone="page"
-          heading="Photography is in progress"
-          message="Tell us what you are looking for — a sofa for a particular room, a bed in a particular timber — and we will send photographs of work we have done."
-        >
-          <WhatsAppLink slot="action" context={{ kind: 'general' }} label="Ask for photographs" />
-          <CallLink slot="action" variant="outline" />
-        </EmptyState>
-      ) : (
-        /*
-          The lookbook grid (Milestone 3, Checkpoint D). An asymmetric-but-controlled editorial
-          rhythm: every third tile runs wide, so the grid reads like a lookbook spread rather than a
-          uniform contact sheet. Each tile links to the piece it shows, its image reveals behind a
-          clip-path mask (`data-reveal="mask"` — the box never resizes, so loading discipline holds),
-          and it lifts a subtle hover zoom on the image alone. The first tile is eager and priority;
-          the rest are lazy, and every box reserves its space.
-        */
-        <ul class="ngf-lookbook">
-          {tiles.map((tile, index) => (
-            <li class:list={['ngf-lookbook-tile', index % 3 === 0 && 'ngf-lookbook-tile-wide']}>
-              <a class="ngf-lookbook-link" href={`/product/${tile.product.slug}`}>
-                <span class="ngf-lookbook-frame" data-reveal="mask">
-                  <ResponsiveImage
-                    productId={tile.product.id}
-                    image={tile.image}
-                    context="card"
-                    eager={isEagerCard(index)}
-                    priority={index === 0}
-                  />
-                </span>
-                <span class="ngf-lookbook-caption">{tile.product.name}</span>
-              </a>
+      /*
+      The feature row the reference closes on: three reassurances and a contact link. Site-level, so
+      it renders once beneath every board. Inline SVG, currentColor, decorative.
+    */
+    }
+    {
+      hasImages && (
+        <div class="ngf-gallery-feats" data-reveal data-motion-group>
+          <ul class="ngf-gallery-feats-list">
+            <li class="ngf-gallery-feat">
+              <span class="ngf-gallery-feat-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="6" width="18" height="13" rx="2" />
+                  <circle cx="12" cy="12.5" r="3" />
+                  <path d="M8 6l1.5-2h5L16 6" />
+                </svg>
+              </span>
+              <span class="ngf-gallery-feat-text">
+                <span class="ngf-gallery-feat-title">Real Spaces</span>
+                <span class="ngf-gallery-feat-sub">See how it fits in your home</span>
+              </span>
             </li>
-          ))}
-        </ul>
+            <li class="ngf-gallery-feat">
+              <span class="ngf-gallery-feat-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="4" width="18" height="14" rx="2" />
+                  <path d="M3 15l5-4 4 3 3-2 6 5" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                </svg>
+              </span>
+              <span class="ngf-gallery-feat-text">
+                <span class="ngf-gallery-feat-title">Multiple Angles</span>
+                <span class="ngf-gallery-feat-sub">Get the complete view</span>
+              </span>
+            </li>
+            <li class="ngf-gallery-feat">
+              <span class="ngf-gallery-feat-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7Z" />
+                  <circle cx="7.5" cy="10.5" r="1" />
+                  <circle cx="12" cy="7.5" r="1" />
+                  <circle cx="16.5" cy="10.5" r="1" />
+                </svg>
+              </span>
+              <span class="ngf-gallery-feat-text">
+                <span class="ngf-gallery-feat-title">Different Setups</span>
+                <span class="ngf-gallery-feat-sub">Styled for modern living</span>
+              </span>
+            </li>
+          </ul>
+          <p class="ngf-gallery-feats-help">
+            Have questions? We're here to help. <a href="/contact">Contact Us</a>
+          </p>
+        </div>
       )
     }
   </div>
 </BaseLayout>
-
-<style>
-  /*
-   * The lookbook grid. A controlled masonry rhythm: a two-column base on a phone and a three-column
-   * track on a wide viewport, where every third tile spans two columns so the spread stays
-   * asymmetric without ever breaking the grid.
-   */
-  .ngf-lookbook {
-    display: grid;
-    gap: clamp(0.75rem, 2vw, 1.25rem);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (min-width: 768px) {
-    .ngf-lookbook {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .ngf-lookbook-tile-wide {
-      grid-column: span 2;
-    }
-  }
-
-  .ngf-lookbook-tile {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 20rem;
-    min-width: 0;
-  }
-
-  .ngf-lookbook-link {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    color: var(--color-obsidian);
-    text-decoration: none;
-  }
-
-  /*
-   * The frame reserves the box and clips the image, so the reveal mask and the hover zoom both play
-   * inside a box whose size never changes — the loading discipline the page depends on holds.
-   */
-  .ngf-lookbook-frame {
-    display: block;
-    overflow: hidden;
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--color-taupe);
-    background-color: var(--color-cream);
-  }
-
-  .ngf-lookbook-frame > :global(.ngf-image) {
-    display: block;
-    transition: transform var(--dur-normal, 240ms) var(--ease-entrance, ease);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    :where(:not([data-motion='off']))
-      .ngf-lookbook-link:hover
-      .ngf-lookbook-frame
-      > :global(.ngf-image),
-    :where(:not([data-motion='off']))
-      .ngf-lookbook-link:focus-visible
-      .ngf-lookbook-frame
-      > :global(.ngf-image) {
-      transform: scale(1.04);
-    }
-  }
-
-  .ngf-lookbook-caption {
-    font-size: var(--text-small);
-    color: var(--color-walnut);
-  }
-</style>

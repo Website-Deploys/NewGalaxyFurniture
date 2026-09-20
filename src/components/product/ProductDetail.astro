@@ -79,6 +79,34 @@ const description = safeText(product.description);
 const customization = safeTextOrUndefined(product.customization);
 const deliveryInformation = safeTextOrUndefined(product.deliveryInformation);
 
+/**
+ * The category's display name as a single label, sanitized. Falls back to the slug when the name
+ * is not known, and to `undefined` only when the product carries no category at all — which the
+ * schema does not allow, so in practice the pill always renders. Kept as its own value so both the
+ * pill and any future placement read the same string.
+ */
+const categoryLabel = safeTextOrUndefined(categoryName ?? product.category);
+
+/**
+ * The trust row: four fixed reassurances shown beneath the conversion controls. They are
+ * site-level promises, not per-product facts, so they are the same on every PDP and on the admin
+ * preview — an operator approving a photograph sees exactly what a customer will. The "made in"
+ * line names the workshop city from site settings rather than a hard-coded string, so a change of
+ * address is a settings edit and never a code edit. Each item is decorative reassurance, not a
+ * measurement, so it is honest on a product with no specifications.
+ */
+const madeInCity = safeTextOrUndefined(settings.location.city);
+const trustPoints: { title: string; detail: string; icon: string }[] = [
+  { title: 'Premium Build Quality', detail: 'Sturdy frames, high-density foam', icon: 'quality' },
+  { title: 'Customisation Available', detail: 'Fabric, size and colour options', icon: 'customise' },
+  {
+    title: madeInCity === undefined ? 'Made in our workshop' : `Made in ${madeInCity}`,
+    detail: 'Built to order, not mass-made',
+    icon: 'made',
+  },
+  { title: 'Expert Support', detail: 'Guidance from enquiry to delivery', icon: 'support' },
+];
+
 const primary = primaryImageOf(product);
 const gallery = [...product.images].sort((a, b) => a.order - b.order);
 const rest = gallery.filter((image) => image.id !== primary?.id);
@@ -211,6 +239,22 @@ const quickEnquireHref = (() => {
     <Breadcrumbs items={productCrumbs(product, categoryName)} />
 
     <header class="ngf-pdp-head">
+      {
+        /*
+        The category pill. `categoryName` is the display name resolved from the category slug
+        (falling back to the slug when the name is unknown), so it is one label, never a row of
+        chips. It links to the category listing so the pill doubles as a way back up the tree —
+        the same destination the breadcrumb's category crumb points at. Rendered only when the
+        product carries a category, honouring the omit-when-empty rule (Requirement 4.3).
+      */
+      }
+      {
+        categoryLabel !== undefined && (
+          <a class="ngf-pdp-category" href={`/collection/${product.category}`}>
+            {categoryLabel}
+          </a>
+        )
+      }
       <h1 class="ngf-pdp-name">{name}</h1>
       <p class="ngf-pdp-sku">SKU {sku}</p>
     </header>
@@ -267,6 +311,57 @@ const quickEnquireHref = (() => {
     </div>
 
     {
+      /*
+      The trust row: four site-level reassurances, each a small line icon over a short label. It is
+      the same on every product and on the admin preview because these are promises the business
+      makes, not facts about this piece — so nothing here is gated on a product field. The icons are
+      inline SVG (currentColor, aria-hidden) rather than an icon font or image requests, so the row
+      costs no extra fetches and inherits the panel's colour.
+    */
+    }
+    <ul class="ngf-pdp-trust" aria-label="What to expect">
+      {
+        trustPoints.map((point) => (
+          <li class="ngf-pdp-trust-item">
+            <span class="ngf-pdp-trust-icon" aria-hidden="true">
+              {point.icon === 'quality' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3l7 3v5c0 4.2-2.8 7.6-7 8.9C7.8 18.6 5 15.2 5 11V6l7-3z" />
+                  <path d="M9 11.5l2 2 4-4.5" />
+                </svg>
+              )}
+              {point.icon === 'customise' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 7h11" />
+                  <path d="M19 7h1" />
+                  <circle cx="17" cy="7" r="2" />
+                  <path d="M4 17h5" />
+                  <path d="M13 17h7" />
+                  <circle cx="11" cy="17" r="2" />
+                </svg>
+              )}
+              {point.icon === 'made' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 20h16" />
+                  <path d="M6 20v-8l6-4 6 4v8" />
+                  <path d="M10 20v-4h4v4" />
+                </svg>
+              )}
+              {point.icon === 'support' && (
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="3.2" />
+                  <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+                </svg>
+              )}
+            </span>
+            <span class="ngf-pdp-trust-title">{point.title}</span>
+            <span class="ngf-pdp-trust-detail">{point.detail}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    {
       description.trim() !== '' && (
         <div class="ngf-pdp-description whitespace-pre-line">{description}</div>
       )
@@ -303,8 +398,24 @@ const quickEnquireHref = (() => {
     {
       customization !== undefined && (
         <section class="ngf-pdp-note">
-          <p class="ngf-pdp-eyebrow">Customization</p>
+          <p class="ngf-pdp-eyebrow">Customisation</p>
           <p class="ngf-pdp-note-body whitespace-pre-line">{customization}</p>
+          {
+            /*
+            A dedicated way to start the customisation conversation, distinct from the two buy
+            controls above. It resolves to the same WhatsApp enquiry the primary CTA uses — the
+            message already asks about "price, availability and order details", which covers a
+            customisation question — so there is no second URL builder and long-press/copy-link all
+            resolve to activation (Requirement 5.11). Rendered only inside this block, so it never
+            appears for a product with no customisation note.
+          */
+          }
+          <WhatsAppLink
+            context={enquiryContext}
+            label="Discuss Customisation"
+            variant="outline"
+            class="ngf-pdp-customise"
+          />
         </section>
       )
     }

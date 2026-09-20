@@ -37,6 +37,7 @@ import ProductDetail from '@/components/product/ProductDetail.astro';
 import RecentlyViewed from '@/components/product/RecentlyViewed';
 import RelatedProducts from '@/components/product/RelatedProducts.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
+import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
 import { aggregateRatingFor, getPublishedReviews } from '@/lib/content/reviews';
@@ -49,6 +50,7 @@ import { absoluteUrl, productDescriptionFallback, productTitleFallback } from '@
 import { pageMeta, siteOrigin } from '@/lib/seo/page';
 import { productCrumbs } from '@/lib/site/breadcrumbs';
 import { toSearchDoc } from '@/lib/search/build-index';
+import { primaryImageOf } from '@/schemas/product';
 import type { Product } from '@/schemas/product';
 import type { Review } from '@/schemas/review';
 
@@ -108,6 +110,26 @@ const related = relatedProducts(
 
 const galleryImages = galleryImagesOf(product);
 const primary = galleryImages[0];
+
+/* -------------------------------------------------------------------------- */
+/* Marketing sections (public PDP only)                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The wide banner and the "A Closer Look" strip are public-page furniture, not product facts, so
+ * they are assembled here rather than in the shared `ProductDetail` — the admin preview has no use
+ * for them. Both draw from the same ordered gallery the interactive island uses, so they always
+ * show this product's real photographs and never a stock image.
+ *
+ * The banner reuses the primary `ProductImageValue`; the closer-look strip is the remaining
+ * angles. When a product has only one photograph the strip is empty and its whole block is
+ * omitted, and when it has none the banner is omitted too — the marketing band degrades to just
+ * the quote form rather than showing an empty frame (Requirement 4.3's omit-when-empty rule,
+ * applied to presentational sections).
+ */
+const orderedImages = [...product.images].sort((a, b) => a.order - b.order);
+const bannerImage = primaryImageOf(product);
+const closerLookImages = orderedImages.filter((image) => image.id !== bannerImage?.id);
 
 const recentCard = {
   name: product.name,
@@ -219,33 +241,154 @@ const meta = pageMeta(Astro, {
 
     {
       /*
-      Get a Quote, against this piece. Placed after the detail rather than inside it, because
-      `ProductDetail` is shared with `/admin/preview/:id` and an operator approving a photograph has
-      no use for a live lead form. The product reference travels as a slug only; the server
-      re-resolves the name, SKU and canonical URL when the enquiry arrives (Requirement 6.6).
+      The feature strip: four short reassurances in a row directly beneath the product detail. Like
+      the in-panel trust row it is site-level presentation rather than product data, but it lives on
+      the public page — the admin preview does not need it — so it is composed here. Inline SVG,
+      currentColor, aria-hidden: no extra fetches and it inherits the page's ink.
+    */
+    }
+    <section class="ngf-pdp-features" aria-label="Why this piece" data-reveal data-motion-group>
+      <ul class="ngf-pdp-features-list">
+        <li class="ngf-pdp-feature">
+          <span class="ngf-pdp-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 11h18" /><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" />
+              <path d="M4 11a2 2 0 0 0-2 2v3h20v-3a2 2 0 0 0-2-2" /><path d="M4 18v2" /><path d="M20 18v2" />
+            </svg>
+          </span>
+          <span class="ngf-pdp-feature-body">
+            <span class="ngf-pdp-feature-title">Spacious &amp; Comfortable</span>
+            <span class="ngf-pdp-feature-detail">Ideal for family living</span>
+          </span>
+        </li>
+        <li class="ngf-pdp-feature">
+          <span class="ngf-pdp-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l7 3v5c0 4.2-2.8 7.6-7 8.9C7.8 18.6 5 15.2 5 11V6l7-3z" /><path d="M9 11.5l2 2 4-4.5" />
+            </svg>
+          </span>
+          <span class="ngf-pdp-feature-body">
+            <span class="ngf-pdp-feature-title">Durable Construction</span>
+            <span class="ngf-pdp-feature-detail">Built to last for years</span>
+          </span>
+        </li>
+        <li class="ngf-pdp-feature">
+          <span class="ngf-pdp-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l2.5 5 5.5.8-4 3.9.95 5.5L12 21.5 7.05 18.2 8 12.7 4 8.8 9.5 8z" />
+            </svg>
+          </span>
+          <span class="ngf-pdp-feature-body">
+            <span class="ngf-pdp-feature-title">Elegant Design</span>
+            <span class="ngf-pdp-feature-detail">Blends with modern interiors</span>
+          </span>
+        </li>
+        <li class="ngf-pdp-feature">
+          <span class="ngf-pdp-feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7h11" /><path d="M19 7h1" /><circle cx="17" cy="7" r="2" />
+              <path d="M4 17h5" /><path d="M13 17h7" /><circle cx="11" cy="17" r="2" />
+            </svg>
+          </span>
+          <span class="ngf-pdp-feature-body">
+            <span class="ngf-pdp-feature-title">Custom Options</span>
+            <span class="ngf-pdp-feature-detail">Choose your fabric and size</span>
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    {
+      /*
+      The banner band: a wide photograph of the piece beside a quiet quote card. Both are
+      presentational, so the whole band is omitted when the product has no photograph — a banner
+      frame with nothing in it would be the dishonest inverse of the omit-when-empty rule. The image
+      is lazy: the PDP's one eager image is the gallery primary, and `audit-image-loading` fails the
+      build on a second high-priority image.
+    */
+    }
+    {
+      bannerImage !== null && (
+        <section class="ngf-pdp-banner" data-reveal="mask">
+          <div class="ngf-pdp-banner-media">
+            <ResponsiveImage
+              productId={product.id}
+              image={bannerImage}
+              context="card"
+              widths={[640, 960, 1280]}
+              class="ngf-pdp-banner-image"
+            />
+          </div>
+          <div class="ngf-pdp-banner-quote">
+            <p class="ngf-pdp-banner-line">“Designed for conversations, built for living.”</p>
+            <span class="ngf-pdp-banner-rule" aria-hidden="true" />
+            <p class="ngf-pdp-banner-sub">A statement piece for modern homes.</p>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      /*
+      Get a Quote, against this piece, now paired with "A Closer Look" — the remaining angles of
+      the same product. Placed after the detail rather than inside it, because `ProductDetail` is
+      shared with `/admin/preview/:id` and an operator approving a photograph has no use for a live
+      lead form. The product reference travels as a slug only; the server re-resolves the name, SKU
+      and canonical URL when the enquiry arrives (Requirement 6.6).
+
+      The closer-look column is omitted when there are no extra angles, and then the quote form
+      spans the width on its own rather than sitting beside an empty column.
     */
     }
     <section class="ngf-pdp-enquiry" aria-labelledby="ngf-pdp-quote-heading" data-reveal>
-      {
-        /*
-        The one primitive on a product page. Decorative — the specifications above it are the real
-        statement about how the piece is made, and this is the visual language they sit in rather
-        than a second source of that information.
-      */
-      }
-      <span class="ngf-pdp-detail">
-        <CraftsmanshipLines strokeWidth={1} trigger="none" />
-      </span>
-      <EnquiryIsland
-        form="quote"
-        heading="Get a quote for this piece"
-        context={{ kind: 'product', productName: product.name, sku: product.sku }}
-        productSlug={product.slug}
-        productName={product.name}
-      />
+      {closerLookImages.length > 0 && (
+        <div class="ngf-pdp-closer" data-motion-group>
+          <h2 class="ngf-pdp-closer-heading">A Closer Look</h2>
+          <p class="ngf-pdp-closer-sub">See the {product.name} from every angle.</p>
+          <ul class="ngf-pdp-closer-grid">
+            {closerLookImages.map((image) => (
+              <li>
+                <ResponsiveImage
+                  productId={product.id}
+                  image={image}
+                  context="card"
+                  widths={[320, 480, 640]}
+                  class="ngf-pdp-closer-image"
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div class="ngf-pdp-quote">
+        {
+          /*
+          The one primitive on a product page. Decorative — the specifications above it are the real
+          statement about how the piece is made, and this is the visual language they sit in rather
+          than a second source of that information.
+        */
+        }
+        <span class="ngf-pdp-detail">
+          <CraftsmanshipLines strokeWidth={1} trigger="none" />
+        </span>
+        <EnquiryIsland
+          form="quote"
+          heading="Get a quote for this piece"
+          context={{ kind: 'product', productName: product.name, sku: product.sku }}
+          productSlug={product.slug}
+          productName={product.name}
+        />
+      </div>
     </section>
 
-    <RelatedProducts products={related} categoryNames={categoryNames} />
+    <RelatedProducts
+      products={related}
+      categoryNames={categoryNames}
+      explore={{
+        href: `/collection/${product.category}`,
+        label: `Explore more from ${categoryNames[product.category] ?? product.category}`,
+      }}
+    />
 
     <RecentlyViewed client:idle slug={product.slug} card={recentCard} />
   </div>
@@ -264,7 +407,7 @@ const meta = pageMeta(Astro, {
 
   @media (min-width: 1024px) {
     .ngf-pdp-enquiry {
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
       align-items: start;
     }
   }

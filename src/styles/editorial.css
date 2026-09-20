@@ -219,3 +219,468 @@
   font-size: var(--text-small);
   line-height: 1.6;
 }
+
+/* ------------------------------------------------------------------------- *
+ * Gallery board (/gallery) — the per-product lookbook
+ *
+ * The `/gallery` route mounts one `GalleryBoard` island per product. These rules live here rather
+ * than in an Astro scoped block because the board is a React island and cannot participate in
+ * Astro's scoping. The layout is the reference's: a header with filter tabs, a four-cell bento grid
+ * (two wide, two square), captions overlaid on each photograph, a hover zoom, a floating expand
+ * control, and a "See it in your space" conversion card.
+ * ------------------------------------------------------------------------- */
+
+.ngf-gallery-page {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 6vw, 4rem);
+}
+
+.ngf-galb {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/* Header ------------------------------------------------------------------- */
+
+.ngf-galb-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ngf-galb-eyebrow {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.ngf-galb-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h1);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: var(--color-obsidian);
+  text-wrap: balance;
+}
+
+.ngf-galb-intro {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--color-espresso);
+  line-height: 1.55;
+}
+
+/* Filter tabs -------------------------------------------------------------- */
+
+.ngf-galb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.ngf-galb-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 70%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-white);
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-galb-tab-count {
+  color: var(--color-walnut);
+  font-weight: 500;
+}
+
+.ngf-galb-tab[data-active='true'] {
+  background-color: var(--color-obsidian);
+  border-color: var(--color-obsidian);
+  color: var(--color-ivory);
+}
+
+.ngf-galb-tab[data-active='true'] .ngf-galb-tab-count {
+  color: color-mix(in srgb, var(--color-ivory) 75%, transparent);
+}
+
+.ngf-galb-tab:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .ngf-galb-tab:not([data-active='true']):not(:disabled):hover {
+    background-color: var(--color-cream);
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-galb-tab {
+    transition: none;
+  }
+}
+
+/* Bento grid --------------------------------------------------------------- */
+
+.ngf-galb-grid {
+  display: grid;
+  gap: clamp(0.75rem, 1.6vw, 1.1rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .ngf-galb-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+  }
+
+  /* The two "wide" cells span two columns; the square cells fill the third. */
+  .ngf-galb-cell[data-span='wide'] {
+    grid-column: span 2;
+  }
+}
+
+.ngf-galb-cell {
+  min-width: 0;
+}
+
+.ngf-galb-tile {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  background-color: var(--color-cream);
+  box-shadow: var(--shadow-level1);
+  transition:
+    transform var(--dur-normal) var(--ease-standard),
+    box-shadow var(--dur-normal) var(--ease-standard);
+}
+
+.ngf-galb-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+}
+
+.ngf-galb-cell[data-span='wide'] .ngf-galb-frame {
+  aspect-ratio: 16 / 10;
+}
+
+.ngf-galb-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  transition: transform var(--dur-reveal) var(--ease-entrance);
+}
+
+/* Hover: the photograph zooms a touch and the tile lifts. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :where(:not([data-motion='off'])) .ngf-galb-tile:hover,
+  :where(:not([data-motion='off'])) .ngf-galb-tile:focus-within {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  :where(:not([data-motion='off'])) .ngf-galb-tile:hover .ngf-galb-img,
+  :where(:not([data-motion='off'])) .ngf-galb-tile:focus-within .ngf-galb-img {
+    transform: scale(1.05);
+  }
+}
+
+/* Caption overlay: an icon + title + subtitle on a soft dark gradient chip. */
+.ngf-galb-caption {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100% - 2rem);
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-md);
+  background-color: color-mix(in srgb, var(--color-obsidian) 68%, transparent);
+  color: var(--color-ivory);
+  backdrop-filter: blur(6px) saturate(1.2);
+  pointer-events: none;
+}
+
+.ngf-galb-caption-icon {
+  display: inline-flex;
+  flex: none;
+  color: color-mix(in srgb, var(--color-ivory) 85%, transparent);
+}
+
+.ngf-galb-caption-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ngf-galb-caption-title {
+  font-size: var(--text-small);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ngf-galb-caption-sub {
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: color-mix(in srgb, var(--color-ivory) 78%, transparent);
+}
+
+/* Expand control: the circular button top-right that opens the zoom overlay. */
+.ngf-galb-expand {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 60%, transparent);
+  border-radius: var(--radius-pill);
+  background-color: color-mix(in srgb, var(--color-white) 92%, transparent);
+  color: var(--color-obsidian);
+  cursor: pointer;
+  box-shadow: var(--shadow-level1);
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-galb-expand:hover {
+    background-color: var(--color-white);
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-galb-img,
+  .ngf-galb-tile,
+  .ngf-galb-expand {
+    transition: none;
+  }
+}
+
+/* The stretched link covering the tile — beneath the caption and the expand button. */
+.ngf-galb-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.ngf-galb-link:focus-visible {
+  outline: 2px solid var(--color-obsidian);
+  outline-offset: 2px;
+}
+
+/* "See it in your space" conversion card ---------------------------------- */
+
+.ngf-galb-cta {
+  position: relative;
+  display: grid;
+  gap: 1.5rem;
+  padding: clamp(1.75rem, 4vw, 2.75rem);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-cream);
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .ngf-galb-cta {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}
+
+.ngf-galb-cta-title {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h2);
+  letter-spacing: -0.01em;
+  color: var(--color-obsidian);
+}
+
+.ngf-galb-cta-body {
+  margin: 0 0 1.5rem;
+  max-width: 48ch;
+  color: var(--color-espresso);
+  line-height: 1.6;
+}
+
+.ngf-galb-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ngf-galb-cta-primary,
+.ngf-galb-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.7rem 1.4rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-galb-cta-primary {
+  background-color: var(--color-obsidian);
+  color: var(--color-ivory);
+}
+
+.ngf-galb-cta-secondary {
+  border: 1px solid var(--color-taupe);
+  background-color: var(--color-white);
+  color: var(--color-espresso);
+}
+
+@media (hover: hover) {
+  .ngf-galb-cta-primary:hover,
+  .ngf-galb-cta-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-galb-cta-primary:hover {
+    background-color: var(--color-espresso);
+  }
+
+  .ngf-galb-cta-secondary:hover {
+    background-color: var(--color-cream);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-galb-cta-primary,
+  .ngf-galb-cta-secondary {
+    transition: none;
+  }
+}
+
+/* The handwritten script accent, echoing the reference's "Same Comfort / Different Angles". */
+.ngf-galb-cta-script {
+  justify-self: end;
+  align-self: center;
+  color: color-mix(in srgb, var(--color-champagne) 80%, var(--color-walnut));
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.25rem, 2.5vw, 1.9rem);
+  line-height: 1.25;
+  text-align: right;
+}
+
+@media (max-width: 899px) {
+  .ngf-galb-cta-script {
+    display: none;
+  }
+}
+
+/* Feature row (bottom of the page) ---------------------------------------- */
+
+.ngf-gallery-feats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 2rem;
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  border-top: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+}
+
+.ngf-gallery-feats-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ngf-gallery-feat {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ngf-gallery-feat-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-cream);
+  color: var(--color-walnut);
+}
+
+.ngf-gallery-feat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ngf-gallery-feat-title {
+  color: var(--color-obsidian);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ngf-gallery-feat-sub {
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+  line-height: 1.3;
+}
+
+.ngf-gallery-feats-help {
+  margin: 0;
+  color: var(--color-walnut);
+  font-size: var(--text-small);
+}
+
+.ngf-gallery-feats-help a {
+  color: var(--color-obsidian);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}

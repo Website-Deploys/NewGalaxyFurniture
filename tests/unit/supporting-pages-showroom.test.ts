@@ -150,7 +150,7 @@ describe('workshop — an architectural story on drawing-board panels', () => {
   });
 });
 
-describe('gallery — the lookbook grid and the live empty state', () => {
+describe('gallery — per-product boards and the live empty state', () => {
   it('keeps the composed EmptyState empty path with the homepage GallerySection wording', () => {
     expect(GALLERY).toContain('<EmptyState');
     expect(GALLERY).toContain('Photography is in progress');
@@ -159,21 +159,24 @@ describe('gallery — the lookbook grid and the live empty state', () => {
     expect(GALLERY).toContain('<CallLink');
   });
 
-  it('draws the populated path as a lookbook with image-reveal masks and hover zoom', () => {
-    expect(GALLERY).toContain('ngf-lookbook');
-    // The image reveal mask — clip-path only, so the box never resizes.
-    expect(GALLERY).toContain('data-reveal="mask"');
-    // The subtle hover zoom scales the image inside its clipped frame.
-    expect(GALLERY).toMatch(/\.ngf-lookbook-link:hover[\s\S]*?transform: scale\(/);
-    expect(GALLERY).toMatch(/border-radius:\s*var\(--radius-xl\)/);
+  it('draws the populated path as per-product GalleryBoard islands with filter tabs', () => {
+    // One interactive board per product, hydrated when visible.
+    expect(GALLERY).toContain('<GalleryBoard');
+    expect(GALLERY).toContain('client:visible');
+    // Tiles come from the shared server-side assembly, so the derivative ladder stays server-side.
+    expect(GALLERY).toContain('galleryTilesOf');
+    // The "See it in your space" conversion card and the closing feature row.
+    expect(GALLERY).toContain('ngf-gallery-feats');
+    expect(GALLERY).toContain('Contact Us');
   });
 
-  it('links every tile to the product it shows and preserves the image-loading discipline', () => {
-    expect(GALLERY).toContain('href={`/product/${tile.product.slug}`}');
-    expect(GALLERY).toContain('<ResponsiveImage');
-    // The first tile is priority; eagerness is decided by the shared staging helper, not per tile.
-    expect(GALLERY).toContain('priority={index === 0}');
-    expect(GALLERY).toContain('isEagerCard(index)');
+  it('links every tile to the product it shows and prioritises exactly one lead image', () => {
+    // Each board links to its own product page.
+    expect(GALLERY).toContain('productHref={`/product/${board.product.slug}`}');
+    // Only the first board's first tile is the prioritised, preloaded lead image.
+    expect(GALLERY).toContain('leadTileId={boardIndex === 0 ? board.tiles[0]?.id : undefined}');
+    // The preload hint is built from the lead tile itself, so preload and element pair up.
+    expect(GALLERY).toContain('const leadTile = boards[0]?.tiles[0]');
   });
 });
 
