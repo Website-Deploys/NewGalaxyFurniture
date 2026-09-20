@@ -164,7 +164,7 @@ describe('gallery — per-product boards and the live empty state', () => {
     expect(GALLERY).toContain('<GalleryBoard');
     expect(GALLERY).toContain('client:visible');
     // Tiles come from the shared server-side assembly, so the derivative ladder stays server-side.
-    expect(GALLERY).toContain('galleryTilesOf');
+    expect(GALLERY).toContain('resolvableGalleryTilesOf');
     // The "See it in your space" conversion card and the closing feature row.
     expect(GALLERY).toContain('ngf-gallery-feats');
     expect(GALLERY).toContain('Contact Us');

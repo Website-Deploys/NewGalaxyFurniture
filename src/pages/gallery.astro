@@ -25,20 +25,50 @@ import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getCatalogue } from '@/lib/content/catalogue';
 import { getSiteSettings } from '@/lib/content/site';
-import { galleryTilesOf } from '@/lib/products/gallery-tiles';
+import { resolvableGalleryTilesOf } from '@/lib/products/gallery-tiles';
 import { pageMeta } from '@/lib/seo/page';
 import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import '@/styles/editorial.css';
 
 const settings = getSiteSettings();
 const products = await getCatalogue();
 
 /**
- * One board per product that actually has photographs, in catalogue order. A product with no images
- * contributes no board rather than an empty frame.
+ * Static image overrides, read from `public/products/{slug}/` at build time.
+ *
+ * Each file is named by the product image id it stands in for (e.g. `img_h0mv17oeuf.jpeg`), so the
+ * mapping is unambiguous. These are committed, same-origin files that resolve in the browser
+ * without the `/img/**` media bucket — which is what makes the gallery show real photographs even
+ * before the objects are uploaded to the deployed bucket. A product with no such folder simply has
+ * an empty map and falls back to the derivative pipeline.
+ */
+function staticOverridesFor(slug: string): Record<string, string> {
+  const dir = join(process.cwd(), 'public', 'products', slug);
+  const out: Record<string, string> = {};
+  try {
+    for (const file of readdirSync(dir)) {
+      const dot = file.lastIndexOf('.');
+      const id = dot === -1 ? file : file.slice(0, dot);
+      out[id] = `/products/${slug}/${file}`;
+    }
+  } catch {
+    // No folder for this product: no overrides.
+  }
+  return out;
+}
+
+/**
+ * One board per product that has photographs the browser can actually load, in catalogue order.
+ * A product with no resolvable images contributes no board rather than a wall of blurred
+ * placeholders.
  */
 const boards = products
-  .map((product) => ({ product, tiles: galleryTilesOf(product) }))
+  .map((product) => ({
+    product,
+    tiles: resolvableGalleryTilesOf(product, staticOverridesFor(product.slug)),
+  }))
   .filter((board) => board.tiles.length > 0);
 
 const hasImages = boards.length > 0;
@@ -63,7 +93,11 @@ const leadTile = boards[0]?.tiles[0];
 const leadPreload =
   leadTile === undefined
     ? null
-    : { href: leadTile.src, srcset: leadTile.srcSet, sizes: leadTile.sizes };
+    : leadTile.srcSet === leadTile.src
+      ? // A single static file: one candidate, so preload the href alone (a bare srcset with no
+        // width descriptor is invalid in imagesrcset).
+        { href: leadTile.src }
+      : { href: leadTile.src, srcset: leadTile.srcSet, sizes: leadTile.sizes };
 
 const meta = pageMeta(Astro, {
   title: 'Gallery',

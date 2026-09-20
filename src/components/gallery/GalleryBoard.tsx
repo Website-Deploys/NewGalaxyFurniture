@@ -204,8 +204,8 @@ export default function GalleryBoard({
                 <span className="ngf-galb-frame">
                   <img
                     src={tile.src}
-                    srcSet={tile.srcSet}
-                    sizes={tile.sizes}
+                    srcSet={tile.srcSet === tile.src ? undefined : tile.srcSet}
+                    sizes={tile.srcSet === tile.src ? undefined : tile.sizes}
                     width={tile.width}
                     height={tile.height}
                     alt={tile.alt}
