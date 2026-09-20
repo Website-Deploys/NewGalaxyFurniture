@@ -895,41 +895,47 @@ const headingLines =
   }
 
   .ngf-hero-dot {
+    /*
+     * The button is the interactive target. Its height is the project's 44px touch contract
+     * (Requirement 24.3, asserted by the responsive suite's touch-target sweep), which also clears
+     * WCAG 2.5.8 `target-size` (≥24px) as the *real* hit area rather than through a decorative
+     * overlay that pointer and audit tooling do not count. Width tracks the widest pill state so the
+     * dots stay visually tight; the touch contract is about height, the axis a thumb misses on. The
+     * button carries no visible fill — the slim pill a visitor sees is drawn by `::before`, centred
+     * inside this larger transparent target — so the dot looks identical while staying tappable.
+     */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* The visible bar. Its width animates on activation; the button around it does not move. */
+  .ngf-hero-dot::before {
+    content: '';
     display: block;
     width: 0.85rem;
     height: 0.3rem;
-    padding: 0;
-    border: 0;
     border-radius: var(--radius-pill);
     background-color: color-mix(in srgb, var(--color-obsidian) 26%, transparent);
-    cursor: pointer;
     transition:
       width var(--dur-normal) var(--ease-standard),
       background-color var(--dur-fast) var(--ease-standard);
   }
 
-  /* The touch target is a comfortable 44px without enlarging the visible bar (Requirement 24.3). */
-  .ngf-hero-dot::before {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 44px;
-    height: 44px;
-    transform: translate(-50%, -50%);
-    content: '';
-  }
-
-  .ngf-hero-dot {
-    position: relative;
-  }
-
-  .ngf-hero-dot[data-active='true'] {
+  .ngf-hero-dot[data-active='true']::before {
     width: 1.85rem;
     background-color: color-mix(in srgb, var(--color-obsidian) 66%, transparent);
   }
 
   @media (hover: hover) {
-    .ngf-hero-dot:hover {
+    .ngf-hero-dot:hover::before {
       background-color: color-mix(in srgb, var(--color-obsidian) 50%, transparent);
     }
   }
@@ -937,11 +943,12 @@ const headingLines =
   .ngf-hero-dot:focus-visible {
     outline: 2px solid var(--color-obsidian);
     outline-offset: 3px;
+    border-radius: var(--radius-pill);
   }
 
   /* The width animation is a nicety, not information — drop it under reduced motion. */
   @media (prefers-reduced-motion: reduce) {
-    .ngf-hero-dot {
+    .ngf-hero-dot::before {
       transition: none;
     }
   }

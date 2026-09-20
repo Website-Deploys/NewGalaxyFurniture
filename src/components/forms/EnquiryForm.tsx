@@ -189,9 +189,37 @@ export default function EnquiryForm(props: EnquiryFormProps): ReactElement {
   // form and the callback form, and unscoped `useId()` gave both the same field ids — so every
   // label on the second form pointed at the first form's input. See `@/lib/ui/ids`.
   const idPrefix = useScopedId(`ngf-enquiry-${props.type.toLowerCase()}`);
-  const [values, setValues] = useState<TextValues>(EMPTY_VALUES);
+
+  /**
+   * Adopt anything typed before this island hydrated.
+   *
+   * The form is `client:visible`: its markup is server-rendered and usable as plain HTML before
+   * Preact mounts, so a fast visitor — or a test driver — can type into a field in that window.
+   * The lazy initialiser below reads the live DOM once, on the client's first (hydration) render,
+   * *before* the inputs become controlled and get reconciled to state. Seeding state from what the
+   * uncontrolled inputs already hold means that early input survives hydration instead of being
+   * silently cleared (and with it the submitted payload, which reads `values`).
+   *
+   * The ids are the scoped `useId` ids, identical on the server and here by construction, so each
+   * field is found by the same id it was rendered with. On the server there is no `document`, so the
+   * initialiser falls back to empty — the render is unaffected.
+   */
+  const seedFrom = (id: string): string => {
+    if (typeof document === 'undefined') return '';
+    const node = document.getElementById(id);
+    return node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement
+      ? node.value
+      : '';
+  };
+  const [values, setValues] = useState<TextValues>(() => {
+    const seeded = { ...EMPTY_VALUES };
+    for (const key of Object.keys(EMPTY_VALUES) as (keyof TextValues)[]) {
+      seeded[key] = seedFrom(`${idPrefix}-${key}`);
+    }
+    return seeded;
+  });
   const [image, setImage] = useState<File | null>(null);
-  const [honeypot, setHoneypot] = useState('');
+  const [honeypot, setHoneypot] = useState(() => seedFrom(`${idPrefix}-company`));
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [errors, setErrors] = useState<FieldErrors>({});
   const summaryRef = useRef<HTMLParagraphElement | null>(null);
@@ -204,6 +232,21 @@ export default function EnquiryForm(props: EnquiryFormProps): ReactElement {
    * value is never rendered and never changes" out loud.
    */
   const renderedAt = useRef<number>(Date.now());
+
+  /**
+   * Whether this island has hydrated.
+   *
+   * `false` on the server render and on the client's first (hydration) render, then `true` after
+   * mount. It drives the `data-ngf-hydrated` attribute below, which is the honest "this form is now
+   * interactive" signal: the form is `client:visible`, so its controls exist as static HTML before
+   * the JavaScript that makes them work has run, and anything that means to *drive* the form — a
+   * fast visitor's own reflexes aside, chiefly the end-to-end suite — needs a way to wait for that
+   * moment rather than guess at it. A flag flipped in an effect is exactly that moment.
+   */
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   /** Move focus to the failure summary so a keyboard or screen-reader user is told. */
   useEffect(() => {
@@ -286,6 +329,7 @@ export default function EnquiryForm(props: EnquiryFormProps): ReactElement {
       noValidate
       onSubmit={(event) => void onSubmit(event)}
       data-ngf-enquiry-form={props.type}
+      data-ngf-hydrated={hydrated ? 'true' : undefined}
       aria-describedby={failure === null ? undefined : `${idPrefix}-summary`}
     >
       {props.heading !== undefined && <h2 className="ngf-form-heading">{props.heading}</h2>}

@@ -109,8 +109,15 @@ const channels = contactChannels(getSiteSettings());
     font-size: 0.75rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
+    /*
+     * Walnut at full strength, not `opacity: 0.85`. At 12px this label is small text and must clear
+     * 4.5:1 (WCAG 1.4.3); walnut on the ivory/cream/white surfaces it sits on is 5.0–5.8:1 at full
+     * opacity, but fading it to 0.85 blends it toward the background and drops it to ~3.7–4.0:1,
+     * which axe flags as a serious contrast failure on the homepage's number cards and footer. The
+     * muted look is already carried by the walnut token itself, so the opacity bought nothing but a
+     * failing ratio.
+     */
     color: var(--color-walnut);
-    opacity: 0.85;
   }
 
   /*

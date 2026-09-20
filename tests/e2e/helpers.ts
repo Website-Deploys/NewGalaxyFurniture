@@ -325,3 +325,25 @@ export async function waitForCatalogueControls(page: Page): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Wait until an enquiry form has hydrated before driving it.
+ *
+ * Every enquiry form is a `client:visible` island: its controls are server-rendered as static
+ * HTML and only become interactive once Preact mounts, which does not happen until the island
+ * scrolls into view and its chunk loads. A spec that fills or submits the form before that moment
+ * is racing hydration — input typed too early, or a submit clicked too early, reaches inert markup
+ * — which is a fact about how the page loads, not a defect in it. The form flips
+ * `data-ngf-hydrated="true"` on mount; waiting for it here is the same "wait for the island to be
+ * ready" pattern `waitForCatalogueControls` and `focusSearch` already use for the other islands.
+ *
+ * Returns the form locator so callers can chain.
+ */
+export async function waitForEnquiryForm(page: Page, type = 'CONTACT'): Promise<Locator> {
+  const form = page.locator(`[data-ngf-enquiry-form="${type}"]`);
+  await form.scrollIntoViewIfNeeded();
+  await expect(
+    page.locator(`[data-ngf-enquiry-form="${type}"][data-ngf-hydrated="true"]`),
+  ).toHaveCount(1, { timeout: 20_000 });
+  return form;
+}

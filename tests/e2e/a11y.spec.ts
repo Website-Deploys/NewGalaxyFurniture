@@ -1,7 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { PUBLIC_PAGES, desktopSearch, focusSearch, waitForCatalogueControls } from './helpers';
+import {
+  PUBLIC_PAGES,
+  desktopSearch,
+  focusSearch,
+  waitForCatalogueControls,
+  waitForEnquiryForm,
+} from './helpers';
 
 /**
  * The accessibility pass.
@@ -334,6 +340,9 @@ test('every form control is labelled and every validation message is associated'
   page,
 }) => {
   await page.goto('/contact', { waitUntil: 'load' });
+  // Wait for the `client:visible` enquiry island to hydrate before driving it: clicking submit on
+  // the not-yet-interactive markup would reach an inert button and never raise the error summary.
+  await waitForEnquiryForm(page);
   const form = page.locator('[data-ngf-enquiry-form]').first();
   await expect(form).toBeVisible();
 
