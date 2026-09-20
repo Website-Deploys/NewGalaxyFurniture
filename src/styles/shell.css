@@ -434,7 +434,7 @@
  * all still work — so this is progressive enhancement, not a dependency.
  */
 .ngf-shop-mega:has(
-    .ngf-shop-row:nth-of-type(1):hover,
+    .ngf-shop-list li:nth-child(1) .ngf-shop-row:hover,
     .ngf-shop-list li:nth-child(1) .ngf-shop-row:focus-visible
   )
   .ngf-shop-preview:nth-of-type(1),
