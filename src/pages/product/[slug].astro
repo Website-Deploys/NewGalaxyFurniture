@@ -445,24 +445,67 @@ const meta = pageMeta(Astro, {
           </div>
         )
       }
-      <div class="ngf-pdp-quote">
-        {
-          /*
-          The one primitive on a product page. Decorative — the specifications above it are the real
-          statement about how the piece is made, and this is the visual language they sit in rather
-          than a second source of that information.
-        */
-        }
-        <span class="ngf-pdp-detail">
+
+      {
+        /*
+        A quiet divider between "A Closer Look" and the quote, so the transition reads as one
+        intentional flow rather than two stacked sections. Decorative only.
+      */
+      }
+      <div class="ngf-quote-divider" aria-hidden="true">
+        <span class="ngf-quote-divider-line"></span>
+        <span class="ngf-quote-divider-mark">
           <CraftsmanshipLines strokeWidth={1} trigger="none" />
         </span>
-        <EnquiryIsland
-          form="quote"
-          heading="Get a quote for this piece"
-          context={{ kind: 'product', productName: product.name, sku: product.sku }}
-          productSlug={product.slug}
-          productName={product.name}
-        />
+        <span class="ngf-quote-divider-line"></span>
+      </div>
+
+      {
+        /*
+        The quote, redesigned as a premium two-column band: a large photograph of the piece with a
+        caption on the left, the form on the right, one elegant heading and a short line of copy
+        above both. The `EnquiryIsland` is unchanged — same form, same fields, same submission —
+        its own heading is suppressed here because the section supplies one.
+      */
+      }
+      <div class="ngf-quote">
+        <div class="ngf-quote-head">
+          <h2 id="ngf-pdp-quote-heading" class="ngf-quote-title">Get a quote for this piece</h2>
+          <p class="ngf-quote-lead">
+            Tell us what you have in mind. Share a few details and we'll get back to you with a
+            personalised quote.
+          </p>
+        </div>
+
+        <div class="ngf-quote-body">
+          {
+            bannerImage !== null && (
+              <figure class="ngf-quote-figure">
+                <span class="ngf-quote-media">
+                  <img
+                    src={bannerImage.src}
+                    width={bannerImage.record.width}
+                    height={bannerImage.record.height}
+                    alt={bannerImage.record.alt}
+                    loading="lazy"
+                    decoding="async"
+                    class="ngf-quote-image"
+                  />
+                </span>
+                <figcaption class="ngf-quote-caption">{product.name}</figcaption>
+              </figure>
+            )
+          }
+
+          <div class="ngf-quote-form">
+            <EnquiryIsland
+              form="quote"
+              context={{ kind: 'product', productName: product.name, sku: product.sku }}
+              productSlug={product.slug}
+              productName={product.name}
+            />
+          </div>
+        </div>
       </div>
     </section>
 
@@ -484,21 +527,10 @@ const meta = pageMeta(Astro, {
 
 <style>
   .ngf-pdp-enquiry {
-    display: grid;
-    gap: 2rem;
-    padding-block: clamp(2rem, 6vh, 4rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5rem, 6vh, 4.5rem);
+    padding-block: clamp(2.5rem, 6vh, 4.5rem);
     border-top: 1px solid var(--color-taupe);
-  }
-
-  @media (min-width: 1024px) {
-    .ngf-pdp-enquiry {
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-      align-items: start;
-    }
-  }
-
-  .ngf-pdp-detail {
-    display: block;
-    color: var(--color-taupe);
   }
 </style>

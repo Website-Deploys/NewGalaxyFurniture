@@ -90,6 +90,8 @@ interface FieldSpec {
   autoComplete?: string;
   hint?: string;
   inputMode?: 'text' | 'tel' | 'numeric';
+  /** Presentational placeholder text. Never a substitute for the label. */
+  placeholder?: string;
 }
 
 const FIELDS: Record<FieldKey, FieldSpec> = {
@@ -99,6 +101,7 @@ const FIELDS: Record<FieldKey, FieldSpec> = {
     required: true,
     maxLength: LEAD_LIMITS.nameMax,
     autoComplete: 'name',
+    placeholder: 'e.g. Priya Sharma',
   },
   phone: {
     label: 'Phone number',
@@ -108,6 +111,7 @@ const FIELDS: Record<FieldKey, FieldSpec> = {
     autoComplete: 'tel',
     inputMode: 'tel',
     hint: 'A 10-digit Indian mobile number, with or without +91. We reply on WhatsApp or by phone.',
+    placeholder: '+91 98765 43210',
   },
   requirement: {
     label: 'What do you need made?',
@@ -123,6 +127,7 @@ const FIELDS: Record<FieldKey, FieldSpec> = {
     required: false,
     maxLength: LEAD_LIMITS.budgetMax,
     hint: 'A range is fine. It helps us suggest something realistic rather than guessing.',
+    placeholder: 'e.g. ₹40,000 – ₹50,000',
   },
   dimensions: {
     label: 'Dimensions (optional)',
@@ -130,6 +135,7 @@ const FIELDS: Record<FieldKey, FieldSpec> = {
     required: false,
     maxLength: LEAD_LIMITS.dimensionsMax,
     hint: 'Length × width × height, or the largest size that will fit.',
+    placeholder: 'e.g. 7 ft × 3 ft × 3 ft',
   },
   message: {
     label: 'Message',
@@ -138,6 +144,7 @@ const FIELDS: Record<FieldKey, FieldSpec> = {
     rows: 4,
     maxLength: LEAD_LIMITS.messageMax,
     hint: `At least ${String(LEAD_LIMITS.messageMin)} characters.`,
+    placeholder: 'Tell us about the space, colours, or anything you have in mind…',
   },
   image: {
     label: 'A photograph or sketch (optional)',
@@ -396,6 +403,7 @@ export default function EnquiryForm(props: EnquiryFormProps): ReactElement {
                 rows={spec.rows ?? 3}
                 maxLength={spec.maxLength}
                 required={spec.required}
+                placeholder={spec.placeholder}
                 value={values[key as Exclude<FieldKey, 'image'>]}
                 aria-invalid={invalid || undefined}
                 aria-describedby={describedBy === '' ? undefined : describedBy}
@@ -432,6 +440,7 @@ export default function EnquiryForm(props: EnquiryFormProps): ReactElement {
                 autoComplete={spec.autoComplete}
                 maxLength={spec.maxLength}
                 required={spec.required}
+                placeholder={spec.placeholder}
                 value={values[key as Exclude<FieldKey, 'image'>]}
                 aria-invalid={invalid || undefined}
                 aria-describedby={describedBy === '' ? undefined : describedBy}

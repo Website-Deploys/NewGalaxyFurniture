@@ -2682,12 +2682,206 @@
   object-fit: cover;
 }
 
-/* The quote column keeps the CraftsmanshipLines primitive above the form on a phone. */
-.ngf-pdp-quote {
+/* Quote section — premium two-column band ---------------------------------- *
+ *
+ * A centred band with a comfortable measure: an elegant serif heading and a short line of copy,
+ * then a large photograph of the piece beside the form. The form island is unchanged; these rules
+ * only restyle its controls within `.ngf-quote` so the presentation reads as a showroom enquiry
+ * rather than a generic contact form. Everything animates opacity/transform only.
+ */
+
+/* The divider between "A Closer Look" and the quote — a hairline with the technical mark centred. */
+.ngf-quote-divider {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(100%, 60rem);
+  margin-inline: auto;
+}
+
+.ngf-quote-divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: color-mix(in srgb, var(--color-taupe) 70%, transparent);
+}
+
+.ngf-quote-divider-mark {
+  display: block;
+  width: 2.5rem;
+  color: var(--color-taupe);
+}
+
+.ngf-quote {
+  width: min(100%, 68rem);
+  margin-inline: auto;
+}
+
+.ngf-quote-head {
+  text-align: center;
+  max-width: 46ch;
+  margin-inline: auto;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.ngf-quote-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h1);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--color-obsidian);
+  text-wrap: balance;
+}
+
+.ngf-quote-lead {
+  margin: 0.85rem auto 0;
+  color: var(--color-espresso);
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+/* The two columns: photograph + caption on the left, form on the right. Stacks on a phone. */
+.ngf-quote-body {
+  display: grid;
+  gap: clamp(1.75rem, 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .ngf-quote-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.ngf-quote-figure {
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.85rem;
+}
+
+.ngf-quote-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.ngf-quote-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+/* On desktop the photograph holds beside the form as it scrolls. */
+@media (min-width: 900px) {
+  .ngf-quote-figure {
+    position: sticky;
+    top: 1.5rem;
+  }
+
+  .ngf-quote-media {
+    aspect-ratio: 3 / 4;
+  }
+}
+
+.ngf-quote-caption {
+  color: var(--color-walnut);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-h3);
+  line-height: 1.2;
+}
+
+/* The form column. Kept visually compact and premium. */
+.ngf-quote-form {
   min-width: 0;
+}
+
+/* The island's form fills its column here rather than the shared 34rem cap. */
+.ngf-quote-form .ngf-form {
+  max-width: none;
+  gap: 1rem;
+}
+
+/* Taller, cleaner inputs with a soft radius and a refined focus ring. */
+.ngf-quote-form .ngf-field input,
+.ngf-quote-form .ngf-field textarea {
+  min-height: 52px;
+  padding: 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 85%, transparent);
+  border-radius: var(--radius-md);
+  background-color: var(--color-white);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-quote-form .ngf-field textarea {
+  min-height: 120px;
+}
+
+.ngf-quote-form .ngf-field input:focus-visible,
+.ngf-quote-form .ngf-field textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-espresso);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-champagne) 30%, transparent);
+}
+
+.ngf-quote-form .ngf-field input::placeholder,
+.ngf-quote-form .ngf-field textarea::placeholder {
+  color: color-mix(in srgb, var(--color-walnut) 70%, transparent);
+}
+
+.ngf-quote-form .ngf-field-label {
+  font-size: var(--text-small);
+  letter-spacing: 0.02em;
+}
+
+/* A wide, prominent dark button with a subtle lift on hover. */
+.ngf-quote-form .ngf-form-actions {
+  align-items: stretch;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.ngf-quote-form .ngf-form-submit {
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body);
+  letter-spacing: 0.03em;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-quote-form .ngf-form-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-level2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ngf-quote-form .ngf-form-submit {
+    transition: background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-quote-form .ngf-form-submit:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* The reassurance line under the button, centred and quiet. */
+.ngf-quote-form .ngf-form-note {
+  text-align: center;
+  color: var(--color-walnut);
 }
 
 /* Related section heading row: heading left, explore-more link right. */
