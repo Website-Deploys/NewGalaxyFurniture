@@ -2,7 +2,7 @@
  * The Content-Security-Policy audit of the build output.
  *
  * The design requires zero CSP violations on every public page, and the policy is strict enough
- * that a single carelessly added tag breaks a page rather than degrading it — an inline script under
+ * that a single carelessly added tag breaks a page rather than degrading it â€” an inline script under
  * `script-src 'self'` does not warn, it does not run. Waiting for a browser to tell us that is
  * waiting until after deploy, so this reads the artifact and fails the build instead.
  *
@@ -11,7 +11,7 @@
  * | Directive | Violation this looks for |
  * |---|---|
  * | `script-src` | a `<script>` whose inline body hashes to something not in `FRAMEWORK_INLINE_SCRIPTS`, or a `<script src>` on another origin |
- * | `script-src 'self'` | an inline event-handler attribute (`onclick=`, `onerror=`, …) |
+ * | `script-src 'self'` | an inline event-handler attribute (`onclick=`, `onerror=`, â€¦) |
  * | *any* | a `javascript:` URL in `href`, `src`, `action`, or `formaction` |
  * | `object-src 'none'` | `<object>` or `<embed>` |
  * | `frame-src 'none'` | `<iframe>` |
@@ -20,20 +20,20 @@
  * | `style-src`, `font-src`, `img-src` | a cross-origin stylesheet, font, or image (`data:` is allowed for images) |
  *
  * The inline-script check is a hash check rather than a ban, because Astro's island bootstrap is
- * emitted as literal inline `<script>` elements with no way to externalise it — see
+ * emitted as literal inline `<script>` elements with no way to externalise it â€” see
  * `src/lib/security/inline-script-hashes.ts` for why hashing those four is the only honest option.
  * The check runs in both directions: an inline script whose hash is not on the list is a violation,
  * and the `client:load` entry (used only by the server-rendered admin, which never appears in
- * `dist/client/`) is re-derived from the installed Astro package and must still match — so an Astro
+ * `dist/`) is re-derived from the installed Astro package and must still match â€” so an Astro
  * upgrade that changes a byte fails here rather than in production.
  *
  * Two things are deliberately **not** violations. A `<script type="application/ld+json">` (or
- * `application/json`) block is a data block: it is not executable, and CSP does not govern it —
+ * `application/json`) block is a data block: it is not executable, and CSP does not govern it â€”
  * that is what makes the structured data compatible with the strictest `script-src`. And an inline
  * `style` attribute or a `<style>` element is allowed, because `style-src` carries
  * `'unsafe-inline'` for exactly one reason: Astro inlines critical and scoped CSS.
  *
- * Runs in `postbuild`. Usage: tsx scripts/audit-csp.ts [dist/client]
+ * Runs in `postbuild`. Usage: tsx scripts/audit-csp.ts [dist]
  *
  * Design: Deployment. Requirements: 25.9, 25.10.
  */
@@ -46,7 +46,7 @@ import { fileURLToPath } from 'node:url';
 import { FRAMEWORK_INLINE_SCRIPTS } from '../src/lib/security/inline-script-hashes';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist', 'client');
+const DEFAULT_DIR = join(ROOT, 'dist');
 
 /** Script types that are data, not code. CSP does not apply to these. */
 const DATA_SCRIPT_TYPES = [
@@ -74,8 +74,8 @@ const ALLOWED_HASHES = new Map(
 /**
  * The `client:load` loader, re-derived from the installed Astro package.
  *
- * It is the one allowlisted script that never appears in `dist/client/` — only the server-rendered
- * admin uses `client:load` — so the HTML scan cannot cover it. Astro exports these loaders as a
+ * It is the one allowlisted script that never appears in `dist/` â€” only the server-rendered
+ * admin uses `client:load` â€” so the HTML scan cannot cover it. Astro exports these loaders as a
  * single-template-literal module with no interpolation and no escapes, so reading between the first
  * and last backtick reproduces the exact string the renderer will inline. If Astro ever changes that
  * shape, this returns something that is not on the list and the audit fails loudly, which is the
@@ -143,7 +143,7 @@ export function auditHtml(html: string, page: string): CspViolation[] {
         add(
           'script-src',
           `inline script with no allowlisted hash (${String(body.length)} chars, ` +
-            `${sha256Of(body)}): ${body.trim().slice(0, 80)}…`,
+            `${sha256Of(body)}): ${body.trim().slice(0, 80)}â€¦`,
         );
       }
       continue;
@@ -222,7 +222,9 @@ function main(): void {
   try {
     if (!statSync(target).isDirectory()) throw new Error('not a directory');
   } catch {
-    console.error(`[audit-csp] no build output at ${relative(ROOT, target)} — run the build first`);
+    console.error(
+      `[audit-csp] no build output at ${relative(ROOT, target)} â€” run the build first`,
+    );
     process.exitCode = 1;
     return;
   }
@@ -237,14 +239,14 @@ function main(): void {
       directive: 'script-src',
       detail:
         `the installed Astro's client:load loader hashes to ${derived.hash}, which is not in ` +
-        'FRAMEWORK_INLINE_SCRIPTS — the admin would stop hydrating. Update the list after ' +
+        'FRAMEWORK_INLINE_SCRIPTS â€” the admin would stop hydrating. Update the list after ' +
         'reviewing what changed.',
     });
   }
 
   if (violations.length === 0) {
     console.log(
-      `[audit-csp] ${String(pages)} page(s): 0 violations of the deployed policy — every inline ` +
+      `[audit-csp] ${String(pages)} page(s): 0 violations of the deployed policy â€” every inline ` +
         `script hashes to one of the ${String(ALLOWED_HASHES.size)} allowlisted framework ` +
         'bootstraps, no inline handler, no cross-origin subresource, no frame or object.',
     );
@@ -253,7 +255,7 @@ function main(): void {
 
   console.error(`[audit-csp] FAILED with ${String(violations.length)} violation(s):`);
   for (const violation of violations) {
-    console.error(`  ${violation.page} — ${violation.directive}: ${violation.detail}`);
+    console.error(`  ${violation.page} â€” ${violation.directive}: ${violation.detail}`);
   }
   console.error(
     '\nThe policy is not the thing to change. Move the code into an external same-origin module, ' +

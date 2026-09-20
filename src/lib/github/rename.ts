@@ -23,7 +23,7 @@
  * Requirements: 12.11, 12.12, 17.16.
  */
 
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 import { AppError, ERROR_CODES } from '../errors';
 import { applyFieldPatch, serializeContentJson } from './serialize';
@@ -42,7 +42,7 @@ export function productUrlPath(slug: string): string {
 }
 
 export interface RenameProductInput {
-  drafts: KVNamespace;
+  drafts: KeyValueStore;
   client: GitHubContentClient;
   /** The product as stored, before the rename. */
   current: Product;

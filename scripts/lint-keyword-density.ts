@@ -8,13 +8,13 @@
  * repeat it.
  *
  * **What it measures, and why that scope.** The text inside `<main>`, with `<script>`, `<style>`,
- * and every tag stripped — so the page's own words, not the shell's. The header and the footer
+ * and every tag stripped â€” so the page's own words, not the shell's. The header and the footer
  * carry the business name on every page by design (a wordmark, a navigation, a copyright line);
  * counting them would produce an identical, unavoidable baseline on all twenty pages and would say
  * nothing about whether any page's copy was stuffed. `<main>` is exactly the region an author
  * controls, which is exactly the region the rule is about.
  *
- * **How density is computed.** For each target phrase: `occurrences × words-in-phrase / total
+ * **How density is computed.** For each target phrase: `occurrences Ã— words-in-phrase / total
  * words`. A three-word phrase appearing twice in a 300-word page is 2%. Phrase matching is
  * case-insensitive and whitespace-normalised, and bounded by word edges so "Bengaluru" inside
  * "Bengalurus" does not count.
@@ -26,7 +26,7 @@
  *
  * Usage: tsx scripts/lint-keyword-density.ts [directory]
  *
- * Design: SEO and Structured Data → Local SEO content strategy.
+ * Design: SEO and Structured Data â†’ Local SEO content strategy.
  * Requirements: 23.17.
  */
 
@@ -35,7 +35,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist', 'client');
+const DEFAULT_DIR = join(ROOT, 'dist');
 
 /** The ceiling, as a fraction. */
 export const MAX_DENSITY = 0.02;
@@ -44,7 +44,7 @@ export const MAX_DENSITY = 0.02;
  * The target phrases from the design's local-SEO strategy.
  *
  * Both spellings of the city are listed because both are searched for, and each is counted
- * separately — a page may legitimately name one of them once.
+ * separately â€” a page may legitimately name one of them once.
  */
 export const TARGET_PHRASES: readonly string[] = [
   'New Galaxy Furniture',
@@ -159,7 +159,7 @@ function main(): void {
     info = statSync(target);
   } catch {
     console.log(
-      `[keyword-density] no build output at ${relative(ROOT, target)} — nothing to measure yet ` +
+      `[keyword-density] no build output at ${relative(ROOT, target)} â€” nothing to measure yet ` +
         '(the postbuild hook runs this against real output).',
     );
     return;
@@ -183,7 +183,7 @@ function main(): void {
   console.error('[keyword-density] FAILED');
   for (const finding of findings) {
     console.error(
-      `  ${finding.page}: "${finding.phrase}" ×${String(finding.occurrences)} in ` +
+      `  ${finding.page}: "${finding.phrase}" Ã—${String(finding.occurrences)} in ` +
         `${String(finding.totalWords)} words = ${(finding.density * 100).toFixed(2)}% ` +
         `(ceiling ${String(MAX_DENSITY * 100)}%)`,
     );

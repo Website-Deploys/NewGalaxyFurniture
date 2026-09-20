@@ -38,7 +38,7 @@
  */
 
 import type { APIContext } from 'astro';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 import { consumeNamedLimit, hashIdentifier } from '@/lib/auth/rate-limit';
 import { clientAddress } from '@/lib/auth/guard';
@@ -266,7 +266,7 @@ export async function POST(context: APIContext): Promise<Response> {
   // whole submission (6.18) and a stored key always refers to an object that exists.
   let imageKey: string | null = null;
   if (submission.image !== null) {
-    let bucket: R2Bucket;
+    let bucket: ObjectBucket;
     try {
       bucket = getR2(context);
     } catch (error) {

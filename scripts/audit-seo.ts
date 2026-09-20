@@ -2,7 +2,7 @@
  * The build-output SEO audit.
  *
  * `buildPageMeta` guarantees the *shape* of a page's metadata; it cannot guarantee the properties
- * that are only true of the set — that no two pages share a title, that every indexable page is in
+ * that are only true of the set â€” that no two pages share a title, that every indexable page is in
  * the sitemap, that a canonical points at the page it is on. Those are cross-page invariants and
  * this is where they are checked, against the artifact that actually deploys.
  *
@@ -10,7 +10,7 @@
  *
  * - exactly one `<title>`, at most 60 characters after entity decoding;
  * - exactly one `<meta name="description">`, at most 155 characters;
- * - exactly one `<link rel="canonical">`, absolute, and pointing at *this* page's own path — a
+ * - exactly one `<link rel="canonical">`, absolute, and pointing at *this* page's own path â€” a
  *   canonical that names another page silently de-indexes this one;
  * - every `application/ld+json` block parses, and carries `@context` and `@type`.
  *
@@ -22,10 +22,10 @@
  *   catches a new page that nobody added to `STATIC_SITEMAP_PATHS`.
  *
  * Pages carrying `noindex` are exempt from the uniqueness and sitemap rules and required to be
- * absent from the sitemap — which is what makes the `/404` and preview exemptions explicit rather
+ * absent from the sitemap â€” which is what makes the `/404` and preview exemptions explicit rather
  * than forgotten.
  *
- * Runs in `postbuild`. Usage: tsx scripts/audit-seo.ts [dist/client]
+ * Runs in `postbuild`. Usage: tsx scripts/audit-seo.ts [dist]
  *
  * Design: SEO and Structured Data.
  * Requirements: 23.1, 23.2, 23.3, 23.12, 23.15.
@@ -36,7 +36,7 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist', 'client');
+const DEFAULT_DIR = join(ROOT, 'dist');
 
 const TITLE_MAX = 60;
 const DESCRIPTION_MAX = 155;
@@ -68,7 +68,7 @@ function htmlFilesUnder(directory: string): string[] {
   return found;
 }
 
-/** `about/index.html` → `/about`; `index.html` → `/`; `404.html` → `/404`. */
+/** `about/index.html` â†’ `/about`; `index.html` â†’ `/`; `404.html` â†’ `/404`. */
 export function routePathOf(relativeFile: string): string {
   const parts = relativeFile.split(sep);
   const last = parts.pop() ?? '';
@@ -256,7 +256,9 @@ function main(): void {
   try {
     if (!statSync(target).isDirectory()) throw new Error('not a directory');
   } catch {
-    console.error(`[audit-seo] no build output at ${relative(ROOT, target)} — run the build first`);
+    console.error(
+      `[audit-seo] no build output at ${relative(ROOT, target)} â€” run the build first`,
+    );
     process.exitCode = 1;
     return;
   }

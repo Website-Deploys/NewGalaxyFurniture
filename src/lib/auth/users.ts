@@ -15,7 +15,7 @@
  * Requirements: 10.4, 10.13, 25.3.
  */
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { SqlDatabase } from '@/lib/runtime/types';
 
 import { isRole, type Role } from './permissions';
 
@@ -63,7 +63,7 @@ export function normalizeEmail(email: string): string {
  * indistinguishable to the caller and therefore to the client.
  */
 export async function findAdminUserWithHash(
-  db: D1Database,
+  db: SqlDatabase,
   email: string,
 ): Promise<{ user: AdminUser; passwordHash: string } | null> {
   const row = await db
@@ -80,7 +80,7 @@ export async function findAdminUserWithHash(
 }
 
 /** The account behind a session, for the `Actor:` commit trailer and the session probe. */
-export async function findAdminUserById(db: D1Database, id: string): Promise<AdminUser | null> {
+export async function findAdminUserById(db: SqlDatabase, id: string): Promise<AdminUser | null> {
   const row = await db
     .prepare(
       'SELECT id, email, password_hash, role, status, created_at, last_login_at ' +
@@ -92,7 +92,7 @@ export async function findAdminUserById(db: D1Database, id: string): Promise<Adm
 }
 
 export async function recordSuccessfulLogin(
-  db: D1Database,
+  db: SqlDatabase,
   id: string,
   at: string = new Date().toISOString(),
 ): Promise<void> {
@@ -106,7 +106,7 @@ export async function recordSuccessfulLogin(
  * available and has already been proved correct.
  */
 export async function updatePasswordHash(
-  db: D1Database,
+  db: SqlDatabase,
   id: string,
   passwordHash: string,
 ): Promise<void> {

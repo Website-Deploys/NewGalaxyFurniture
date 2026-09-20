@@ -11,7 +11,7 @@ import { derivativeWidthsFor, jpegFallbackWidthFor } from '@/lib/images/srcset';
 import { sniffImageType } from '@/lib/images/sniff';
 import { validateUpload } from '@/lib/images/validate';
 import { fileFrom, makePng, makeRgba, nodeCodec, nodeCodecWithoutAvif } from '../fixtures/images';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 /**
  * Derivative generation against the **real** codec.
@@ -26,7 +26,7 @@ import type { R2Bucket } from '@cloudflare/workers-types';
 
 /** An in-memory stand-in for R2 with the two methods the pipeline uses. */
 function memoryBucket(): {
-  bucket: R2Bucket;
+  bucket: ObjectBucket;
   objects: Map<string, { bytes: Uint8Array; contentType?: string }>;
 } {
   const objects = new Map<string, { bytes: Uint8Array; contentType?: string }>();
@@ -44,7 +44,7 @@ function memoryBucket(): {
       });
       return undefined;
     },
-  } as unknown as R2Bucket;
+  } as unknown as ObjectBucket;
   return { bucket, objects };
 }
 
@@ -52,13 +52,13 @@ const PRODUCT_ID = 'p_abcdefghij';
 const IMAGE_ID = 'img_abcdefghij';
 
 describe('the width ladder', () => {
-  it('offers the design’s widths and never one above the original', () => {
+  it('offers the designâ€™s widths and never one above the original', () => {
     expect(derivativeWidthsFor(2400)).toStrictEqual([320, 480, 640, 960, 1280, 1600, 2000]);
     expect(derivativeWidthsFor(1000)).toStrictEqual([320, 480, 640, 960]);
     expect(derivativeWidthsFor(800)).toStrictEqual([320, 480, 640]);
   });
 
-  it('falls back to the image’s own width when it is narrower than the smallest rung', () => {
+  it('falls back to the imageâ€™s own width when it is narrower than the smallest rung', () => {
     // Below the 800 px upload minimum this cannot happen in practice; the ladder is still total
     // so a `srcset` can never come out empty.
     expect(derivativeWidthsFor(200)).toStrictEqual([200]);
@@ -173,7 +173,7 @@ describe('the stored original is sanitized, not the uploaded bytes', () => {
     const jpegSniff = sniffImageType(jpeg.bytes.subarray(0, 32));
     expect(jpegSniff.ok && jpegSniff.type.format).toBe('jpeg');
 
-    // A PNG or AVIF original is stored as WebP, and the record's `mime` says so — the
+    // A PNG or AVIF original is stored as WebP, and the record's `mime` says so â€” the
     // substitution is explicit rather than implied by an extension.
     for (const format of ['png', 'webp', 'avif'] as const) {
       const stored = await sanitizeOriginal(codec, raw, format);
@@ -189,7 +189,7 @@ describe('the stored original is sanitized, not the uploaded bytes', () => {
     const payload = new Uint8Array(Buffer.from('<?php system($_GET[0]); ?>', 'ascii'));
     const polyglot = new Uint8Array([...png, ...payload]);
 
-    // The file still sniffs as a PNG and still validates — appending bytes to a PNG does not
+    // The file still sniffs as a PNG and still validates â€” appending bytes to a PNG does not
     // make it not a PNG. What matters is that the *stored* object is a re-encode.
     const outcome = await validateUpload(
       fileFrom('polyglot.png', 'image/png', polyglot),
@@ -208,7 +208,7 @@ describe('the stored original is sanitized, not the uploaded bytes', () => {
   }, 120_000);
 });
 
-describe('AVIF, which the design’s named codec cannot do on its own', () => {
+describe('AVIF, which the designâ€™s named codec cannot do on its own', () => {
   it('round-trips: an AVIF upload decodes, and an AVIF derivative is real AVIF', async () => {
     const codec = await nodeCodec();
     expect(codec.formats).toContain('avif');

@@ -25,7 +25,7 @@
  * Requirements: 10.1, 10.8, 10.9, 11.5, 12.10, 25.4.
  */
 
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 import type { z } from 'zod';
 
 import { ERROR_CODES, errorResponse } from '../errors';
@@ -51,7 +51,7 @@ export type GuardOutcome =
 export interface GuardInput {
   request: Request;
   /** KV `SESSIONS`. */
-  sessions: KVNamespace;
+  sessions: KeyValueStore;
   /** The deployment origin — the scheme and host of `PUBLIC_SITE_URL`, nothing hard-coded. */
   expectedOrigin: string;
   now?: number;
@@ -193,7 +193,7 @@ export async function evaluateGuard(input: GuardInput): Promise<GuardOutcome> {
  *
  * Structural, not `APIContext` itself, so the guard can be exercised without
  * constructing an Astro context. `locals` is `unknown` because nothing here reads it:
- * bindings come from `cloudflare:workers` via `src/lib/env.ts`.
+ * bindings come from the environment via `src/lib/env.ts`.
  */
 interface AstroLikeContext {
   request: Request;
@@ -213,7 +213,7 @@ export async function requireAdmin(
   context: AstroLikeContext,
   permission?: Permission,
 ): Promise<GuardOutcome> {
-  let sessions: KVNamespace;
+  let sessions: KeyValueStore;
   let expectedOrigin: string;
   try {
     sessions = getKV(context, 'SESSIONS');
@@ -267,7 +267,12 @@ export async function readValidatedJson<T>(
   return { ok: false, response: errorResponse(ERROR_CODES.VALIDATION_FAILED, { fields }) };
 }
 
-/** The client address, as Cloudflare reports it. `unknown` keeps keys well-formed. */
+/** The client address, from Netlify's forwarding headers. `unknown` keeps keys well-formed. */
 export function clientAddress(request: Request): string {
-  return request.headers.get('cf-connecting-ip') ?? request.headers.get('x-real-ip') ?? 'unknown';
+  return (
+    request.headers.get('x-nf-client-connection-ip') ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown'
+  );
 }

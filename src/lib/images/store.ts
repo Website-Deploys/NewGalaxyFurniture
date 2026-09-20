@@ -15,7 +15,7 @@
  * Requirements: 15.7, 15.16.
  */
 
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 import { deletedKey, imagePrefix, IMAGE_CACHE_CONTROL } from './srcset';
 
@@ -26,7 +26,7 @@ export interface StoredObject {
 }
 
 /** Write one object with the immutable cache header baked into its metadata. */
-export async function putImageObject(bucket: R2Bucket, object: StoredObject): Promise<void> {
+export async function putImageObject(bucket: ObjectBucket, object: StoredObject): Promise<void> {
   await bucket.put(object.key, object.bytes, {
     httpMetadata: {
       contentType: object.contentType,
@@ -37,7 +37,7 @@ export async function putImageObject(bucket: R2Bucket, object: StoredObject): Pr
 
 /** Every key under one image's prefix, following the list cursor to the end. */
 export async function listImageKeys(
-  bucket: R2Bucket,
+  bucket: ObjectBucket,
   productId: string,
   imageId: string,
 ): Promise<string[]> {
@@ -68,7 +68,7 @@ export interface SoftDeleteResult {
  * rather than lost.
  */
 export async function softDeleteImage(
-  bucket: R2Bucket,
+  bucket: ObjectBucket,
   productId: string,
   imageId: string,
 ): Promise<SoftDeleteResult> {
@@ -101,7 +101,7 @@ export async function softDeleteImage(
 }
 
 /** Restore a soft-deleted image, for the recovery path the 30-day window exists for. */
-export async function restoreImage(bucket: R2Bucket, key: string): Promise<boolean> {
+export async function restoreImage(bucket: ObjectBucket, key: string): Promise<boolean> {
   const object = await bucket.get(deletedKey(key));
   if (object === null) return false;
   const bytes = new Uint8Array(await object.arrayBuffer());

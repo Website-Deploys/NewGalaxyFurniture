@@ -30,7 +30,7 @@ import { sanitizeOriginal } from '@/lib/images/derivatives';
 import { putImageObject } from '@/lib/images/store';
 import { validateUpload, type UploadCandidate, type UploadError } from '@/lib/images/validate';
 import type { ImageCodec, RawImage } from '@/lib/images/codec';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 /**
  * The prefix quarantined enquiry attachments live under.
@@ -63,7 +63,7 @@ export type EnquiryImageResult =
  * fails, so a rejected image leaves no bytes behind.
  */
 export async function storeEnquiryImage(
-  bucket: R2Bucket,
+  bucket: ObjectBucket,
   codec: ImageCodec,
   leadId: string,
   file: UploadCandidate,

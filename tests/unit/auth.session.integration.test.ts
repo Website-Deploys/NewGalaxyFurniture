@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { D1Database, KVNamespace } from '@cloudflare/workers-types';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { getPlatformProxy } from 'wrangler';
+import type { KeyValueStore, SqlDatabase } from '@/lib/runtime/types';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+import { fakeKeyValueStore, fakeSqlDatabase } from '../fixtures/runtime';
 
 import {
   checkEmailLock,
@@ -52,41 +53,19 @@ import {
 const MINUTE = 60_000;
 const MIGRATION_PATH = fileURLToPath(new URL('../../migrations/0001_admin.sql', import.meta.url));
 
-let proxy: Awaited<ReturnType<typeof getPlatformProxy>>;
-let sessions: KVNamespace;
-let rateLimitKv: KVNamespace;
-let db: D1Database;
+let sessions: KeyValueStore;
+let rateLimitKv: KeyValueStore;
+let db: SqlDatabase;
 
-/** Split the real migration into statements and run each. */
-async function applyMigration(database: D1Database): Promise<void> {
-  const sql = readFileSync(MIGRATION_PATH, 'utf8')
-    .replace(/^\s*--.*$/gm, '') // line comments would confuse the split
-    .trim();
-  for (const statement of sql.split(';')) {
-    const trimmed = statement.trim();
-    if (trimmed === '') continue;
-    await database.prepare(trimmed).run();
-  }
-}
-
-beforeAll(async () => {
-  proxy = await getPlatformProxy({ configPath: './wrangler.toml', persist: false });
-  // `getPlatformProxy` types `env` loosely (it cannot know this project's bindings), so
-  // the three this suite drives are named here.
-  const env = proxy.env as {
-    SESSIONS: KVNamespace;
-    RATELIMIT: KVNamespace;
-    DB: D1Database;
-  };
-  sessions = env.SESSIONS;
-  rateLimitKv = env.RATELIMIT;
-  db = env.DB;
-  await applyMigration(db);
-}, 120_000);
-
-afterAll(async () => {
-  await proxy?.dispose();
-}, 60_000);
+beforeAll(() => {
+  // In-memory fakes of the runtime storage interfaces — no Cloudflare, no network. The SQL fake
+  // applies the real migration DDL (valid SQLite and Postgres), so the same statements the
+  // application runs are exercised here.
+  const schema = readFileSync(MIGRATION_PATH, 'utf8');
+  db = fakeSqlDatabase(schema);
+  sessions = fakeKeyValueStore();
+  rateLimitKv = fakeKeyValueStore();
+});
 
 /** Each test starts from a clean lockout table; sessions are keyed by random id. */
 beforeEach(async () => {
@@ -171,7 +150,7 @@ describe('idle renewal', () => {
     const now = Date.UTC(2026, 0, 15, 9, 0, 0);
     const session = await createSession(sessions, { userId: 'usr_1', role: 'editor' }, now);
 
-    // Inside the interval: same object back, and — the part that matters — the stored
+    // Inside the interval: same object back, and â€” the part that matters â€” the stored
     // record is untouched, so this costs no KV write.
     const early = now + LAST_SEEN_WRITE_INTERVAL_MS - 1;
     const untouched = await touchSession(sessions, session, early);
@@ -262,7 +241,7 @@ describe('logout revocation', () => {
 
     await destroySession(sessions, session.id);
 
-    // The captured cookie still parses — cookies are not revocable — but the id it
+    // The captured cookie still parses â€” cookies are not revocable â€” but the id it
     // carries resolves to nothing, which is where the revocation actually lives.
     const replayedId = readSessionCookie(capturedCookie.split(';')[0] ?? '');
     expect(replayedId).toBe(session.id);
@@ -290,7 +269,7 @@ describe('per-email lockout escalation', () => {
     const observed: number[] = [];
     // Five ladder rungs: the fourth and fifth must both be 60, which is what
     // "progressively longer periods of 1, 5, 15, and 60" means for a persistent
-    // attacker — the ladder saturates rather than wrapping back to 1.
+    // attacker â€” the ladder saturates rather than wrapping back to 1.
     for (let rung = 0; rung < 5; rung += 1) {
       let applied = 0;
       for (let attempt = 0; attempt < LOGIN_FAILURE_THRESHOLD; attempt += 1) {
@@ -357,7 +336,7 @@ describe('per-email lockout escalation', () => {
     expect((await checkEmailLock(db, emailHash, now + 10_000)).allowed).toBe(true);
   });
 
-  it('keeps one address’s lock away from another', async () => {
+  it('keeps one addressâ€™s lock away from another', async () => {
     const locked = await hashIdentifier('locked@example.test');
     const other = await hashIdentifier('other@example.test');
     const now = Date.UTC(2026, 0, 15, 9, 0, 0);

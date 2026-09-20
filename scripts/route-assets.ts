@@ -1,15 +1,15 @@
 /**
  * What a route actually costs, resolved from the build output.
  *
- * `size-limit` measures files. A *route* budget is not a file — it is the transitive closure of
+ * `size-limit` measures files. A *route* budget is not a file â€” it is the transitive closure of
  * everything a browser fetches to render one page, and on this stack that closure is assembled from
  * three places, only the first of which is obvious:
  *
  * 1. `<script src>` and `<link rel="stylesheet">` in the document;
- * 2. the `component-url` and `renderer-url` attributes on every `<astro-island>` — islands are
+ * 2. the `component-url` and `renderer-url` attributes on every `<astro-island>` â€” islands are
  *    fetched by the hydration runtime, not by a `<script>` tag, so a glob over `<script src>` misses
  *    the entire interactive payload;
- * 3. the static imports of everything found by (1) and (2), followed transitively — which is where
+ * 3. the static imports of everything found by (1) and (2), followed transitively â€” which is where
  *    React, `react-dom/client`, the schemas, and MiniSearch actually live.
  *
  * Astro's output filenames are content-hashed, so a hand-written glob per route would be a list of
@@ -18,7 +18,7 @@
  * route's total automatically, and a chunk that stops being used stops being counted.
  *
  * Astro's inline island bootstrap is JavaScript the route delivers too, so it is counted rather than
- * excused — `writeInlineScriptBundle` concatenates it into one measurable file per route.
+ * excused â€” `writeInlineScriptBundle` concatenates it into one measurable file per route.
  *
  * Used by `.size-limit.mjs`. Nothing here enforces a budget; it only reports what is there.
  *
@@ -37,7 +37,7 @@ export interface RouteAssets {
   inlineScript: string;
 }
 
-/** `/_astro/x.js` → `<dist>/_astro/x.js`; `./y.js` from a chunk → resolved against the chunk. */
+/** `/_astro/x.js` â†’ `<dist>/_astro/x.js`; `./y.js` from a chunk â†’ resolved against the chunk. */
 function toFile(distDir: string, url: string, fromFile?: string): string | null {
   const clean = url.split('?')[0]?.split('#')[0] ?? '';
   if (clean === '' || /^[a-z][a-z0-9+.-]*:/i.test(clean) || clean.startsWith('//')) return null;
@@ -54,7 +54,7 @@ function toFile(distDir: string, url: string, fromFile?: string): string | null 
 /**
  * The static import specifiers in a built chunk.
  *
- * A regex over `from"…"` / `import"…"` rather than a parser: the input is generated, minified,
+ * A regex over `from"â€¦"` / `import"â€¦"` rather than a parser: the input is generated, minified,
  * single-quoted-or-double-quoted ES module output whose import forms are exactly these three, and a
  * miss is visible as a chunk missing from a total rather than as a silent wrong number.
  */
@@ -82,7 +82,7 @@ function importsOf(code: string): string[] {
  * Dynamic imports are followed as well as static ones. A dynamically imported chunk is still bytes
  * this route can pull, and counting it is the conservative direction: the budget then holds even for
  * a visitor who opens the gallery lightbox. The one asset genuinely excluded from a budget by the
- * design — the search index — is not a JS chunk at all but a separate JSON route, so it is never in
+ * design â€” the search index â€” is not a JS chunk at all but a separate JSON route, so it is never in
  * this closure and needs no special case.
  */
 export function jsClosure(distDir: string, entries: readonly string[]): string[] {
@@ -117,7 +117,7 @@ function attributeValues(html: string, tag: string, attribute: string): string[]
   return values;
 }
 
-/** The inline `<script>` bodies in a document — the framework island bootstrap. */
+/** The inline `<script>` bodies in a document â€” the framework island bootstrap. */
 export function inlineScriptsOf(html: string): string[] {
   const bodies: string[] = [];
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
@@ -160,7 +160,7 @@ export function routeAssets(distDir: string, htmlPath: string): RouteAssets {
  * Write a route's inline bootstrap to a measurable file and return its path.
  *
  * Under `dist/.size-limit/`, which is inside the build output and therefore never uploaded as a
- * public asset (the asset directory is `dist/client`) and never committed.
+ * public asset (the asset directory is `dist`) and never committed.
  */
 export function writeInlineScriptBundle(name: string, code: string): string | null {
   if (code.trim() === '') return null;

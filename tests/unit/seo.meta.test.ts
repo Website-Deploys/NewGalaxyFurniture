@@ -312,7 +312,7 @@ const ALLOWED_HOSTS = [
   'schema.org',
   'www.w3.org',
   'api.github.com',
-  'api.cloudflare.com',
+  'api.netlify.com',
   'api.openai.com',
   'api.anthropic.com',
   'api.whatsapp.com',
@@ -365,7 +365,9 @@ describe('the domain appears only in PUBLIC_SITE_URL', () => {
           /\benv(?:ironment)?\.PUBLIC_SITE_URL\b/.test(text) ||
           /import\.meta\.env(?: as [^)]*\))?\.PUBLIC_SITE_URL/.test(text) ||
           /\bbuildTime\.PUBLIC_SITE_URL\b/.test(text) ||
-          /PUBLIC_SITE_URL\?:/.test(text)
+          /PUBLIC_SITE_URL\?:/.test(text) ||
+          // The Netlify env resolver reads it by name: readEnv('PUBLIC_SITE_URL').
+          /readEnv\(\s*['"]PUBLIC_SITE_URL['"]\s*\)/.test(text)
         );
       })
       // Normalise to forward slashes: `relative()` yields the OS separator, and this

@@ -26,7 +26,7 @@
  * Requirements: 12.13, 17.2, 17.9–17.18, 25.12, 26.4, 26.5.
  */
 
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 import { AppError, ERROR_CODES } from '../errors';
 import { parseContentJson } from './serialize';
@@ -509,7 +509,7 @@ interface LockRecord {
  * *inside* the record and the KV TTL is the platform minimum, used only for cleanup.
  */
 export async function withProductLock<T>(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   productId: string,
   operation: () => Promise<T>,
   now: number = Date.now(),

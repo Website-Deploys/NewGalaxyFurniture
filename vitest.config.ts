@@ -19,15 +19,6 @@ const alias = {
    * rather than passing on data it did not declare.
    */
   'astro:content': fileURLToPath(new URL('./tests/fixtures/astro-content.ts', import.meta.url)),
-  /**
-   * `cloudflare:workers` exists only inside the Workers runtime, and `@/lib/env` imports `env` from
-   * it. The admin guard imports `@/lib/env`, so Properties 52 and 53 — which enumerate the whole
-   * admin route table — cannot load without this. The stub's env is empty, so a test that needs a
-   * binding has to pass one in.
-   */
-  'cloudflare:workers': fileURLToPath(
-    new URL('./tests/fixtures/cloudflare-workers.ts', import.meta.url),
-  ),
 };
 
 export default defineConfig({

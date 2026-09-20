@@ -34,7 +34,7 @@
  * Requirements: 3.14, 3.15, 20.11, 14.10, 25.14.
  */
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { SqlDatabase } from '@/lib/runtime/types';
 
 import { measuredViewCounts } from './queries';
 import {
@@ -63,7 +63,7 @@ export type SnapshotOutcome =
   | { kind: 'failed'; reason: 'read' | 'write' };
 
 export interface SnapshotRunInput {
-  db: D1Database;
+  db: SqlDatabase;
   client: GitHubContentClient;
   /** Injected so the ranges are testable; the handler passes the scheduled time. */
   now: Date;

@@ -1,6 +1,4 @@
-import type { R2Bucket } from '@cloudflare/workers-types';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getPlatformProxy } from 'wrangler';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { deletedKey, IMAGE_CACHE_CONTROL, originalKey } from '@/lib/images/srcset';
 import { generateDerivatives, sanitizeOriginal } from '@/lib/images/derivatives';
@@ -8,40 +6,33 @@ import { generateImageId, validateUpload } from '@/lib/images/validate';
 import { keyCandidates, parseImageRequest } from '@/lib/images/delivery';
 import { listImageKeys, putImageObject, restoreImage, softDeleteImage } from '@/lib/images/store';
 import { fileFrom, makePng, nodeCodec } from '../fixtures/images';
+import { fakeObjectBucket } from '../fixtures/runtime';
 import type { ImageCodec } from '@/lib/images/codec';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 /**
- * The upload path against a **real local R2 binding**.
+ * The upload path against an in-memory object bucket implementing the project's `ObjectBucket`
+ * interface (the same interface the Netlify Blobs adapter implements in production).
  *
- * `getPlatformProxy` starts the same workerd-backed R2 the Worker gets in production, driven by
- * this project's own `wrangler.toml`. That matters more than it looks: an in-memory fake would
- * let this suite pass while `httpMetadata` was being dropped, while `list` pagination was
- * mishandled, or while the delete-after-copy ordering in the soft delete was wrong — and the
- * soft delete is the only recovery path images have, since they are deliberately not in Git.
+ * The codec is the production codec (Photon + jSquash), so what is written here is what would be
+ * written by an upload. The fake preserves `httpMetadata`, prefix `list`, and the delete-after-copy
+ * ordering the soft delete depends on, so the recovery path — the only one images have, since they
+ * are deliberately not in Git — is exercised for real.
  *
- * The codec is the production codec (Photon + jSquash), so what is written here is what would
- * be written by an upload.
- *
- * Requirements: 15.1–15.13, 15.16, 22.9.
+ * Requirements: 15.1-15.13, 15.16, 22.9.
  */
 
 const PRODUCT_ID = 'p_r2test0001';
 
-let proxy: Awaited<ReturnType<typeof getPlatformProxy>>;
-let media: R2Bucket;
+let media: ObjectBucket;
 let codec: ImageCodec;
 
 beforeAll(async () => {
-  proxy = await getPlatformProxy({ configPath: './wrangler.toml', persist: false });
-  media = (proxy.env as { MEDIA: R2Bucket }).MEDIA;
+  media = fakeObjectBucket();
   codec = await nodeCodec();
 }, 180_000);
 
-afterAll(async () => {
-  await proxy?.dispose();
-}, 60_000);
-
-/** The upload endpoint's own sequence: validate → sanitize → store original → derivatives. */
+/** The upload endpoint's own sequence: validate â†’ sanitize â†’ store original â†’ derivatives. */
 async function uploadOne(bytes: Uint8Array, filename = 'photo.png') {
   const outcome = await validateUpload(fileFrom(filename, 'image/png', bytes), (input, type) =>
     codec.decode(input, type),
@@ -92,7 +83,7 @@ describe('an accepted upload lands in R2 exactly as the record describes', () =>
     expect(result.generated.widths).toStrictEqual([320, 480, 640, 960, 1280]);
 
     const keys = await listImageKeys(media, PRODUCT_ID, result.imageId);
-    // 5 widths × 2 formats + 1 JPEG + the original.
+    // 5 widths Ã— 2 formats + 1 JPEG + the original.
     expect(keys).toHaveLength(12);
     for (const entry of result.generated.written) {
       const object = await media.get(entry.key);
@@ -161,9 +152,9 @@ describe('deletion is a move, and it is reversible', () => {
     expect(moved.failed).toStrictEqual([]);
     expect(moved.moved.sort()).toStrictEqual(before.sort());
 
-    // Gone from the live prefix…
+    // Gone from the live prefixâ€¦
     expect(await listImageKeys(media, PRODUCT_ID, result.imageId)).toStrictEqual([]);
-    // …and present under deleted/, with the provenance a recovery needs.
+    // â€¦and present under deleted/, with the provenance a recovery needs.
     for (const key of before) {
       const object = await media.get(deletedKey(key));
       expect(object).not.toBeNull();

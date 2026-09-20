@@ -1,11 +1,41 @@
 # New Galaxy Furniture
 
 A premium furniture catalogue site with a GitHub-backed admin platform, built on Astro and
-deployed to Cloudflare Workers.
+deployed to **Netlify** (Netlify Functions, Neon Postgres, and Netlify Blobs).
 
 Enquiries convert on WhatsApp and by phone — there is no cart, no checkout and no payment
 processing. The catalogue is content, the content is JSON in this repository, and the
 repository is the source of truth.
+
+> **Platform: Netlify only.** This project was migrated off Cloudflare. There is no Worker, no
+> `wrangler.toml`, and no R2/D1/KV/Rate-Limiting binding in the runtime. The server layer runs as
+> Netlify Functions; relational data (leads, analytics, admin users) is Neon Postgres; product
+> images, admin sessions, product drafts and rate-limit counters are Netlify Blobs; product/content
+> JSON is still committed to the GitHub content repository by the admin write-back pipeline. Any
+> Cloudflare wording that remains below is historical and does not describe the runtime.
+
+## Deploying to Netlify (quickstart)
+
+1. **Create the Netlify site** from this GitHub repo (Netlify → Add new site → Import). Netlify
+   auto-detects Astro; the build command is `npm run build` and the publish directory is `dist`
+   (both are declared in `netlify.toml`).
+2. **Provision the database.** In the Netlify site, add the **Neon** database extension (Netlify DB).
+   It sets `NETLIFY_DATABASE_URL` automatically. Then create the schema:
+   `NETLIFY_DATABASE_URL="postgres://…" npm run db:migrate`.
+3. **Set environment variables** (Site configuration → Environment variables). See
+   [Environment variables](#environment-variables) and `.env.example`. Required: `PUBLIC_SITE_URL`,
+   `PUBLIC_WHATSAPP_NUMBERS`, `PUBLIC_PHONE_NUMBERS`, `NETLIFY_DATABASE_URL`, `SESSION_SECRET`,
+   `GITHUB_TOKEN`, `GITHUB_REPO`. Netlify Blobs needs **no** credentials.
+4. **Create the admin account:** `NETLIFY_DATABASE_URL="postgres://…" npm run seed:admin`
+   (interactive; no password is ever stored in an env var or printed).
+5. **Migrate existing product images** into Netlify Blobs (one-off, carries already-published
+   images across the storage change): run under a Blobs context, e.g.
+   `npx netlify dev --command "npm run images:migrate"`. New admin uploads write to Blobs directly.
+6. **Deploy** (push to the connected branch, or `netlify deploy --build --prod`). The nightly
+   analytics snapshot runs automatically as the Scheduled Function in `netlify/functions/`.
+
+Local development: `cp .env.example .env`, fill it in, then `npm run dev` (Astro) or
+`npx netlify dev` (full Functions + Blobs emulation).
 
 - [Overview](#overview)
 - [Architecture](#architecture)
@@ -13,19 +43,10 @@ repository is the source of truth.
 - [Folder structure](#folder-structure)
 - [Local setup](#local-setup)
 - [Environment variables](#environment-variables)
-- [Cloudflare setup](#cloudflare-setup)
 - [Admin setup](#admin-setup)
 - [AI assistant configuration](#ai-assistant-configuration)
 - [GitHub integration](#github-integration)
-- [Deployment](#deployment)
 - [Creating a product](#creating-a-product)
-- [The Kiro product workflow](#the-kiro-product-workflow)
-- [Content operations](#content-operations)
-  - [Adding a category](#adding-a-category)
-  - [Managing reviews](#managing-reviews)
-  - [Managing leads](#managing-leads)
-  - [Changing the WhatsApp and phone numbers](#changing-the-whatsapp-and-phone-numbers)
-  - [Configuring the domain](#configuring-the-domain)
 - [Security](#security)
 - [Testing](#testing)
 - [What is not supplied](#what-is-not-supplied)

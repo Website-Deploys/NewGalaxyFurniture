@@ -1,5 +1,5 @@
 /**
- * Secret scan of the build output — the last gate before deploy.
+ * Secret scan of the build output â€” the last gate before deploy.
  *
  * Walks every file under `dist/` and fails on the first credential pattern it
  * finds, naming the file, the line, and the byte offset. Runs after `build` in CI
@@ -12,11 +12,11 @@
  *   the Worker bundle is a committed secret no matter who can read it.
  * - Credential *names* (`AI_API_KEY`, `SESSION_SECRET`) are forbidden in
  *   client-reachable output only. `dist/server/**` is server code that never
- *   leaves Cloudflare, and it must name its bindings to read them — that is the
+ *   leaves Cloudflare, and it must name its bindings to read them â€” that is the
  *   correct pattern, not a leak. The same name in a browser bundle means a secret
  *   was referenced from client-reachable code, which is the defect this catches.
  *
- * Design: Testing Strategy → CI gates; Deployment.
+ * Design: Testing Strategy â†’ CI gates; Deployment.
  * Requirements: 28.3, 28.4, 28.6. Property 51 asserts the same invariant.
  *
  * Usage: npm run scan:secrets [-- <directory>]
@@ -45,7 +45,7 @@ const PATTERNS: readonly Pattern[] = [
 /**
  * Server-only output: reachable by Cloudflare, never by a browser.
  *
- * `@astrojs/cloudflare` v14 splits the build into `dist/client/**` (uploaded to
+ * `@astrojs/cloudflare` v14 splits the build into `dist/**` (uploaded to
  * the static asset store) and `dist/server/**` (the Worker bundle), replacing the
  * old single-directory layout where server code sat in `dist/_worker.js/**`.
  * `server` is therefore the current server-only prefix; `_worker.js` is retained
@@ -93,8 +93,8 @@ function extensionOf(path: string): string {
 function isClientReachable(relativePath: string): boolean {
   // Split on either separator: `relative()` yields the OS separator (a backslash
   // on Windows), while callers and tests pass forward-slash paths. Keying off the
-  // platform `sep` alone would leave a Windows-style path unsplit — or a
-  // forward-slash path on Windows unsplit — and misclassify the server bundle as
+  // platform `sep` alone would leave a Windows-style path unsplit â€” or a
+  // forward-slash path on Windows unsplit â€” and misclassify the server bundle as
   // client-reachable, flagging every legitimate binding read as a leak.
   const first = relativePath.split(/[/\\]/)[0];
   return first === undefined || !SERVER_ONLY_PREFIXES.includes(first);
@@ -159,7 +159,7 @@ async function main(): Promise<void> {
     if (!info.isDirectory()) throw new Error('not a directory');
   } catch {
     console.error(
-      `scan:secrets — nothing to scan: ${target} does not exist. Run \`npm run build\` first.`,
+      `scan:secrets â€” nothing to scan: ${target} does not exist. Run \`npm run build\` first.`,
     );
     process.exitCode = 1;
     return;
@@ -169,15 +169,15 @@ async function main(): Promise<void> {
 
   if (findings.length === 0) {
     console.log(
-      `scan:secrets — clean. No credential pattern found under ${relative(process.cwd(), target) || target}/.`,
+      `scan:secrets â€” clean. No credential pattern found under ${relative(process.cwd(), target) || target}/.`,
     );
     return;
   }
 
-  console.error(`scan:secrets — FAILED with ${findings.length} finding(s):`);
+  console.error(`scan:secrets â€” FAILED with ${findings.length} finding(s):`);
   for (const finding of findings) {
     console.error(
-      `  ${finding.file}:${finding.line} (byte offset ${finding.offset}) — ${finding.pattern} [${finding.excerpt}]`,
+      `  ${finding.file}:${finding.line} (byte offset ${finding.offset}) â€” ${finding.pattern} [${finding.excerpt}]`,
     );
   }
   console.error(

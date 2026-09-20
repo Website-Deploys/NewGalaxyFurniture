@@ -17,7 +17,7 @@
     "| SEO | 1.0 | 0.95 |",
     "| Best Practices | 0.95 | 0.95 |",
     "",
-    "INP has no lab audit — it is a field metric, measured from real interactions. Lighthouse's",
+    "INP has no lab audit â€” it is a field metric, measured from real interactions. Lighthouse's",
     "closest lab proxies are Total Blocking Time and `max-potential-fid`, so both are asserted",
     "rather than pretending an INP number was measured here. The 150 ms / 200 ms INP row of the",
     "design's table is therefore enforced by the TBT and max-potential-FID assertions below plus",
@@ -29,11 +29,11 @@
     "assertable once a product content file exists; until then the run covers the other three and",
     "the PDP entry is the first thing to add with the first product.",
     "",
-    "Requirements: 22.1, 22.2, 22.3, 22.14. Design: Performance Budgets → Core Web Vitals targets."
+    "Requirements: 22.1, 22.2, 22.3, 22.14. Design: Performance Budgets â†’ Core Web Vitals targets."
   ],
   "ci": {
     "collect": {
-      "staticDistDir": "dist/client",
+      "staticDistDir": "dist",
       "url": [
         "http://localhost/index.html",
         "http://localhost/collection/index.html",

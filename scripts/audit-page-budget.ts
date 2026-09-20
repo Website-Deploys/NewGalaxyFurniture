@@ -8,18 +8,18 @@
  *    the second one delays the first, which makes LCP worse than not preloading at all.
  * 2. **At most 1,500 DOM nodes on any public page.** Past that, style recalculation on a mid-range
  *    phone starts to dominate interaction latency regardless of how small the JavaScript is.
- * 3. **Every island is `client:visible` or `client:idle`** on a public page — never `client:load`.
+ * 3. **Every island is `client:visible` or `client:idle`** on a public page â€” never `client:load`.
  *    `client:load` hydrates during the initial load, which is precisely the "no marketing component
  *    hydrates eagerly" rule. Admin is exempt and is not in this output.
- * 4. **Zero third-party scripts on any public critical path** — no chat widget, no tag manager, no
+ * 4. **Zero third-party scripts on any public critical path** â€” no chat widget, no tag manager, no
  *    web-font CDN. Checked here as "no cross-origin subresource of any kind", which is the same
  *    condition from the other direction and is also what `scripts/audit-csp.ts` enforces as policy.
  *
  * Each is measured from the built HTML, so what is checked is what deploys.
  *
- * Runs in `postbuild`. Usage: tsx scripts/audit-page-budget.ts [dist/client]
+ * Runs in `postbuild`. Usage: tsx scripts/audit-page-budget.ts [dist]
  *
- * Design: Performance Budgets → Techniques.
+ * Design: Performance Budgets â†’ Techniques.
  * Requirements: 22.9, 22.10, 22.11, 22.12, 22.13.
  */
 
@@ -28,7 +28,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist', 'client');
+const DEFAULT_DIR = join(ROOT, 'dist');
 
 export const MAX_DOM_NODES = 1500;
 export const MAX_PRELOADED_IMAGES = 1;
@@ -62,7 +62,7 @@ function attributeOf(tag: string, name: string): string | null {
  * Element count, as an approximation of DOM nodes.
  *
  * Every opening tag, minus the void elements' non-existent closers, minus comments and the doctype.
- * It undercounts text nodes, which a browser also counts — so the real figure is higher and the
+ * It undercounts text nodes, which a browser also counts â€” so the real figure is higher and the
  * margin below the limit is what matters, not the exact number. A parser would give a truer count
  * and would be a dependency added to count elements.
  */
@@ -71,7 +71,7 @@ export function countElements(html: string): number {
   return (withoutComments.match(/<[a-z][a-z0-9-]*\b/gi) ?? []).length;
 }
 
-/** `<link rel="preload" as="image">` — the LCP hint, which may appear at most once. */
+/** `<link rel="preload" as="image">` â€” the LCP hint, which may appear at most once. */
 export function countPreloadedImages(html: string): number {
   return [...html.matchAll(/<link\b[^>]*>/gi)].filter((match) => {
     const tag = match[0];
@@ -85,8 +85,8 @@ export function countPreloadedImages(html: string): number {
 /**
  * `rel` values on a `<link>` that cause a fetch.
  *
- * The distinction matters: `rel="canonical"` carries an absolute URL on this site by design — it is
- * a *statement* about identity, not a request — and counting it as a third-party subresource flagged
+ * The distinction matters: `rel="canonical"` carries an absolute URL on this site by design â€” it is
+ * a *statement* about identity, not a request â€” and counting it as a third-party subresource flagged
  * all twenty-four pages on the first run. Only the rels that make the browser go and get something
  * are subresources.
  */
@@ -149,7 +149,7 @@ export function auditPage(html: string, page: string): PageProblem[] {
     problems.push({
       page,
       rule: `at most ${String(MAX_PRELOADED_IMAGES)} preloaded image`,
-      detail: `${String(preloads)} image preloads — the second delays the first`,
+      detail: `${String(preloads)} image preloads â€” the second delays the first`,
     });
   }
 
@@ -201,7 +201,7 @@ function main(): void {
     if (!statSync(target).isDirectory()) throw new Error('not a directory');
   } catch {
     console.error(
-      `[page-budget] no build output at ${relative(ROOT, target)} — run the build first`,
+      `[page-budget] no build output at ${relative(ROOT, target)} â€” run the build first`,
     );
     process.exitCode = 1;
     return;
@@ -221,7 +221,7 @@ function main(): void {
 
   console.error(`[page-budget] FAILED with ${String(problems.length)} problem(s):`);
   for (const problem of problems) {
-    console.error(`  ${problem.page} — ${problem.rule}: ${problem.detail}`);
+    console.error(`  ${problem.page} â€” ${problem.rule}: ${problem.detail}`);
   }
   process.exitCode = 1;
 }

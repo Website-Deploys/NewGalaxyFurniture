@@ -38,14 +38,15 @@
 
 import { defineMiddleware } from 'astro:middleware';
 
-import { consumeBindingLimit } from '@/lib/auth/rate-limit';
+import { ADMIN_API_LIMIT_PER_MINUTE, consumeBindingLimit } from '@/lib/auth/rate-limit';
 import { ERROR_CODES, errorResponse, minutesPhrase } from '@/lib/errors';
 import { getRedirects } from '@/lib/content/site';
-import { getWorkerEnv } from '@/lib/env';
+import { clientIp, getKV } from '@/lib/env';
 import { isAdminApiPath, isAdminPagePath, LOGIN_PAGE_PATH } from '@/lib/auth/routes';
 import { readSessionCookie, readSession } from '@/lib/auth/session';
 import { applySecurityHeaders } from '@/lib/security/headers';
 import { canonicalRedirect } from '@/lib/seo/redirects';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 const NOINDEX = 'noindex, nofollow';
 
@@ -58,12 +59,13 @@ function isPublicAdminPage(pathname: string): boolean {
   return pathname === LOGIN_PAGE_PATH || pathname === `${LOGIN_PAGE_PATH}/`;
 }
 
-/** The Worker env, or null when this render has no Cloudflare runtime. */
-function readEnvOrNull(
-  context: Parameters<typeof getWorkerEnv>[0],
-): ReturnType<typeof getWorkerEnv> | null {
+/** The rate-limit / sessions KV store, or null when it cannot be opened in this environment. */
+function readKvOrNull(
+  context: Parameters<typeof getKV>[0],
+  name: 'SESSIONS' | 'RATELIMIT',
+): KeyValueStore | null {
   try {
-    return getWorkerEnv(context);
+    return getKV(context, name);
   } catch {
     return null;
   }
@@ -80,21 +82,19 @@ async function handle(
 
   if (!adminPage && !adminApi) return await next();
 
-  // Bindings are only present on on-demand-rendered routes. During the static build
-  // this middleware still runs for prerendered pages, so a missing runtime must not
-  // throw — it means "there is no session to read here", not "deny".
-  const env = readEnvOrNull(context);
-
   if (adminApi) {
-    // 120 requests / minute / session (Requirement 10.12). Keyed by the cookie
-    // value, which is the session identity; an unauthenticated caller is keyed by
-    // address instead so the ceiling cannot be dodged by omitting the cookie.
+    // 120 requests / minute / session (Requirement 10.12). Keyed by the cookie value, which is the
+    // session identity; an unauthenticated caller is keyed by client address instead so the ceiling
+    // cannot be dodged by omitting the cookie.
+    const rateLimitKv = readKvOrNull(context, 'RATELIMIT');
     const sessionId = readSessionCookie(context.request.headers.get('cookie'));
     const key =
-      sessionId !== ''
-        ? `admin-api:${sessionId}`
-        : `admin-api-anon:${context.request.headers.get('cf-connecting-ip') ?? 'unknown'}`;
-    const decision = await consumeBindingLimit(env?.RL_ADMIN_API, key);
+      sessionId !== '' ? `admin-api:${sessionId}` : `admin-api-anon:${clientIp(context.request)}`;
+    const decision = await consumeBindingLimit(
+      rateLimitKv ?? undefined,
+      key,
+      ADMIN_API_LIMIT_PER_MINUTE,
+    );
     if (!decision.allowed) {
       return errorResponse(ERROR_CODES.RATE_LIMITED, {
         message: `Too many requests. Try again in ${minutesPhrase(decision.retryAfterMinutes)}.`,
@@ -108,9 +108,9 @@ async function handle(
 
   // --- Admin pages ----------------------------------------------------------
   if (!isPublicAdminPage(pathname)) {
-    const sessions = env?.SESSIONS;
+    const sessions = readKvOrNull(context, 'SESSIONS');
     const session =
-      sessions === undefined
+      sessions === null
         ? null
         : await readSession(sessions, readSessionCookie(context.request.headers.get('cookie')));
 

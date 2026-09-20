@@ -16,7 +16,7 @@
  */
 
 import type { APIContext } from 'astro';
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 import { ERROR_CODES, errorResponse } from '../errors';
 import { createGitHubClient } from '../github/factory';
@@ -33,7 +33,7 @@ export interface AdminContext {
   session: Session;
   actor: InteractiveActor;
   /** KV `DRAFTS`: draft working copies and the product index. */
-  drafts: KVNamespace;
+  drafts: KeyValueStore;
   client: GitHubContentClient;
 }
 
@@ -54,7 +54,7 @@ export async function openAdminContext(
   const guard = await requireAdmin(apiContext, permission);
   if (!guard.ok) return { ok: false, response: guard.response };
 
-  let drafts: KVNamespace;
+  let drafts: KeyValueStore;
   let client: GitHubContentClient;
   let email: string;
   try {
@@ -90,6 +90,6 @@ export async function openAdminContext(
  * `DRAFTS` means the draft store's key listing never walks lock keys and can never
  * mistake one for content.
  */
-export function lockNamespace(apiContext: APIContext): KVNamespace {
+export function lockNamespace(apiContext: APIContext): KeyValueStore {
   return getKV(apiContext, 'RATELIMIT');
 }

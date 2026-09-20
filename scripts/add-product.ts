@@ -1,5 +1,5 @@
 /**
- * `npm run product:add` — the single-command product creation CLI.
+ * `npm run product:add` -> the single-command product creation CLI.
  *
  * Adding a product must touch **exactly one data file and zero frontend files**. That is
  * the whole requirement, and it is only true because nothing here is bespoke: every
@@ -10,20 +10,20 @@
  * |---|---|
  * | slug, SKU | `toSlug` / `uniqueSlug` / `generateSku` (`src/lib/slug.ts`) |
  * | product id, record assembly, derived fields | `buildNewProduct` / `normalizeProduct` (`src/lib/products/input.ts`) |
- * | schema gate | `validateProduct` → `ProductSchema` |
- * | publish gate | `checkPublishGate` → `PublishReadySchema` |
+ * | schema gate | `validateProduct` -> `ProductSchema` |
+ * | publish gate | `checkPublishGate` -> `PublishReadySchema` |
  * | upload validation | `validateUpload` (`src/lib/images/validate.ts`) |
  * | derivatives, LQIP, sanitized original | `generateDerivatives` / `buildLqip` / `sanitizeOriginal` |
  * | R2 keys and writes | `originalKey` / `putImageObject` |
  * | SEO fallbacks | `productTitleFallback` / `productDescriptionFallback` |
- * | write path | `productContentPath` — the admin's path allowlist |
- * | bytes on disk | `serializeContentJson` — sorted keys, 2-space indent, trailing newline |
+ * | write path | `productContentPath` -> the admin's path allowlist |
+ * | bytes on disk | `serializeContentJson` -> sorted keys, 2-space indent, trailing newline |
  *
  * There is no second implementation of any of those, which is what makes Requirement
  * 27.11 (byte-compatible files from all three creation routes) true by construction
  * rather than by comparison.
  *
- * ## What the image step can and cannot do — stated plainly
+ * ## What the image step can and cannot do -> stated plainly
  *
  * The derivative pipeline writes to an **R2 binding**, and a binding exists only inside a
  * Worker. This CLI runs in Node, so it obtains a real binding the only way a local process
@@ -35,8 +35,8 @@
  * CLI does puts bytes where a deployed `/img/**` request will find them. Consequently:
  *
  * - the written record carries `derivativesReady: false` with empty `derivativeWidths` /
- *   `derivativeFormats` — the same initial state the admin upload endpoint records before
- *   its background pass — because claiming readiness would be a claim about a bucket this
+ *   `derivativeFormats` -> the same initial state the admin upload endpoint records before
+ *   its background pass -> because claiming readiness would be a claim about a bucket this
  *   process never reached;
  * - the run report names the bucket it actually wrote to, lists every object key, and says
  *   what is still required;
@@ -63,7 +63,7 @@
  * and names the failing field.
  *
  * Design: Kiro / Developer Product Workflow.
- * Requirements: 27.1 – 27.11.
+ * Requirements: 27.1 -> 27.11.
  */
 
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
@@ -93,7 +93,7 @@ import {
 import { putImageObject } from '../src/lib/images/store.ts';
 import { serializeContentJson } from '../src/lib/github/serialize.ts';
 import { SiteSettingsSchema } from '../src/schemas/site.ts';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 import type { Product, ProductImageValue, ProductStatusValue } from '../src/schemas/product.ts';
 import type { SiteSettings } from '../src/schemas/site.ts';
 import type { TakenIdentifiers } from '../src/lib/products/duplicate.ts';
@@ -212,7 +212,7 @@ const VARIADIC_FLAGS = new Set(['--images']);
 export const USAGE = `npm run product:add -- --name <name> --category <slug> [options]
 
 Required
-  --name <string>             Product name (2–120 characters)
+  --name <string>             Product name (2->120 characters)
   --category <slug>           Must match an existing data/categories/<slug>.json
 
 Pricing
@@ -289,15 +289,15 @@ function parseList(raw: string): string[] {
  *
  * The admin form has four separate numeric controls; a command line does not, so the CLI
  * accepts the shorthand an operator would actually type and expands it into the same
- * `Dimensions` object. `display` is never inferred — an invented human-readable string is
- * still an invented product fact — and is set only by `--dimensions-display`.
+ * `Dimensions` object. `display` is never inferred -> an invented human-readable string is
+ * still an invented product fact -> and is set only by `--dimensions-display`.
  */
 export function parseDimensions(
   raw: string,
 ): { lengthCm: number; widthCm: number; heightCm: number; depthCm?: number } | null {
   const parts = raw
     .toLowerCase()
-    .split(/[x×*]/)
+    .split(/[x*×]/)
     .map((part) => part.trim());
   if (parts.length < 3 || parts.length > 4) return null;
   const numbers: number[] = [];
@@ -533,7 +533,7 @@ async function readCategories(dataDir: string): Promise<CategoryInfo> {
  * The slugs and SKUs already in use.
  *
  * The admin reads these from the KV product index; there is no KV here, so the files
- * themselves are the index — which is the same set of identifiers, read from the source of
+ * themselves are the index -> which is the same set of identifiers, read from the source of
  * truth rather than from its cache. Fields are read individually rather than through
  * `ProductSchema` on purpose: an existing file that fails validation must still reserve its
  * slug, otherwise this command would happily mint a colliding one. Reporting that file is
@@ -579,7 +579,7 @@ async function readSettings(dataDir: string): Promise<SiteSettings | null> {
  * The production codec, resolved for Node.
  *
  * Photon's `workerd` build and jSquash's `.wasm` module imports only resolve inside the
- * Cloudflare build, so Node gets `@cf-wasm/photon/node` and modules compiled from disk —
+ * Cloudflare build, so Node gets `@cf-wasm/photon/node` and modules compiled from disk ->
  * exactly what the test suite does. The adapters and `createCodec` are the production ones;
  * only module resolution differs, so the derivatives this command writes are the bytes the
  * Worker would have written.
@@ -621,7 +621,9 @@ async function nodeCodec(): Promise<ImageCodec> {
 }
 
 /** An in-process bucket used to capture bytes when `--r2 none` or `--images-out` is set. */
-function captureBucket(sink: Map<string, { bytes: Uint8Array; contentType: string }>): R2Bucket {
+function captureBucket(
+  sink: Map<string, { bytes: Uint8Array; contentType: string }>,
+): ObjectBucket {
   return {
     put: (
       key: string,
@@ -634,11 +636,11 @@ function captureBucket(sink: Map<string, { bytes: Uint8Array; contentType: strin
       });
       return Promise.resolve(undefined);
     },
-  } as unknown as R2Bucket;
+  } as unknown as ObjectBucket;
 }
 
 /** Fan a single write out to every destination this run has. */
-function teeBucket(targets: readonly R2Bucket[]): R2Bucket {
+function teeBucket(targets: readonly ObjectBucket[]): ObjectBucket {
   return {
     put: async (
       key: string,
@@ -652,11 +654,11 @@ function teeBucket(targets: readonly R2Bucket[]): R2Bucket {
       }
       return undefined;
     },
-  } as unknown as R2Bucket;
+  } as unknown as ObjectBucket;
 }
 
 interface R2Target {
-  bucket: R2Bucket | null;
+  bucket: ObjectBucket | null;
   description: string;
   dispose: () => Promise<void>;
 }
@@ -665,36 +667,24 @@ interface R2Target {
  * The `MEDIA` binding, via wrangler's platform proxy.
  *
  * This is the only way a Node process gets a genuine R2 binding, and it is genuinely the
- * local bucket — see the header. Failure to start is reported, never swallowed: silently
+ * local bucket -> see the header. Failure to start is reported, never swallowed: silently
  * degrading to "no upload" while printing a success line is precisely the dishonesty this
  * command must not commit.
  */
-async function openLocalR2(): Promise<R2Target | RunFailure> {
+async function openBlobBucket(): Promise<R2Target | RunFailure> {
   try {
-    const { getPlatformProxy } = await import('wrangler');
-    const proxy = await getPlatformProxy<{ MEDIA?: R2Bucket }>({
-      configPath: 'wrangler.toml',
-      persist: { path: '.wrangler/state/v3' },
-      remoteBindings: false,
-    });
-    const bucket = proxy.env.MEDIA;
-    if (bucket === undefined) {
-      await proxy.dispose();
-      return fieldFailure(
-        'images',
-        'wrangler.toml exposes no MEDIA R2 binding, so there is nowhere to write image objects.',
-      );
-    }
+    const { createBlobObjectBucket } = await import('../src/lib/runtime/blob-bucket.ts');
+    const bucket = createBlobObjectBucket('ngf-media');
     return {
       bucket,
       description:
-        'the LOCAL R2 simulator — the MEDIA binding from wrangler.toml, persisted at .wrangler/state/v3/r2. This is NOT the deployed bucket.',
-      dispose: () => proxy.dispose(),
+        'the Netlify Blobs store "ngf-media" (via the ObjectBucket adapter). Requires a Netlify Blobs context -> run under `netlify dev` or a linked site.',
+      dispose: () => Promise.resolve(),
     };
   } catch (error) {
     return fieldFailure(
       'images',
-      `Could not open the local R2 binding through wrangler (${error instanceof Error ? error.message : String(error)}). ` +
+      `Could not open the Netlify Blobs store (${error instanceof Error ? error.message : String(error)}). ` +
         'Re-run with --r2 none to validate and measure the images without writing objects.',
     );
   }
@@ -703,7 +693,7 @@ async function openLocalR2(): Promise<R2Target | RunFailure> {
 interface ProcessedImages {
   records: ProductImageValue[];
   reports: ImageReport[];
-  /** Key → bytes, present when the objects need writing to `--images-out`. */
+  /** Key -> bytes, present when the objects need writing to `--images-out`. */
   captured: Map<string, { bytes: Uint8Array; contentType: string }>;
 }
 
@@ -712,18 +702,18 @@ async function processImages(input: {
   alt: string;
   productId: string;
   codec: ImageCodec;
-  bucket: R2Bucket | null;
+  bucket: ObjectBucket | null;
   capture: Map<string, { bytes: Uint8Array; contentType: string }> | null;
 }): Promise<ProcessedImages | RunFailure> {
   const records: ProductImageValue[] = [];
   const reports: ImageReport[] = [];
   const captured = input.capture ?? new Map<string, { bytes: Uint8Array; contentType: string }>();
 
-  const sinks: R2Bucket[] = [];
+  const sinks: ObjectBucket[] = [];
   if (input.bucket !== null) sinks.push(input.bucket);
   if (input.capture !== null) sinks.push(captureBucket(captured));
   const target =
-    sinks.length === 0 ? null : sinks.length === 1 ? (sinks[0] as R2Bucket) : teeBucket(sinks);
+    sinks.length === 0 ? null : sinks.length === 1 ? (sinks[0] as ObjectBucket) : teeBucket(sinks);
 
   for (const [index, path] of input.paths.entries()) {
     let bytes: Uint8Array;
@@ -800,7 +790,7 @@ async function processImages(input: {
       /*
        * Recorded exactly as the admin upload endpoint records it on first write, and left
        * that way. `derivativesReady` is a claim about the bucket the deployment reads, and
-       * this process never reached that bucket — see the file header. `/img/**` therefore
+       * this process never reached that bucket -> see the file header. `/img/**` therefore
        * serves the sanitized original, which is the designed pre-derivative behaviour
        * (Requirement 15.13), until the objects are in place and the admin's own pipeline
        * asserts readiness.
@@ -897,7 +887,7 @@ export function assertWhatsAppRoundTrip(
     if (decodeURIComponent(rawQuery) !== message) {
       return fieldFailure(
         'whatsapp',
-        `The enquiry link for ${entry.label} is encoded more than once — a single decode must return the message.`,
+        `The enquiry link for ${entry.label} is encoded more than once -> a single decode must return the message.`,
       );
     }
     urls.push(url);
@@ -952,7 +942,7 @@ export async function run(
     return fieldFailure(
       'category',
       `No category "${options.category}". Valid category slugs: ${known}. ` +
-        'This command never creates a category — add data/categories/<slug>.json first.',
+        'This command never creates a category -> add data/categories/<slug>.json first.',
     );
   }
 
@@ -976,23 +966,23 @@ export async function run(
   if (options.images.length > 0) {
     let target: R2Target;
     if (options.dryRun) {
-      // A dry run writes nothing anywhere. Derivatives are still encoded — into memory —
+      // A dry run writes nothing anywhere. Derivatives are still encoded -> into memory ->
       // so the run really does verify the pipeline rather than merely claiming it would.
       target = {
         bucket: null,
         description:
-          'nowhere — --dry-run: every derivative was encoded and verified in memory, and no object was written to any bucket or to disk.',
+          'nowhere -> --dry-run: every derivative was encoded and verified in memory, and no object was written to any bucket or to disk.',
         dispose: () => Promise.resolve(),
       };
     } else if (options.r2 === 'local') {
-      const opened = await openLocalR2();
+      const opened = await openBlobBucket();
       if ('ok' in opened) return opened;
       target = opened;
     } else {
       target = {
         bucket: null,
         description:
-          'nowhere — --r2 none was requested, so no original and no derivative was written to any bucket.',
+          'nowhere -> --r2 none was requested, so no original and no derivative was written to any bucket.',
         dispose: () => Promise.resolve(),
       };
     }
@@ -1042,7 +1032,7 @@ export async function run(
    * These are the *same* strings the render-time fallback chain would compute, so storing
    * them changes no output; what it buys is that the generated value is visible in the diff
    * the operator reviews. Both are set exactly as `buildNewProduct` would have set them had
-   * they been supplied as input, and the input record is updated to match — which is what
+   * they been supplied as input, and the input record is updated to match -> which is what
    * keeps the admin creator byte-compatible for the same input. */
   if (product.seoTitle === undefined) {
     const generated = truncateAtWord(
@@ -1148,7 +1138,7 @@ export async function run(
 
 function reportImages(result: RunSuccess): void {
   if (result.images.length === 0) {
-    console.log('images: none supplied — the product has no media and cannot be published.');
+    console.log('images: none supplied -> the product has no media and cannot be published.');
     return;
   }
 
@@ -1166,7 +1156,7 @@ function reportImages(result: RunSuccess): void {
   console.log(`\n  Objects were written to: ${result.imageDestination ?? 'nowhere'}`);
   console.log(
     '  The product record therefore carries derivativesReady: false with empty\n' +
-      '  derivativeWidths/derivativeFormats. That is not a placeholder — it is the truth:\n' +
+      '  derivativeWidths/derivativeFormats. That is not a placeholder -> it is the truth:\n' +
       '  this command reached no deployed bucket, so /img/** will serve the sanitized\n' +
       '  original (the designed pre-derivative behaviour) once the bytes are in place.\n' +
       '\n' +
@@ -1185,8 +1175,8 @@ function reportSuccess(result: RunSuccess): void {
   console.log('');
   console.log(
     result.written
-      ? `product:add — wrote 1 file: ${result.path}`
-      : `product:add — DRY RUN, nothing written. Would write 1 file: ${result.path}`,
+      ? `product:add -> wrote 1 file: ${result.path}`
+      : `product:add -> DRY RUN, nothing written. Would write 1 file: ${result.path}`,
   );
   console.log(
     `  id ${result.product.id}  sku ${result.product.sku}  slug ${result.product.slug}  status ${result.product.status}`,
@@ -1204,7 +1194,7 @@ function reportSuccess(result: RunSuccess): void {
 }
 
 function reportFailure(result: RunFailure): void {
-  console.error(`product:add — FAILED. ${result.message}`);
+  console.error(`product:add -> FAILED. ${result.message}`);
   const entries = Object.entries(result.fields);
   if (entries.length > 0) {
     for (const [field, messages] of entries) {

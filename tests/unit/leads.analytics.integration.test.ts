@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { D1Database } from '@cloudflare/workers-types';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { getPlatformProxy } from 'wrangler';
+import type { SqlDatabase } from '@/lib/runtime/types';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+import { fakeSqlDatabase } from '../fixtures/runtime';
 
 import {
   analyticsSummary,
@@ -44,7 +45,7 @@ import { demoSofa } from '../fixtures/products';
  * Lead and event persistence, against **real local D1**.
  *
  * `getPlatformProxy` starts the same workerd-backed D1 the Worker gets in production, and the
- * schema comes from `migrations/0002_leads.sql` and `migrations/0003_events.sql` themselves — so a
+ * schema comes from `migrations/0002_leads.sql` and `migrations/0003_events.sql` themselves â€” so a
  * syntax error, a missing index or a wrong primary key in either migration fails here rather than
  * at deploy time. That matters most for the analytics rollup: the additive `ON CONFLICT` upsert is
  * the whole of "counts are never lost", and an in-memory fake would let a wrong conflict target
@@ -56,40 +57,18 @@ import { demoSofa } from '../fixtures/products';
 
 const MIGRATIONS = ['0002_leads.sql', '0003_events.sql'];
 
-let proxy: Awaited<ReturnType<typeof getPlatformProxy>>;
-let db: D1Database;
+let db: SqlDatabase;
 
-/**
- * Split the real migration into statements and run each.
- *
- * Comments are stripped to end-of-line wherever they appear, not only on whole lines. That is not
- * fussiness: `-- quarantined R2 prefix; admin-only` is a trailing comment containing a semicolon,
- * and a whole-line-only strip splits the `CREATE TABLE` in half and fails with
- * `incomplete input`. No string literal in these migrations contains `--`, so this is safe here.
- */
-async function applyMigrations(database: D1Database): Promise<void> {
-  for (const file of MIGRATIONS) {
-    const path = fileURLToPath(new URL(`../../migrations/${file}`, import.meta.url));
-    const sql = readFileSync(path, 'utf8')
-      .replace(/--[^\n]*/g, '')
-      .trim();
-    for (const statement of sql.split(';')) {
-      const trimmed = statement.trim();
-      if (trimmed === '') continue;
-      await database.prepare(trimmed).run();
-    }
-  }
+/** Build an in-memory SQL database with the shipped migration DDL applied. */
+function loadSchema(): string {
+  return MIGRATIONS.map((file) =>
+    readFileSync(fileURLToPath(new URL(`../../migrations/${file}`, import.meta.url)), 'utf8'),
+  ).join('\n');
 }
 
-beforeAll(async () => {
-  proxy = await getPlatformProxy({ configPath: './wrangler.toml', persist: false });
-  db = (proxy.env as { DB: D1Database }).DB;
-  await applyMigrations(db);
-}, 120_000);
-
-afterAll(async () => {
-  await proxy?.dispose();
-}, 60_000);
+beforeAll(() => {
+  db = fakeSqlDatabase(loadSchema());
+});
 
 beforeEach(async () => {
   await db.prepare('DELETE FROM leads').run();
@@ -120,7 +99,11 @@ function lead(overrides: Partial<NewLead> = {}): NewLead {
 
 describe('the leads migration produces the schema the store queries', () => {
   it('stores and reads back every field the admin list displays', async () => {
-    const stored = lead({ budget: '₹40,000–50,000', dimensions: '7 ft', imageKey: 'quarantine/x' });
+    const stored = lead({
+      budget: 'â‚¹40,000â€“50,000',
+      dimensions: '7 ft',
+      imageKey: 'quarantine/x',
+    });
     await insertLead(db, stored);
 
     const read = await getLead(db, stored.id);
@@ -331,7 +314,7 @@ describe('CSV export', () => {
     expect(csv).not.toContain('Out of range');
   });
 
-  it('neutralises a formula so a lead cannot execute in the operator’s spreadsheet', async () => {
+  it('neutralises a formula so a lead cannot execute in the operatorâ€™s spreadsheet', async () => {
     // The attack: a name of `=HYPERLINK(...)` is a live formula when the CSV is opened.
     await insertLead(db, lead({ name: '=HYPERLINK("http://evil.test","click")' }));
     const csv = leadsToCsv(await queryLeadsForExport(db, {}));
@@ -449,7 +432,7 @@ describe('folding and the daily-rollup upsert', () => {
     expect(tallies[0]?.count).toBe(3);
   });
 
-  it('uses the event’s own day, so a batch flushed across midnight splits correctly', () => {
+  it('uses the eventâ€™s own day, so a batch flushed across midnight splits correctly', () => {
     const beforeMidnight = Date.UTC(2026, 2, 14, 23, 59, 0);
     const afterMidnight = Date.UTC(2026, 2, 15, 0, 1, 0);
     const { tallies } = foldBatch([event({ ts: beforeMidnight }), event({ ts: afterMidnight })]);
@@ -469,7 +452,7 @@ describe('folding and the daily-rollup upsert', () => {
     expect(row?.count).toBe(3);
   });
 
-  it('keeps one row per (day, type, entity) — the primary key the migration declares', async () => {
+  it('keeps one row per (day, type, entity) â€” the primary key the migration declares', async () => {
     await recordEvents(db, [
       event(),
       event({ e: 'another-sofa' }),
@@ -480,7 +463,7 @@ describe('folding and the daily-rollup upsert', () => {
     expect(results).toHaveLength(4);
   });
 
-  it('records a search’s result count, and does not overwrite a known one with an unknown', async () => {
+  it('records a searchâ€™s result count, and does not overwrite a known one with an unknown', async () => {
     await recordEvents(db, [{ t: 'search', e: 'sofa', ts: AT, r: 0 }]);
     await recordEvents(db, [{ t: 'search', e: 'sofa', ts: AT }]);
 
@@ -493,7 +476,7 @@ describe('folding and the daily-rollup upsert', () => {
     expect(row?.results).toBe(0);
   });
 
-  it('stores no per-visitor identifier — there is no column for one', async () => {
+  it('stores no per-visitor identifier â€” there is no column for one', async () => {
     await recordEvents(db, [event()]);
     const { results } = await db.prepare('SELECT * FROM event_daily LIMIT 1').all();
     const columns = Object.keys(results[0] ?? {});
@@ -664,7 +647,7 @@ describe('a lead stored the way POST /api/leads stores one', () => {
   it('keeps a lead the spam heuristics flagged, with the reasons on the note', async () => {
     const assessment = scoreSpam({
       name: 'SEO Growth',
-      message: 'rank your website — https://a.test https://b.test https://c.test',
+      message: 'rank your website â€” https://a.test https://b.test https://c.test',
     });
     expect(assessment.score).toBeGreaterThan(0);
 
@@ -680,7 +663,7 @@ describe('a lead stored the way POST /api/leads stores one', () => {
       note: `Flagged: ${assessment.reasons.join(' ')}`,
     });
 
-    // Requirement 6.10: marked, present, and readable — not discarded.
+    // Requirement 6.10: marked, present, and readable â€” not discarded.
     const stored = await getLead(db, id);
     expect(stored?.spamScore).toBe(assessment.score);
     expect(stored?.note).toMatch(/^Flagged: /);

@@ -7,19 +7,19 @@
  * only by whichever component happened to be rendering:
  *
  * 1. **At most one prioritised image per page**, and if the page has one it must be the one image
- *    the page preloads — matched by URL. Two `fetchpriority="high"` images are two fetches racing
+ *    the page preloads â€” matched by URL. Two `fetchpriority="high"` images are two fetches racing
  *    for the same early bandwidth, which is the same defect the "never preload more than one image"
  *    prohibition names. A page with no contentful image (a policy page) has neither, which is not a
  *    gap: there is no LCP image to hint.
  * 2. **The prioritised image is `loading="eager"`.** A high-priority lazy image is a contradiction
  *    the browser resolves by deferring it.
- * 3. **Every other image is `loading="lazy"` and `decoding="async"`** — the design's rule verbatim,
+ * 3. **Every other image is `loading="lazy"` and `decoding="async"`** â€” the design's rule verbatim,
  *    with one exception it also states: the first six cards of a grid are eager (at normal
  *    priority), because they are above the fold. So `loading="eager"` is allowed on at most
  *    `EAGER_CARDS` images per page and only inside a card or gallery tile.
  * 4. **Every image carries intrinsic `width` and `height`.** Without them the box is not reserved
  *    and the image shifts the layout when it arrives, which is the CLS budget.
- * 5. **Every image sits in a reserved slot** — an enclosing element that declares `aspect-ratio`,
+ * 5. **Every image sits in a reserved slot** â€” an enclosing element that declares `aspect-ratio`,
  *    or a fixed height, inline or through a class the built stylesheet gives one to. Intrinsic
  *    dimensions reserve the box only while the image's own aspect ratio is what the layout uses; a
  *    cropped `object-fit: cover` slot needs a ratio or a height of its own, and every media slot on
@@ -31,12 +31,12 @@
  *
  * Rules 3, 5 and 6 need to know what an element's ancestors and classes are, so this walks a tag
  * stack rather than matching in isolation. It is not a full parser and does not need to be: the
- * input is generated markup, and the check is conservative — an unrecognised shape is reported, not
+ * input is generated markup, and the check is conservative â€” an unrecognised shape is reported, not
  * assumed fine.
  *
- * Runs in `postbuild`. Usage: tsx scripts/audit-image-loading.ts [dist/client]
+ * Runs in `postbuild`. Usage: tsx scripts/audit-image-loading.ts [dist]
  *
- * Design: Performance Budgets → Techniques; Image Pipeline → Delivery budget on the page.
+ * Design: Performance Budgets â†’ Techniques; Image Pipeline â†’ Delivery budget on the page.
  * Requirements: 15.10, 15.17, 22.7, 22.9, 22.10.
  */
 
@@ -45,9 +45,9 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist', 'client');
+const DEFAULT_DIR = join(ROOT, 'dist');
 
-/** Mirrors `EAGER_CARDS` in `src/lib/images/staging.ts` — the design's "first 6 cards". */
+/** Mirrors `EAGER_CARDS` in `src/lib/images/staging.ts` â€” the design's "first 6 cards". */
 export const MAX_EAGER_IMAGES = 6;
 
 /** The zoom-only derivative. `robots.txt` disallows it; a card must never request it. */
@@ -157,8 +157,8 @@ export function preloadedImageUrls(html: string): string[] {
  *
  * Two shapes count, because both hold the slot open before the bytes arrive:
  *
- * - `aspect-ratio` in any form — the media boxes, the hero figure, the skeleton tiles;
- * - a `height` in an absolute unit — the 96 px thumbnail rail, whose box is a fixed rectangle
+ * - `aspect-ratio` in any form â€” the media boxes, the hero figure, the skeleton tiles;
+ * - a `height` in an absolute unit â€” the 96 px thumbnail rail, whose box is a fixed rectangle
  *   rather than a ratio. `height: 100%` and `height: auto` are *not* reservations: they defer to
  *   something else, which is the case this check exists to catch.
  */
@@ -208,7 +208,7 @@ export function srcsetWidths(srcset: string): number[] {
  * - `ngf-card-media` / `ngf-grid`: a product card's media slot and the catalogue grid it sits in.
  * - `ngf-gallerypage`: the standalone gallery surface.
  * - `ngf-lookbook`: the gallery lookbook grid (`/gallery`), whose first tiles are eager and whose
- *   first tile is the page's prioritised LCP image — the same above-the-fold gallery photographs
+ *   first tile is the page's prioritised LCP image â€” the same above-the-fold gallery photographs
  *   `ngf-gallerypage` already names, in the lookbook's masonry rhythm. Each tile reserves its box
  *   via the `.ngf-image` aspect-ratio inside `.ngf-lookbook-frame`, so recognising it here only
  *   admits the eager-eligibility, not any relaxation of the reserved-box or full-resolution rules.
@@ -252,7 +252,7 @@ export function auditImages(
     problems.push({
       page,
       rule: 'at most one prioritised image',
-      detail: `${String(prioritised.length)} images carry fetchpriority="high" — they compete for the same early bandwidth`,
+      detail: `${String(prioritised.length)} images carry fetchpriority="high" â€” they compete for the same early bandwidth`,
     });
   }
 
@@ -272,7 +272,7 @@ export function auditImages(
       page,
       rule: 'the prioritised image is the preloaded one',
       detail:
-        'an image is fetchpriority="high" and nothing is preloaded — the hint the design pairs with it is missing',
+        'an image is fetchpriority="high" and nothing is preloaded â€” the hint the design pairs with it is missing',
     });
   }
 
@@ -282,7 +282,7 @@ export function auditImages(
       problems.push({
         page,
         rule: 'the prioritised image is the preloaded one',
-        detail: `preloads ${preload} and prioritises ${src} — two fetches instead of one`,
+        detail: `preloads ${preload} and prioritises ${src} â€” two fetches instead of one`,
       });
     }
     if ((attributeOf(priority.tag, 'loading') ?? 'eager').toLowerCase() !== 'eager') {
@@ -465,7 +465,7 @@ function main(): void {
   try {
     if (!statSync(target).isDirectory()) throw new Error('not a directory');
   } catch {
-    console.error(`[image-loading] no build output at ${relative(ROOT, target)} — build first`);
+    console.error(`[image-loading] no build output at ${relative(ROOT, target)} â€” build first`);
     process.exitCode = 1;
     return;
   }
@@ -484,7 +484,7 @@ function main(): void {
 
   console.error(`[image-loading] FAILED with ${String(summary.problems.length)} problem(s):`);
   for (const problem of summary.problems) {
-    console.error(`  ${problem.page} — ${problem.rule}: ${problem.detail}`);
+    console.error(`  ${problem.page} â€” ${problem.rule}: ${problem.detail}`);
   }
   process.exitCode = 1;
 }

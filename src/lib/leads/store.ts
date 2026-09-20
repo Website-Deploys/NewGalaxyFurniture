@@ -24,7 +24,7 @@
 
 import { z } from 'zod';
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { SqlDatabase } from '@/lib/runtime/types';
 
 import { safeText } from '@/lib/security/sanitize';
 
@@ -172,7 +172,7 @@ export function generateLeadId(): string {
 /* -------------------------------------------------------------------------- */
 
 /** Store exactly one lead with `NEW` status (Requirement 6.7). */
-export async function insertLead(db: D1Database, lead: NewLead): Promise<void> {
+export async function insertLead(db: SqlDatabase, lead: NewLead): Promise<void> {
   await db
     .prepare(
       'INSERT INTO leads (id, created_at, type, name, phone, message, product_slug, product_name, ' +
@@ -213,7 +213,7 @@ export async function insertLead(db: D1Database, lead: NewLead): Promise<void> {
  * (Requirement 20.12): no visitor event infers one.
  */
 export async function updateLead(
-  db: D1Database,
+  db: SqlDatabase,
   id: string,
   patch: { status?: LeadStatus; note?: string | null },
 ): Promise<Lead | null> {
@@ -240,7 +240,7 @@ export async function updateLead(
 /* Reads                                                                      */
 /* -------------------------------------------------------------------------- */
 
-export async function getLead(db: D1Database, id: string): Promise<Lead | null> {
+export async function getLead(db: SqlDatabase, id: string): Promise<Lead | null> {
   const row = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(id).first<LeadRow>();
   return row === null ? null : toLead(row);
 }
@@ -350,7 +350,7 @@ export interface LeadPage {
   filtered: boolean;
 }
 
-export async function queryLeads(db: D1Database, query: LeadQuery): Promise<LeadPage> {
+export async function queryLeads(db: SqlDatabase, query: LeadQuery): Promise<LeadPage> {
   const clause = whereFor(query);
   const where = numbered(clause);
 
@@ -388,7 +388,7 @@ export async function queryLeads(db: D1Database, query: LeadQuery): Promise<Lead
 
 /** Every lead matching the filter, for the export. Bounded so one query cannot run away. */
 export async function queryLeadsForExport(
-  db: D1Database,
+  db: SqlDatabase,
   query: LeadQuery,
   limit = 5000,
 ): Promise<Lead[]> {
@@ -405,7 +405,7 @@ export async function queryLeadsForExport(
 }
 
 /** How many leads are in each status — the dashboard's `newLeads` card reads `NEW`. */
-export async function countLeadsByStatus(db: D1Database): Promise<Record<LeadStatus, number>> {
+export async function countLeadsByStatus(db: SqlDatabase): Promise<Record<LeadStatus, number>> {
   const counts: Record<LeadStatus, number> = {
     NEW: 0,
     CONTACTED: 0,

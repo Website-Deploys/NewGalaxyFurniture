@@ -20,7 +20,7 @@
  * Requirements: 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.11, 20.12.
  */
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { SqlDatabase } from '@/lib/runtime/types';
 
 import type { AnalyticsEventType } from './rollup';
 
@@ -128,7 +128,7 @@ export function parseRange(params: URLSearchParams, now: Date = new Date()): Ana
 /* -------------------------------------------------------------------------- */
 
 async function totalFor(
-  db: D1Database,
+  db: SqlDatabase,
   type: AnalyticsEventType,
   range: AnalyticsRange,
 ): Promise<number> {
@@ -143,7 +143,7 @@ async function totalFor(
 }
 
 async function rankedFor(
-  db: D1Database,
+  db: SqlDatabase,
   type: AnalyticsEventType,
   range: AnalyticsRange,
   limit: number,
@@ -160,7 +160,7 @@ async function rankedFor(
 }
 
 async function topSearchesFor(
-  db: D1Database,
+  db: SqlDatabase,
   range: AnalyticsRange,
   limit: number,
 ): Promise<RankedQuery[]> {
@@ -186,7 +186,7 @@ async function topSearchesFor(
  * product they already have. Rows with `results IS NULL` are excluded — unknown is not zero.
  */
 async function zeroResultSearchesFor(
-  db: D1Database,
+  db: SqlDatabase,
   range: AnalyticsRange,
   limit: number,
 ): Promise<RankedQuery[]> {
@@ -206,7 +206,7 @@ async function zeroResultSearchesFor(
 }
 
 /** Any recorded event in the range at all. Distinguishes "no data" from "all zeros". */
-async function hasAnyEvents(db: D1Database, range: AnalyticsRange): Promise<boolean> {
+async function hasAnyEvents(db: SqlDatabase, range: AnalyticsRange): Promise<boolean> {
   const row = await db
     .prepare('SELECT 1 AS present FROM event_daily WHERE day >= ? AND day <= ? LIMIT 1')
     .bind(range.from, range.to)
@@ -223,7 +223,7 @@ async function hasAnyEvents(db: D1Database, range: AnalyticsRange): Promise<bool
  * comparisons against the day's edges.
  */
 async function leadFigures(
-  db: D1Database,
+  db: SqlDatabase,
   range: AnalyticsRange,
 ): Promise<{ records: number; conversions: number }> {
   const row = await db
@@ -245,7 +245,7 @@ async function leadFigures(
  * rejected aggregate.
  */
 export async function analyticsSummary(
-  db: D1Database,
+  db: SqlDatabase,
   range: AnalyticsRange,
   topN: number = DEFAULT_TOP_N,
 ): Promise<AnalyticsSummary> {
@@ -277,7 +277,7 @@ export async function analyticsSummary(
  * than presented as current.
  */
 export async function measuredViewCounts(
-  db: D1Database,
+  db: SqlDatabase,
   range: AnalyticsRange,
 ): Promise<{ range: AnalyticsRange; counts: Record<string, number> }> {
   const { results } = await db

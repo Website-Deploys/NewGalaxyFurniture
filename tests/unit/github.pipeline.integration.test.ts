@@ -1,4 +1,4 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AppError } from '@/lib/errors';
@@ -21,8 +21,8 @@ import { demoSofa } from '../fixtures/products';
 /**
  * The write pipeline, against a stubbed GitHub API.
  *
- * The stub reproduces the protocol — blob shas, the `sha` precondition, the 60-column
- * base64 wrapping, the Git Data API sequence — so `GitHubContentClient` runs unmodified.
+ * The stub reproduces the protocol â€” blob shas, the `sha` precondition, the 60-column
+ * base64 wrapping, the Git Data API sequence â€” so `GitHubContentClient` runs unmodified.
  * What is under test is therefore the client's real behaviour, not a mock of it.
  *
  * Six things the design commits to and this suite pins down:
@@ -51,7 +51,7 @@ const editor: InteractiveActor = {
 
 let stub: GitHubApiStub;
 let client: GitHubContentClient;
-let drafts: KVNamespace;
+let drafts: KeyValueStore;
 
 function makeClient(current: GitHubApiStub): GitHubContentClient {
   return new GitHubContentClient({
@@ -88,7 +88,7 @@ function product(overrides: Partial<Product> = {}): Product {
 beforeEach(() => {
   stub = new GitHubApiStub();
   client = makeClient(stub);
-  drafts = new MemoryKV() as unknown as KVNamespace;
+  drafts = new MemoryKV();
 });
 
 describe('single-file update', () => {
@@ -123,7 +123,10 @@ describe('single-file update', () => {
 
   it('round-trips non-ASCII content through base64', async () => {
     const path = siteContentPath('settings')!;
-    const value = { businessName: 'New Galaxy Furniture', tagline: 'सोफ़ा · ₹1,00,000 · café 🛋️' };
+    const value = {
+      businessName: 'New Galaxy Furniture',
+      tagline: 'à¤¸à¥‹à¤«à¤¼à¤¾ Â· â‚¹1,00,000 Â· cafÃ© ðŸ›‹ï¸',
+    };
     await client.writeFile({
       path,
       content: serializeContentJson(value),
@@ -182,10 +185,10 @@ describe('unknown-field preservation', () => {
     });
 
     const after = stub.readJson(path)!;
-    // The patched fields changed…
+    // The patched fields changedâ€¦
     expect(after.name).toBe('Legacy Sofa (renamed)');
     expect(after.price).toBe(47000);
-    // …and every unrecognised field is still there, values intact.
+    // â€¦and every unrecognised field is still there, values intact.
     expect(after.legacyId).toBe('IMP-2019-4471');
     expect(after.importedFrom).toBe('old-catalogue.csv');
     expect(after['v2:pricing']).toEqual({ tier: 'premium', notes: 'negotiated' });
@@ -225,11 +228,11 @@ describe('the 409 conflict path', () => {
       serializeContentJson({ slug: 'contested-sofa', name: 'Original', price: 1000 }),
     );
 
-    // The operator loads the file…
+    // The operator loads the fileâ€¦
     const loaded = await client.readJson(path);
     expect(loaded).not.toBeNull();
 
-    // …someone else saves it while the form is open…
+    // â€¦someone else saves it while the form is openâ€¦
     stub.clobber(
       path,
       serializeContentJson({
@@ -239,7 +242,7 @@ describe('the 409 conflict path', () => {
       }),
     );
 
-    // …and the operator's save is refused rather than winning.
+    // â€¦and the operator's save is refused rather than winning.
     const attempt = client.writeFile({
       path,
       content: serializeContentJson({ slug: 'contested-sofa', name: 'My version', price: 1500 }),
@@ -285,7 +288,7 @@ describe('the 409 conflict path', () => {
     await expect(
       client.deleteFile({ path, sha: loaded!.sha, message: 'm\n\nActor: a (owner)\n' }),
     ).rejects.toMatchObject({ code: 'CONFLICT' });
-    // Not deleted — a stale delete is as dangerous as a stale write.
+    // Not deleted â€” a stale delete is as dangerous as a stale write.
     expect(stub.read(path)).not.toBeNull();
   });
 
@@ -330,7 +333,7 @@ describe('atomic multi-file rename', () => {
       }),
     });
 
-    // One commit, three files — never a half-renamed repository.
+    // One commit, three files â€” never a half-renamed repository.
     expect(stub.commits.length).toBe(commitsBefore + 1);
     expect(stub.lastCommit!.kind).toBe('tree');
     expect(stub.lastCommit!.paths.sort()).toEqual([newPath, oldPath, redirects].sort());
@@ -357,7 +360,7 @@ describe('atomic multi-file rename', () => {
 });
 
 describe('commit messages: subject, trailers, and [skip ci]', () => {
-  it('renders the design’s exact shape', () => {
+  it('renders the designâ€™s exact shape', () => {
     const message = buildCommitMessage({
       scope: 'product',
       action: 'publish',
@@ -444,7 +447,7 @@ describe('commit messages: subject, trailers, and [skip ci]', () => {
   });
 });
 
-describe('the state → repository mapping', () => {
+describe('the state â†’ repository mapping', () => {
   it('writes both KV and the repo for a draft, with [skip ci] and no deploy', async () => {
     const draft = product({ status: 'DRAFT', published: false, stockStatus: 'IN_STOCK' });
     const result = await saveProductState({
@@ -504,7 +507,7 @@ describe('the state → repository mapping', () => {
 
   it('triggers a deploy when a published product returns to draft', async () => {
     // The state table lists DRAFT as "no build", which is right for a draft that was
-    // never public and wrong for one that was — the live page has to come down.
+    // never public and wrong for one that was â€” the live page has to come down.
     const published = product({ status: 'PUBLISHED', published: true, stockStatus: 'IN_STOCK' });
     const result = await saveProductState({
       drafts,
@@ -591,7 +594,7 @@ describe('the state → repository mapping', () => {
 
 describe('the product write lock', () => {
   it('serializes a second concurrent save into a retryable conflict', async () => {
-    const kv = new MemoryKV() as unknown as KVNamespace;
+    const kv = new MemoryKV() as unknown as KeyValueStore;
     const now = Date.UTC(2026, 0, 15, 9, 0, 0);
     let released = false;
 
@@ -616,7 +619,7 @@ describe('the product write lock', () => {
   });
 
   it('does not block a different product', async () => {
-    const kv = new MemoryKV() as unknown as KVNamespace;
+    const kv = new MemoryKV() as unknown as KeyValueStore;
     const now = Date.UTC(2026, 0, 15, 9, 0, 0);
     await withProductLock(
       kv,
@@ -629,7 +632,7 @@ describe('the product write lock', () => {
   });
 
   it('lets an expired lock be taken over', async () => {
-    const kv = new MemoryKV() as unknown as KVNamespace;
+    const kv = new MemoryKV() as unknown as KeyValueStore;
     const now = Date.UTC(2026, 0, 15, 9, 0, 0);
     // A Worker that died mid-save must not wedge the product forever.
     await withProductLock(kv, 'p_0000000003', async () => 'first', now);
@@ -639,7 +642,7 @@ describe('the product write lock', () => {
   });
 
   it('releases the lock even when the operation throws', async () => {
-    const kv = new MemoryKV() as unknown as KVNamespace;
+    const kv = new MemoryKV() as unknown as KeyValueStore;
     const now = Date.UTC(2026, 0, 15, 9, 0, 0);
     await expect(
       withProductLock(kv, 'p_0000000004', () => Promise.reject(new Error('write failed')), now),

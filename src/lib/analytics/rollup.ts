@@ -22,7 +22,7 @@
  * Requirements: 20.1, 20.2, 20.3, 20.11.
  */
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { SqlDatabase } from '@/lib/runtime/types';
 
 export const ANALYTICS_EVENT_TYPES = [
   'product_view',
@@ -187,7 +187,7 @@ export function foldBatch(events: readonly AnalyticsEvent[]): {
  * not "your events were recorded" but "this many counters moved".
  */
 export async function recordEvents(
-  db: D1Database,
+  db: SqlDatabase,
   events: readonly AnalyticsEvent[],
 ): Promise<{ tallies: number; queries: number }> {
   const { tallies, queries } = foldBatch(events);

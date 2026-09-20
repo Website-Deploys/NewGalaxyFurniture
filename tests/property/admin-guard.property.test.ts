@@ -1,4 +1,4 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -26,17 +26,17 @@ import { NUM_RUNS } from './config';
  * **On the spies.** The design's strategy for Property 52 asks for spies on the D1, GitHub and R2
  * bindings, asserted un-called. That is what the three fakes below are: every method that could
  * mutate state is a `vi.fn()`, they are handed to the guard's storage surface, and each property run
- * asserts none of them fired. The guarantee they establish is structural — the guard reaches its
+ * asserts none of them fired. The guarantee they establish is structural â€” the guard reaches its
  * refusal *before* any binding is touched, so there is no ordering in which a write could precede
  * the check. Handlers cannot bypass it: `requireAdmin` is their first statement and it returns a
  * `Response` on refusal, which is the value the endpoint returns.
  *
- * Design: Correctness Properties → Properties 52, 53; Admin Authentication.
+ * Design: Correctness Properties â†’ Properties 52, 53; Admin Authentication.
  */
 
 const ORIGIN = 'https://admin.example.test';
 
-/** Every route that requires a session — the surface both properties quantify over. */
+/** Every route that requires a session â€” the surface both properties quantify over. */
 const GUARDED_ROUTES: AdminRoute[] = ADMIN_ROUTES.filter(
   (route) => !UNAUTHENTICATED_ROUTES.includes(routeKey(route)),
 );
@@ -120,13 +120,13 @@ function bindingSpies() {
  * KV, wrapped so writes are observable.
  *
  * `SESSIONS` is the one binding the guard *does* read, because reading the session is the check. A
- * refused request must not write to it either — a `put` on an unauthenticated request would mean the
+ * refused request must not write to it either â€” a `put` on an unauthenticated request would mean the
  * guard had created or extended something.
  */
-function sessionStore(): { kv: KVNamespace; put: ReturnType<typeof vi.fn> } {
+function sessionStore(): { kv: KeyValueStore; put: ReturnType<typeof vi.fn> } {
   const memory = new MemoryKV();
   const put = vi.fn(memory.put);
-  return { kv: { ...memory, put } as unknown as KVNamespace, put };
+  return { kv: { ...memory, put }, put };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -218,7 +218,7 @@ describe('Property 52: Unauthenticated admin requests write nothing', () => {
 
 describe('Property 53: Missing or wrong CSRF tokens are refused', () => {
   /** A real session in KV, plus the cookie that presents it. */
-  async function withSession(kv: KVNamespace): Promise<{ cookie: string; csrfToken: string }> {
+  async function withSession(kv: KeyValueStore): Promise<{ cookie: string; csrfToken: string }> {
     const session = await createSession(kv, {
       userId: 'u_owner',
       role: 'owner',
@@ -258,7 +258,7 @@ describe('Property 53: Missing or wrong CSRF tokens are refused', () => {
     );
   });
 
-  it('accepts the session’s own token, so the refusal is about the token and not the route', async () => {
+  it('accepts the sessionâ€™s own token, so the refusal is about the token and not the route', async () => {
     await fc.assert(
       fc.asyncProperty(fc.constantFrom(...UNSAFE_ROUTES), async (route) => {
         const { kv } = sessionStore();
@@ -271,7 +271,7 @@ describe('Property 53: Missing or wrong CSRF tokens are refused', () => {
         });
 
         // An owner holds every permission, so the only remaining refusal would be a content-type
-        // mismatch — which `requestFor` supplies from the route's own declaration.
+        // mismatch â€” which `requestFor` supplies from the route's own declaration.
         expect(outcome.ok, `${route.method} ${route.pattern}`).toBe(true);
       }),
       { numRuns: NUM_RUNS },

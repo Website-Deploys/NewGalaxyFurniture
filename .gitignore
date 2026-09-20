@@ -1,38 +1,17 @@
 # build output
 dist/
 .astro/
-.wrangler/
+.netlify/
 
-# dependencies
-node_modules/
-
-# secrets — never commit real values; .env.example is the only tracked env file
+# environment / secrets (never commit)
 .env
 .env.*
 !.env.example
 .dev.vars
-.dev.vars.*
 
-# test artefacts
-.e2e/
-design-refs/
-preview-screenshots/
+# dependencies
+node_modules/
+
+# test artifacts
 playwright-report/
 test-results/
-coverage/
-blob-report/
-.playwright/
-
-# logs / editor / OS
-*.log
-npm-debug.log*
-.DS_Store
-.idea/
-.vscode/*
-!.vscode/extensions.json
-
-# Netlify CLI local state. `.netlify` is the CLI's own working folder; `deno.lock` is written when it
-# boots its Deno edge-function runtime, which this project does not use — Netlify serves the
-# prerendered `dist/client` and nothing else. Neither belongs in the repository.
-.netlify
-deno.lock

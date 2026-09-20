@@ -441,7 +441,7 @@ describe('no credential or provider identity can reach the client', () => {
 
 describe('the provider seam', () => {
   it('has one adapter per declared provider name, and the names are closed', () => {
-    expect([...AI_PROVIDERS]).toEqual(['openai', 'anthropic', 'workers-ai']);
+    expect([...AI_PROVIDERS]).toEqual(['openai', 'anthropic']);
     for (const name of AI_PROVIDERS) expect(isProviderName(name)).toBe(true);
     for (const name of ['gemini', 'OPENAI', '', 'openai '])
       expect(isProviderName(name)).toBe(false);

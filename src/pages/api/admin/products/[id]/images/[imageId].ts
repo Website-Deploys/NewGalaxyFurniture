@@ -17,7 +17,7 @@
  */
 
 import type { APIContext } from 'astro';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 import { z } from 'zod';
 
 import {
@@ -113,7 +113,7 @@ export async function DELETE(context: APIContext): Promise<Response> {
   const imageId = context.params.imageId ?? '';
   const { drafts, client, actor } = opened.context;
 
-  let bucket: R2Bucket;
+  let bucket: ObjectBucket;
   try {
     bucket = getR2(context);
   } catch (error) {

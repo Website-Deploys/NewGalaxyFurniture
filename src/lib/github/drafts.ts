@@ -24,7 +24,7 @@
  * Requirements: 12.4, 14.9, 17.9, 17.14, 17.15.
  */
 
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 import { AppError, ERROR_CODES } from '../errors';
 import { applyFieldPatch, parseContentJson, serializeContentJson } from './serialize';
@@ -59,7 +59,7 @@ function draftKey(productId: string): string {
 /* -------------------------------------------------------------------------- */
 
 export async function putDraft(
-  drafts: KVNamespace,
+  drafts: KeyValueStore,
   product: Product,
   savedAt: string = new Date().toISOString(),
 ): Promise<void> {
@@ -80,7 +80,7 @@ export async function putDraft(
  * is the source of truth and is still there.
  */
 export async function getDraft(
-  drafts: KVNamespace,
+  drafts: KeyValueStore,
   productId: string,
 ): Promise<DraftRecord | null> {
   const raw = await drafts.get(draftKey(productId), 'text');
@@ -95,7 +95,7 @@ export async function getDraft(
   };
 }
 
-export async function deleteDraft(drafts: KVNamespace, productId: string): Promise<void> {
+export async function deleteDraft(drafts: KeyValueStore, productId: string): Promise<void> {
   await drafts.delete(draftKey(productId));
 }
 
@@ -105,7 +105,7 @@ export async function deleteDraft(drafts: KVNamespace, productId: string): Promi
  * KV list pagination is followed to the end; a truncated first page would silently hide
  * drafts from the operator, which is worse than the extra round trips.
  */
-export async function listDrafts(drafts: KVNamespace): Promise<DraftRecord[]> {
+export async function listDrafts(drafts: KeyValueStore): Promise<DraftRecord[]> {
   const records: DraftRecord[] = [];
   let cursor: string | undefined;
   do {
@@ -132,7 +132,7 @@ export interface ProductSource {
 }
 
 export interface ResolveDeps {
-  drafts: KVNamespace;
+  drafts: KeyValueStore;
   client: GitHubContentClient;
 }
 
@@ -175,7 +175,7 @@ export async function resolveProduct(
 /* -------------------------------------------------------------------------- */
 
 export interface SaveProductInput {
-  drafts: KVNamespace;
+  drafts: KeyValueStore;
   client: GitHubContentClient;
   /** The product as it should be stored. */
   product: Product;
@@ -268,7 +268,7 @@ export async function saveProductState(input: SaveProductInput): Promise<SavePro
  * that happens without one.
  */
 export async function deleteProductState(input: {
-  drafts: KVNamespace;
+  drafts: KeyValueStore;
   client: GitHubContentClient;
   product: Product;
   actor: InteractiveActor;
@@ -318,7 +318,7 @@ export interface RehydrateResult {
  * the run — one hand-edited file must not block recovery of the rest.
  */
 export async function rehydrateFromRepository(deps: {
-  drafts: KVNamespace;
+  drafts: KeyValueStore;
   client: GitHubContentClient;
   /** Slugs to rebuild from, from a directory listing. */
   slugs: readonly string[];

@@ -23,7 +23,7 @@
  * Requirements: 15.8, 15.9, 15.10, 15.11, 15.12, 15.13.
  */
 
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 import { derivativeKey, derivativeWidthsFor, jpegFallbackWidthFor } from './srcset';
 import { putImageObject } from './store';
@@ -76,7 +76,7 @@ export function planDerivatives(
 }
 
 export interface GenerateInput {
-  bucket: R2Bucket;
+  bucket: ObjectBucket;
   codec: ImageCodec;
   /** Decoded pixels of the original — metadata already gone by construction. */
   raw: RawImage;

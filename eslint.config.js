@@ -21,7 +21,7 @@ export default defineConfig(
     ignores: [
       'dist/**',
       '.astro/**',
-      '.wrangler/**',
+      '.netlify/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
@@ -80,24 +80,23 @@ export default defineConfig(
            * - `localhost` / `127.0.0.1` — local development only.
            * - `schema.org`, `www.w3.org` — vocabulary URIs, which are identifiers
            *   rather than endpoints; changing them would change their meaning.
-           * - `api.github.com`, `api.cloudflare.com` — upstream service endpoints.
+           * - `api.github.com`, `api.netlify.com` — upstream service endpoints.
            *   These are deliberately *not* configurable: the write pipeline sends a
-           *   `contents:write` credential to the first and an account token to the
-           *   second, so a settable host would be a way to redirect a secret to a
-           *   host of someone else's choosing. Both remain injectable per call site
-           *   for tests (`GitHubClientConfig.apiBase`), which is a compile-time
+           *   `contents:write` credential to the first and the deploy-status reader an
+           *   account token to the second, so a settable host would be a way to redirect
+           *   a secret to a host of someone else's choosing. Both remain injectable per
+           *   call site for tests (`GitHubClientConfig.apiBase`), which is a compile-time
            *   argument rather than runtime configuration.
            * - `api.openai.com`, `api.anthropic.com` — the AI provider endpoints, for
            *   exactly the same reason and it is the stronger case: the adapters send
            *   `AI_API_KEY` to them, so a host read from configuration would turn a
            *   settings edit into a credential exfiltration path. The provider is
-           *   selected by the `AI_PROVIDER` secret from a closed switch (see
+           *   selected by the `AI_PROVIDER` variable from a closed switch (see
            *   `src/lib/ai/factory.ts`); the *host* each adapter talks to is fixed in
-           *   that adapter's own file. Workers AI needs no literal host at all — it is
-           *   reached through the `AI` binding.
+           *   that adapter's own file.
            */
           selector:
-            'Literal[value=/^https?:\\/\\/(?!localhost|127\\.0\\.0\\.1|schema\\.org|www\\.w3\\.org|api\\.github\\.com|api\\.cloudflare\\.com|api\\.openai\\.com|api\\.anthropic\\.com)/]',
+            'Literal[value=/^https?:\\/\\/(?!localhost|127\\.0\\.0\\.1|schema\\.org|www\\.w3\\.org|api\\.github\\.com|api\\.netlify\\.com|api\\.openai\\.com|api\\.anthropic\\.com)/]',
           message:
             'No hard-coded hostname. Read the origin from PUBLIC_SITE_URL via src/lib/env.ts.',
         },

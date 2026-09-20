@@ -138,16 +138,12 @@ export default defineConfig({
    * absence of a database rather than the presence of a guard.
    */
   webServer: {
-    command: 'npm run e2e:prepare && npm run build && npm run e2e:preview',
+    command: 'npm run build && netlify dev',
     url: BASE_URL,
     reuseExistingServer: !isCI,
     timeout: 300_000,
     stdout: 'pipe',
     stderr: 'pipe',
-    // The product seam. `e2e:prepare` writes `tests/fixtures/products.ts` into this git-ignored
-    // directory and `src/content.config.ts` reads the collection from it, so the catalogue, a detail
-    // page and the structured data can all be asserted against real products without a demo product
-    // ever reaching `data/products/`. Unset anywhere else, which is every build that ships.
     env: { NGF_PRODUCTS_DIR: PRODUCTS_DIR },
   },
 });

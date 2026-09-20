@@ -1,4 +1,4 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -38,13 +38,13 @@ import type { Product } from '@/schemas/product';
 /**
  * The admin product path, end to end over the real write pipeline.
  *
- * This is the checkpoint the plan asks for — create → draft save → preview resolution → publish
- * → unpublish → duplicate → delete — driven against a protocol-level GitHub stub and an
+ * This is the checkpoint the plan asks for â€” create â†’ draft save â†’ preview resolution â†’ publish
+ * â†’ unpublish â†’ duplicate â†’ delete â€” driven against a protocol-level GitHub stub and an
  * in-memory KV. The endpoints are thin wrappers over exactly these calls; what is exercised here
  * is every decision they delegate: identity generation, derived-field coherence, the publish
  * gate, the transition machine, the atomic rename, and the index the list and dashboard read.
  *
- * Requirements: 11.2, 11.3, 12.1–12.13, 13.9–13.13, 14.1–14.9.
+ * Requirements: 11.2, 11.3, 12.1â€“12.13, 13.9â€“13.13, 14.1â€“14.9.
  */
 
 const OWNER = { email: 'owner@example.test', role: 'owner', sessionId: 's1' } as InteractiveActor;
@@ -56,7 +56,7 @@ const EDITOR = {
 
 let stub: GitHubApiStub;
 let client: GitHubContentClient;
-let drafts: KVNamespace;
+let drafts: KeyValueStore;
 
 beforeEach(() => {
   stub = new GitHubApiStub({ files: { 'data/site/redirects.json': '{}\n' } });
@@ -67,7 +67,7 @@ beforeEach(() => {
     apiBase: 'https://api.github.com',
     fetchImpl: stub.fetch,
   });
-  drafts = new MemoryKV() as unknown as KVNamespace;
+  drafts = new MemoryKV();
 });
 
 /** The create endpoint's body, minus the HTTP. */
@@ -185,7 +185,7 @@ describe('derived fields cannot be authored', () => {
   });
 });
 
-describe('the editor’s inline validation is the server’s validation', () => {
+describe('the editorâ€™s inline validation is the serverâ€™s validation', () => {
   it('reports the same field keys the API would return', () => {
     const broken: Product = { ...demoSofa, price: 60_000, originalPrice: 50_000 };
 
@@ -194,7 +194,7 @@ describe('the editor’s inline validation is the server’s validation', () => 
     expect(server.ok).toBe(false);
     if (server.ok) return;
 
-    // Not "both report something" — the *same* keys, because they are the same code path.
+    // Not "both report something" â€” the *same* keys, because they are the same code path.
     expect(Object.keys(inline).sort()).toStrictEqual(Object.keys(server.fields).sort());
     expect(Object.keys(inline)).toContain('originalPrice');
   });
@@ -292,7 +292,7 @@ describe('the lifecycle', () => {
     if (!publish.ok) expect(publish.code).toBe('TRANSITION_NOT_ALLOWED');
 
     // The permission gate is on *public* targets only, so an editor may take a product off the
-    // site — that is the machine the design declares, and it is the safe direction.
+    // site â€” that is the machine the design declares, and it is the safe direction.
     expect(applyTransition(demoSofa, 'UNPUBLISHED', EDITOR).ok).toBe(true);
   });
 
@@ -424,7 +424,7 @@ describe('rename', () => {
     const chained = withRenameRedirect({ '/product/a': '/product/b' }, 'b', 'c');
     expect(chained).toStrictEqual({ '/product/a': '/product/c', '/product/b': '/product/c' });
 
-    // A round trip back to `a` must not leave `/product/a → /product/a`.
+    // A round trip back to `a` must not leave `/product/a â†’ /product/a`.
     const roundTrip = withRenameRedirect({ '/product/a': '/product/b' }, 'b', 'a');
     expect(roundTrip['/product/a']).toBeUndefined();
     expect(roundTrip['/product/b']).toBe('/product/a');

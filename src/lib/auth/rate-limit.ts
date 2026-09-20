@@ -19,17 +19,17 @@
  * - The **15-minute window** is a KV counter. Five failures inside one window is
  *   the trigger; the counter is reset when it fires so the next window starts clean.
  * - The **escalation level** is `floor(fails / 5)` over the D1 running total, which
- *   only ever resets on a successful login. First trigger → 1 min, second → 5 min,
- *   third → 15 min, fourth and later → 60 min.
+ *   only ever resets on a successful login. First trigger â†’ 1 min, second â†’ 5 min,
+ *   third â†’ 15 min, fourth and later â†’ 60 min.
  *
  * Every key is a SHA-256 hash. `login_attempts` is read on every attempt including
  * failures, so a dump of it must not reveal which addresses exist.
  *
- * Design: Admin Authentication → Brute-force and abuse control.
+ * Design: Admin Authentication â†’ Brute-force and abuse control.
  * Requirements: 10.10, 10.11, 10.12, 25.8, 26.10.
  */
 
-import type { D1Database, KVNamespace, RateLimit } from '@cloudflare/workers-types';
+import type { SqlDatabase, KeyValueStore } from '@/lib/runtime/types';
 
 const MINUTE_MS = 60_000;
 
@@ -39,7 +39,7 @@ export const LOGIN_FAILURE_THRESHOLD = 5;
 export const LOGIN_FAILURE_WINDOW_MS = 15 * MINUTE_MS;
 /** The escalation ladder, in minutes. The last entry repeats for every further lock. */
 export const LOCK_LADDER_MINUTES: readonly number[] = [1, 5, 15, 60];
-/** Login attempts — successful or not — allowed per client address per window. */
+/** Login attempts â€” successful or not â€” allowed per client address per window. */
 export const LOGIN_IP_LIMIT = 20;
 export const LOGIN_IP_WINDOW_MS = 15 * MINUTE_MS;
 
@@ -50,7 +50,7 @@ export const LOGIN_IP_WINDOW_MS = 15 * MINUTE_MS;
 export const KV_RATE_LIMITS = {
   /** 30 uploads / 10 min per session. */
   imageUpload: { limit: 30, windowMs: 10 * MINUTE_MS, scope: 'session' },
-  /** 20 generations / hour per session — cost containment, not abuse prevention. */
+  /** 20 generations / hour per session â€” cost containment, not abuse prevention. */
   aiGenerate: { limit: 20, windowMs: 60 * MINUTE_MS, scope: 'session' },
   /** 5 leads / hour per IP, on top of the honeypot and the minimum time-on-form. */
   leadSubmit: { limit: 5, windowMs: 60 * MINUTE_MS, scope: 'ip' },
@@ -58,9 +58,9 @@ export const KV_RATE_LIMITS = {
 
 export type KvRateLimitName = keyof typeof KV_RATE_LIMITS;
 
-/** 120 admin API requests per minute per session — the RL_ADMIN_API binding's row. */
+/** 120 admin API requests per minute per session â€” (admin API ceiling). */
 export const ADMIN_API_LIMIT_PER_MINUTE = 120;
-/** 200 events per minute per IP — the RL_EVENTS binding's row. */
+/** 200 events per minute per IP â€” (events ceiling). */
 export const EVENTS_LIMIT_PER_MINUTE = 200;
 
 export interface RateLimitDecision {
@@ -107,7 +107,7 @@ function isWindowRecord(value: unknown): value is WindowRecord {
 }
 
 async function readWindow(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   key: string,
   windowMs: number,
   now: number,
@@ -125,7 +125,7 @@ async function readWindow(
   return { count: 0, resetAt: now + windowMs };
 }
 
-async function writeWindow(kv: KVNamespace, key: string, record: WindowRecord): Promise<void> {
+async function writeWindow(kv: KeyValueStore, key: string, record: WindowRecord): Promise<void> {
   // KV's minimum expirationTtl is 60 s; every window here is at least 10 min.
   await kv.put(key, JSON.stringify(record), {
     expirationTtl: Math.max(60, Math.ceil((record.resetAt - Date.now()) / 1000)),
@@ -138,10 +138,10 @@ async function writeWindow(kv: KVNamespace, key: string, record: WindowRecord): 
  * Read-modify-write on KV is not atomic, so two simultaneous requests can both see
  * the same count. That is accepted deliberately: these are abuse ceilings measured
  * in tens per window, and an occasional off-by-one under a race is immaterial. The
- * limits that must be exact — the login lock — are in D1.
+ * limits that must be exact â€” the login lock â€” are in D1.
  */
 export async function consumeWindow(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   key: string,
   limit: number,
   windowMs: number,
@@ -155,7 +155,7 @@ export async function consumeWindow(
 
 /** Inspect a window without consuming from it. */
 export async function peekWindow(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   key: string,
   limit: number,
   windowMs: number,
@@ -167,7 +167,7 @@ export async function peekWindow(
 
 /** Apply one of the named `KV_RATE_LIMITS` rows to a session id or client address. */
 export async function consumeNamedLimit(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   name: KvRateLimitName,
   subject: string,
   now: number = Date.now(),
@@ -178,20 +178,26 @@ export async function consumeNamedLimit(
 }
 
 /**
- * The Rate Limiting binding rows (admin API, events).
+ * The per-minute request ceilings (admin API 120/min, events 200/min).
  *
- * Fails **open** when the binding is absent, and that is the right default: the
- * binding is a smoothing device on top of authentication, and losing it in a
- * misconfigured preview environment should not make the admin API unusable. The
- * limits that protect a secret — login — never take this path.
+ * Historically backed by Cloudflare's Rate Limiting binding; now a KV (Netlify Blobs) fixed-window
+ * counter like every other rate limit here, so there is one mechanism and no platform binding. The
+ * `limit` is passed by the caller (`ADMIN_API_LIMIT_PER_MINUTE` / `EVENTS_LIMIT_PER_MINUTE`) and the
+ * window is a fixed 60 seconds. It fails **open** when no KV store is available â€” the ceiling is a
+ * smoothing device on top of authentication, and losing it in a misconfigured environment must not
+ * make the admin API unusable. The limits that protect a secret â€” login â€” never take this path.
+ *
+ * The read-modify-write is not atomic (see `consumeWindow`), which is accepted for a ceiling
+ * measured in the hundreds per minute; an occasional off-by-one under a race is immaterial.
  */
 export async function consumeBindingLimit(
-  limiter: RateLimit | undefined,
+  kv: KeyValueStore | undefined,
   key: string,
+  limit: number,
+  now: number = Date.now(),
 ): Promise<RateLimitDecision> {
-  if (limiter === undefined) return ALLOWED;
-  const outcome = await limiter.limit({ key });
-  return outcome.success ? ALLOWED : { allowed: false, retryAfterMinutes: 1 };
+  if (kv === undefined) return ALLOWED;
+  return await consumeWindow(kv, `rl:minute:${key}`, limit, MINUTE_MS, now);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -208,7 +214,7 @@ function loginEmailWindowKey(emailHash: string): string {
 
 /** Count one login attempt from a client address (Requirement 10.11). */
 export async function consumeLoginAttemptForIp(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   ip: string,
   now: number = Date.now(),
 ): Promise<RateLimitDecision> {
@@ -236,7 +242,7 @@ interface AttemptRow {
   lockedUntil: number | null;
 }
 
-async function readAttemptRow(db: D1Database, key: string): Promise<AttemptRow> {
+async function readAttemptRow(db: SqlDatabase, key: string): Promise<AttemptRow> {
   const row = await db
     .prepare('SELECT fails, locked_until FROM login_attempts WHERE key = ?')
     .bind(key)
@@ -257,7 +263,7 @@ async function readAttemptRow(db: D1Database, key: string): Promise<AttemptRow> 
  * derivation at all.
  */
 export async function checkEmailLock(
-  db: D1Database,
+  db: SqlDatabase,
   emailHash: string,
   now: number = Date.now(),
 ): Promise<RateLimitDecision> {
@@ -283,8 +289,8 @@ export interface LoginFailureOutcome {
  * in KV.
  */
 export async function recordLoginFailure(
-  db: D1Database,
-  kv: KVNamespace,
+  db: SqlDatabase,
+  kv: KeyValueStore,
   emailHash: string,
   now: number = Date.now(),
 ): Promise<LoginFailureOutcome> {
@@ -329,8 +335,8 @@ export async function recordLoginFailure(
  * failures plus one new one trip a lock immediately after a legitimate login.
  */
 export async function clearLoginFailures(
-  db: D1Database,
-  kv: KVNamespace,
+  db: SqlDatabase,
+  kv: KeyValueStore,
   emailHash: string,
 ): Promise<void> {
   await db

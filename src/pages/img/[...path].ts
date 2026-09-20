@@ -50,7 +50,7 @@ export async function GET(context: APIContext): Promise<Response> {
   for (const candidate of keyCandidates(request, accept)) {
     const object = await bucket.get(candidate.key);
     if (object === null) continue;
-    return new Response(object.body as unknown as ReadableStream, {
+    return new Response(object.body, {
       headers: {
         'content-type': object.httpMetadata?.contentType ?? candidate.contentType,
         'cache-control': IMAGE_CACHE_CONTROL,

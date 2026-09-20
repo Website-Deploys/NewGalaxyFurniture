@@ -253,7 +253,7 @@ export class GitHubApiStub {
   }
 }
 
-/** A minimal in-memory KVNamespace, for the draft store and the write lock. */
+/** A minimal in-memory KeyValueStore, for the draft store and the write lock. */
 export class MemoryKV {
   private readonly store = new Map<string, string>();
 

@@ -3,15 +3,15 @@
  *
  * | Route | JS | CSS | Total initial transfer |
  * |---|---|---|---|
- * | `/` | ≤ 45 kB | ≤ 24 kB | ≤ 320 kB |
- * | `/collection` | ≤ 70 kB (excl. lazy index) | ≤ 24 kB | ≤ 320 kB |
- * | `/product/[slug]` | ≤ 55 kB | ≤ 24 kB | ≤ 340 kB |
- * | static content pages | ≤ 20 kB | ≤ 20 kB | ≤ 160 kB |
- * | `/admin` | ≤ 220 kB | ≤ 40 kB | ≤ 300 kB |
- * | search index (lazy) | ≤ 60 kB | — | — |
- * | fonts (all routes) | — | — | ≤ 55 kB |
+ * | `/` | â‰¤ 45 kB | â‰¤ 24 kB | â‰¤ 320 kB |
+ * | `/collection` | â‰¤ 70 kB (excl. lazy index) | â‰¤ 24 kB | â‰¤ 320 kB |
+ * | `/product/[slug]` | â‰¤ 55 kB | â‰¤ 24 kB | â‰¤ 340 kB |
+ * | static content pages | â‰¤ 20 kB | â‰¤ 20 kB | â‰¤ 160 kB |
+ * | `/admin` | â‰¤ 220 kB | â‰¤ 40 kB | â‰¤ 300 kB |
+ * | search index (lazy) | â‰¤ 60 kB | â€” | â€” |
+ * | fonts (all routes) | â€” | â€” | â‰¤ 55 kB |
  *
- * Everything is Brotli, and `@size-limit/file` sums each file compressed separately — which is what
+ * Everything is Brotli, and `@size-limit/file` sums each file compressed separately â€” which is what
  * the browser actually transfers, one response at a time.
  *
  * **These numbers were not reachable as first built, and three changes closed the gap.** For the
@@ -33,8 +33,8 @@
  * an island's JavaScript is fetched by the hydration runtime from an `astro-island` attribute rather
  * than by a `<script>` tag. A hand-written glob per route would therefore be both stale after the
  * next edit and blind to the entire interactive payload. `scripts/route-assets.ts` resolves each
- * route's real closure from the built HTML — script tags, island component and renderer URLs, and
- * their transitive imports — so a chunk that a new import pulls into a route starts counting against
+ * route's real closure from the built HTML â€” script tags, island component and renderer URLs, and
+ * their transitive imports â€” so a chunk that a new import pulls into a route starts counting against
  * that route automatically.
  *
  * **Three honest notes about the totals.**
@@ -42,13 +42,13 @@
  * 1. The "total initial transfer" rows measure the HTML plus the CSS, JS, and inline bootstrap the
  *    route delivers. Images are **not** included, because they are not build artifacts: every image
  *    is served from R2 through `/img/**` at a negotiated format and width. The image half of the
- *    budget is enforced where the images are — the staged eager/lazy loading rules and the
- *    derivative ladder — and cannot be measured from `dist/`.
+ *    budget is enforced where the images are â€” the staged eager/lazy loading rules and the
+ *    derivative ladder â€” and cannot be measured from `dist/`.
  * 2. Fonts are excluded from each route's total and measured once, on their own row, because they
  *    are shared and immutably cached: charging 52 kB of fonts to every route would measure the same
  *    bytes twenty times and describe no visitor's experience.
- * 3. `/admin` and `/product/[slug]` have no prerendered HTML to read — admin is server-rendered and
- *    no product content file exists yet — so those rows are measured from their island entry chunks
+ * 3. `/admin` and `/product/[slug]` have no prerendered HTML to read â€” admin is server-rendered and
+ *    no product content file exists yet â€” so those rows are measured from their island entry chunks
  *    and the shared shell instead, and the PDP row falls back to the shell plus the gallery when the
  *    catalogue is empty. Both are noted in the entry names.
  *
@@ -65,12 +65,12 @@ import {
   writeInlineScriptBundle,
 } from './scripts/route-assets.ts';
 
-const DIST = join('dist', 'client');
+const DIST = join('dist');
 const ASTRO = join(DIST, '_astro');
 
 if (!existsSync(DIST)) {
   throw new Error(
-    'size-limit: no build output at dist/client — run `npm run build` before `npm run size-limit`.',
+    'size-limit: no build output at dist â€” run `npm run build` before `npm run size-limit`.',
   );
 }
 
@@ -88,7 +88,7 @@ function htmlIfBuilt(relativePath) {
  * The JS/CSS/inline closure for one built page, plus the page's own HTML.
  *
  * `inline` is the framework's island bootstrap, written to a measurable file. It counts in the JS
- * row — it is JavaScript the route delivers — and is deliberately *excluded* from the total row,
+ * row â€” it is JavaScript the route delivers â€” and is deliberately *excluded* from the total row,
  * where the HTML file already contains those same bytes. Counting it in both would charge the total
  * twice for one payload.
  */
@@ -129,8 +129,8 @@ const ROUTES = [
   /*
    * `/contact` is measured against the interactive-page allowance, not the 20 kB prose allowance.
    *
-   * The design's budget table names five rows — `/`, `/collection`, `/product/[slug]`, "static
-   * content pages", `/admin` — and `/contact` is in none of them. It is not a prose page: it hosts
+   * The design's budget table names five rows â€” `/`, `/collection`, `/product/[slug]`, "static
+   * content pages", `/admin` â€” and `/contact` is in none of them. It is not a prose page: it hosts
    * the Contact and Callback lead-capture forms that Requirement 6.1 puts there, which is the same
    * kind of payload a product detail page carries, and no other content page carries any. Measuring
    * it at 20 kB was a classification this config invented, and it would have been satisfied only by
@@ -146,19 +146,19 @@ for (const entry of ROUTES) {
   const assets = route(entry.name, html);
   checks.push(
     {
-      name: `${entry.name} — JS (${entry.js})`,
+      name: `${entry.name} â€” JS (${entry.js})`,
       path: assets.js,
       limit: entry.js,
       brotli: true,
     },
     {
-      name: `${entry.name} — CSS (${entry.css})`,
+      name: `${entry.name} â€” CSS (${entry.css})`,
       path: assets.css,
       limit: entry.css,
       brotli: true,
     },
     {
-      name: `${entry.name} — total initial transfer, excl. images and fonts (${entry.total})`,
+      name: `${entry.name} â€” total initial transfer, excl. images and fonts (${entry.total})`,
       path: [assets.html, ...assets.externalJs, ...assets.css],
       limit: entry.total,
       brotli: true,
@@ -172,7 +172,7 @@ for (const entry of ROUTES) {
 
 /*
  * A PDP exists only once a product content file does. When one does, it is measured like any other
- * route. When the catalogue is empty — as it is until the operator adds products — the row is
+ * route. When the catalogue is empty â€” as it is until the operator adds products â€” the row is
  * measured from the shell a PDP would load plus its two islands (the gallery and its lightbox, and
  * recently-viewed), which is the same closure minus the product's own markup.
  */
@@ -190,10 +190,10 @@ const productHtml = existsSync(join(DIST, 'product'))
 if (productHtml !== null) {
   const assets = route('product', productHtml);
   checks.push(
-    { name: 'product detail — JS (55 kB)', path: assets.js, limit: '55 kB', brotli: true },
-    { name: 'product detail — CSS (24 kB)', path: assets.css, limit: '24 kB', brotli: true },
+    { name: 'product detail â€” JS (55 kB)', path: assets.js, limit: '55 kB', brotli: true },
+    { name: 'product detail â€” CSS (24 kB)', path: assets.css, limit: '24 kB', brotli: true },
     {
-      name: 'product detail — total initial transfer, excl. images and fonts (340 kB)',
+      name: 'product detail â€” total initial transfer, excl. images and fonts (340 kB)',
       path: [assets.html, ...assets.externalJs, ...assets.css],
       limit: '340 kB',
       brotli: true,
@@ -210,13 +210,13 @@ if (productHtml !== null) {
     ...filesNamed(ASTRO, 'EnquiryForm', '.js'),
   ]);
   checks.push({
-    name: 'product detail — JS, shell + gallery islands (no product content yet) (55 kB)',
+    name: 'product detail â€” JS, shell + gallery islands (no product content yet) (55 kB)',
     path: [...new Set([...shell.js, ...islands])],
     limit: '55 kB',
     brotli: true,
   });
   checks.push({
-    name: 'product detail — CSS, shell (no product content yet) (24 kB)',
+    name: 'product detail â€” CSS, shell (no product content yet) (24 kB)',
     path: shell.css,
     limit: '24 kB',
     brotli: true,
@@ -228,8 +228,8 @@ if (productHtml !== null) {
 /* -------------------------------------------------------------------------- */
 
 /*
- * Admin is server-rendered, so there is no HTML in `dist/client` to read a closure from. It is
- * measured as the React runtime plus the heaviest single view — the product editor, which is the
+ * Admin is server-rendered, so there is no HTML in `dist` to read a closure from. It is
+ * measured as the React runtime plus the heaviest single view â€” the product editor, which is the
  * one that loads the form, the schemas, the image manager and the publish panel. That is the correct
  * shape for a per-view budget: the design's point is that no single admin view loads the whole
  * dashboard, so the budget is against the largest view, not against the sum of all of them.
@@ -244,7 +244,7 @@ const adminHeaviestView = jsClosure(DIST, [
 
 if (adminHeaviestView.length > 0) {
   checks.push({
-    name: 'admin — JS, heaviest view (product editor) (220 kB)',
+    name: 'admin â€” JS, heaviest view (product editor) (220 kB)',
     path: adminHeaviestView,
     limit: '220 kB',
     brotli: true,
@@ -253,13 +253,13 @@ if (adminHeaviestView.length > 0) {
 
 /*
  * Admin CSS is the single global stylesheet the admin shell imports. It is identified by content
- * rather than by name — the Tailwind layer that carries the admin utility classes — because the
+ * rather than by name â€” the Tailwind layer that carries the admin utility classes â€” because the
  * emitted filename is derived from whichever entry pulled it in.
  */
 const adminCss = filesNamed(ASTRO, 'global', '.css');
 if (adminCss.length > 0) {
   checks.push({
-    name: 'admin — CSS (40 kB)',
+    name: 'admin â€” CSS (40 kB)',
     path: adminCss,
     limit: '40 kB',
     brotli: true,
@@ -267,19 +267,19 @@ if (adminCss.length > 0) {
 }
 
 /*
- * The `/admin` total initial transfer row (≤ 300 kB).
+ * The `/admin` total initial transfer row (â‰¤ 300 kB).
  *
  * The design's table has a total for every route including admin, and this row was missing: admin
  * had a JS budget and a CSS budget and nothing holding their sum, which is the number a visitor
  * actually waits for. There is no prerendered admin HTML to read a closure from, so the total is the
- * heaviest view's JS closure plus the admin stylesheet — the same two artifacts as the rows above,
- * measured together. The server-rendered document itself is not in `dist/client` and is a few kB of
+ * heaviest view's JS closure plus the admin stylesheet â€” the same two artifacts as the rows above,
+ * measured together. The server-rendered document itself is not in `dist` and is a few kB of
  * markup; leaving it out understates the total by that much and is the only honest option available
  * from the build output.
  */
 if (adminHeaviestView.length > 0 && adminCss.length > 0) {
   checks.push({
-    name: 'admin — total initial transfer, heaviest view + stylesheet (300 kB)',
+    name: 'admin â€” total initial transfer, heaviest view + stylesheet (300 kB)',
     path: [...adminHeaviestView, ...adminCss],
     limit: '300 kB',
     brotli: true,
@@ -302,8 +302,8 @@ checks.push(
      * Both faces, subset to the declared `unicode-range` with `kern`, `liga` and `clig` retained.
      * The mark-positioning and contextual-alternate lookups were dropped: the declared range holds
      * no combining marks, so `mark`/`mkmk` could never fire, and Inter's `calt` cost 3.6 kB for
-     * substitutions this catalogue has no use for. That is what brought the pair from 56.1 kB —
-     * over budget — to 52.5 kB, without losing a single glyph in the range.
+     * substitutions this catalogue has no use for. That is what brought the pair from 56.1 kB â€”
+     * over budget â€” to 52.5 kB, without losing a single glyph in the range.
      */
     name: 'fonts, all routes, immutably cached (55 kB)',
     path: [join(DIST, 'fonts', '*.woff2')],
@@ -311,7 +311,7 @@ checks.push(
     brotli: true,
   },
   {
-    name: 'motion system JS (Requirement 21.15 — 14 kB)',
+    name: 'motion system JS (Requirement 21.15 â€” 14 kB)',
     path: [
       join(ASTRO, 'ngf-motion*.js'),
       join(ASTRO, 'MotionRuntime.astro_astro_type_script*.js'),

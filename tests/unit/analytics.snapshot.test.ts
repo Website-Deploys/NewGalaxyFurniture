@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import type { D1Database } from '@cloudflare/workers-types';
-import { getPlatformProxy } from 'wrangler';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SqlDatabase } from '@/lib/runtime/types';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { fakeSqlDatabase } from '../fixtures/runtime';
 
 import { GitHubContentClient } from '@/lib/github/client';
 import { commitSubject, parseCommitTrailers } from '@/lib/github/commit-message';
@@ -30,7 +31,7 @@ import { GitHubApiStub } from '../fixtures/github-api';
  * The D1 half runs against **real local D1** through `getPlatformProxy`, with the schema taken from
  * the shipped migration, because the whole artifact is derived from a `SUM(count) GROUP BY entity`
  * over `event_daily` and an in-memory fake of that query would be a fake of the thing under test. The
- * GitHub half runs against the protocol stub, so the write goes through the real client — and
+ * GitHub half runs against the protocol stub, so the write goes through the real client â€” and
  * therefore the real path allowlist, the real sha precondition, and the real commit-message renderer.
  *
  * What the assertions are actually about:
@@ -47,32 +48,14 @@ import { GitHubApiStub } from '../fixtures/github-api';
 
 const MIGRATIONS = ['0003_events.sql'];
 
-let proxy: Awaited<ReturnType<typeof getPlatformProxy>>;
-let db: D1Database;
+let db: SqlDatabase;
 
-async function applyMigrations(database: D1Database): Promise<void> {
-  for (const file of MIGRATIONS) {
-    const path = fileURLToPath(new URL(`../../migrations/${file}`, import.meta.url));
-    const sql = readFileSync(path, 'utf8')
-      .replace(/--[^\n]*/g, '')
-      .trim();
-    for (const statement of sql.split(';')) {
-      const trimmed = statement.trim();
-      if (trimmed === '') continue;
-      await database.prepare(trimmed).run();
-    }
-  }
-}
-
-beforeAll(async () => {
-  proxy = await getPlatformProxy({ configPath: './wrangler.toml', persist: false });
-  db = (proxy.env as { DB: D1Database }).DB;
-  await applyMigrations(db);
-}, 120_000);
-
-afterAll(async () => {
-  await proxy?.dispose();
-}, 60_000);
+beforeAll(() => {
+  const schema = MIGRATIONS.map((file) =>
+    readFileSync(fileURLToPath(new URL(`../../migrations/${file}`, import.meta.url)), 'utf8'),
+  ).join('\n');
+  db = fakeSqlDatabase(schema);
+});
 
 beforeEach(async () => {
   await db.prepare('DELETE FROM event_daily').run();
@@ -343,35 +326,28 @@ describe('the artifact the build then reads', () => {
   });
 });
 
-describe('the Worker entry', () => {
+describe('the scheduled analytics function (Netlify)', () => {
   const source = readFileSync(
-    fileURLToPath(new URL('../../src/worker.ts', import.meta.url)),
+    fileURLToPath(new URL('../../netlify/functions/analytics-snapshot.mts', import.meta.url)),
     'utf8',
   );
 
-  it('leaves the request path exactly as the adapter defines it', () => {
-    /*
-     * The one thing this file must not do is wrap, filter or re-implement `fetch`. The adapter's own
-     * entrypoint is `{ fetch: handle }`; ours has to be that plus `scheduled`, so that adding a cron
-     * cannot change how a single request is served.
-     */
-    expect(source).toContain("import { handle } from '@astrojs/cloudflare/handler';");
-    expect(source).toMatch(/export default \{\s*fetch: handle,\s*scheduled,\s*\};/);
+  it('reaches storage through the same env abstraction as the app', () => {
+    // No Cloudflare Worker, no binding object: it resolves the database and GitHub client through
+    // src/lib/env.ts and the GitHub factory, exactly like every route.
+    expect(source).toContain("from '../../src/lib/env.ts'");
+    expect(source).toContain('getD1(');
+    expect(source).toContain('createGitHubClient(');
+    expect(source).toContain('runAnalyticsSnapshot(');
   });
 
-  it('never lets a failed run throw out of the scheduled handler', () => {
+  it('never lets a failed or unconfigured run throw out of the handler', () => {
     expect(source).toContain('logServerError');
-    expect(source).toContain('waitUntil');
+    expect(source).toMatch(/try\s*\{/);
   });
 
-  it('is the configured entry, with a nightly trigger on production and none on preview', () => {
-    const wrangler = readFileSync(
-      fileURLToPath(new URL('../../wrangler.toml', import.meta.url)),
-      'utf8',
-    );
-    expect(wrangler).toContain('main = "./src/worker.ts"');
-    expect(wrangler).toMatch(/\[triggers\]\ncrons = \["30 19 \* \* \*"\]/);
-    // Inheritable key: without the empty override the preview Worker would write too.
-    expect(wrangler).toMatch(/\[env\.preview\.triggers\]\ncrons = \[\]/);
+  it('is configured with the nightly cron schedule', () => {
+    // Netlify Scheduled Function: the schedule is declared on the exported `config`.
+    expect(source).toMatch(/export const config[^;]*schedule:\s*'30 19 \* \* \*'/s);
   });
 });

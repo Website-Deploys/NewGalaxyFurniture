@@ -3,13 +3,13 @@
  *
  * **Why this file exists at all.** The design specifies `script-src 'self'` with no nonce and no
  * hash, and task 21.3 asks for no inline script execution anywhere so that directive can hold in
- * its strictest form. Every script this project writes now satisfies that — the pre-paint motion
+ * its strictest form. Every script this project writes now satisfies that â€” the pre-paint motion
  * bootstrap was moved out of an inline block into `public/ngf-motion-preference.js`, and
  * `assetsInlineLimit: 0` in `astro.config.mjs` stops Astro inlining bundled component scripts into
  * the document.
  *
  * What cannot be moved is Astro's island bootstrap. `getPrescripts` in
- * `astro/dist/runtime/server/scripts.js` writes `<script>…</script>` with the `astro-island`
+ * `astro/dist/runtime/server/scripts.js` writes `<script>â€¦</script>` with the `astro-island`
  * custom-element runtime and the client-directive loader **as literal inline elements**, with no
  * configuration to externalise them. Any page with a `client:*` island therefore carries two inline
  * scripts, and islands are the architecture: removing them means removing the gallery, the search
@@ -17,9 +17,9 @@
  *
  * So there are exactly three options, and only one of them is honest:
  *
- * 1. Add `'unsafe-inline'` to `script-src` — which turns the directive off. Every stored-XSS defence
+ * 1. Add `'unsafe-inline'` to `script-src` â€” which turns the directive off. Every stored-XSS defence
  *    in this project assumes it is on.
- * 2. Use a nonce — impossible for a prerendered page, whose HTML is one artifact served to
+ * 2. Use a nonce â€” impossible for a prerendered page, whose HTML is one artifact served to
  *    everyone, so the nonce would be a constant and therefore not a nonce.
  * 3. Enumerate the hashes of those specific scripts. A hash grants execution to *that exact byte
  *    sequence* and nothing else: an injected `<script>alert(1)</script>` still does not run.
@@ -30,9 +30,9 @@
  * **How this list is kept honest.** `scripts/audit-csp.ts` runs in `postbuild` and checks both
  * directions: every inline script in the built output must hash to a member of this list, and the
  * `client:load` entry (used only by the server-rendered admin, which never appears in
- * `dist/client/`) is re-derived from the installed Astro package and must still match. An Astro
+ * `dist/`) is re-derived from the installed Astro package and must still match. An Astro
  * upgrade that changes a byte of any of these fails the build, prints the new hash, and requires a
- * human to look at what changed. A newly introduced inline script of our own fails the same gate —
+ * human to look at what changed. A newly introduced inline script of our own fails the same gate â€”
  * which is the point: this list is a closed set of four framework scripts, not a place to add to.
  *
  * Design: Deployment. Requirements: 25.9, 25.10.
@@ -59,7 +59,7 @@ export const FRAMEWORK_INLINE_SCRIPTS: readonly InlineScriptHash[] = [
     hash: 'sha256-Q2BPg90ZMplYY+FSdApNErhpWafg2hcRRbndmvxuL/Q=',
   },
   {
-    source: 'client:load directive loader (astro/runtime/client/load.prebuilt) — admin only',
+    source: 'client:load directive loader (astro/runtime/client/load.prebuilt) â€” admin only',
     hash: 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=',
   },
 ];

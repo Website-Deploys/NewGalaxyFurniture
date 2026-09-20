@@ -4,13 +4,14 @@
  * Two operations need this, and for the same reason: they are slow, and the operator has no
  * reason to wait. Derivative generation is hundreds of milliseconds of AVIF encoding per
  * width, and a soft delete is one read plus one write per stored object. Both must finish,
- * so neither can be a dropped promise — `waitUntil` is what keeps the isolate alive until
- * they do.
+ * so neither can be a dropped promise.
  *
- * The `ExecutionContext` arrives on `locals.cfContext` (the `locals.runtime` property that
- * used to carry it was removed in @astrojs/cloudflare v14). It is read defensively because
- * there are two situations where it is absent — a prerendered render and a unit test — and
- * in both the correct fallback is to await the work rather than to lose it.
+ * **Netlify.** The `@astrojs/netlify` adapter exposes the Netlify Functions request context on
+ * `locals.netlify.context`. When that context carries a `waitUntil`, the work is handed to it so
+ * the runtime keeps the function alive until it settles without the operator waiting on the
+ * response. When it does not — a prerendered render, a unit test, or a runtime that does not
+ * surface `waitUntil` — the correct fallback is to await the work inline rather than lose it: the
+ * data stays consistent, the operator simply waits a little longer.
  *
  * Requirements: 15.8, 15.13, 15.16.
  */
@@ -21,7 +22,13 @@ interface ExecutionContextLike {
 
 function executionContextOf(locals: unknown): ExecutionContextLike | null {
   if (typeof locals !== 'object' || locals === null) return null;
-  const candidate = (locals as { cfContext?: unknown }).cfContext;
+  // `@astrojs/netlify` sets `locals.netlify = { context }`; the Netlify Functions context may
+  // carry a `waitUntil`. Read it structurally so a runtime that omits it falls back cleanly.
+  const netlify = (locals as { netlify?: unknown }).netlify;
+  const candidate =
+    typeof netlify === 'object' && netlify !== null
+      ? (netlify as { context?: unknown }).context
+      : undefined;
   if (typeof candidate !== 'object' || candidate === null) return null;
   const waitUntil = (candidate as { waitUntil?: unknown }).waitUntil;
   return typeof waitUntil === 'function' ? (candidate as ExecutionContextLike) : null;

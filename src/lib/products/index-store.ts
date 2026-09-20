@@ -22,7 +22,7 @@
  * Requirements: 11.2, 11.3, 12.2, 12.13, 17.19.
  */
 
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 import { parseContentJson } from '../github/serialize';
 import { primaryImageOf, type Product, type ProductStatusValue } from '@/schemas/product';
@@ -105,7 +105,7 @@ export function summarize(product: Product): ProductSummary {
   };
 }
 
-export async function readProductIndex(kv: KVNamespace): Promise<ProductIndex> {
+export async function readProductIndex(kv: KeyValueStore): Promise<ProductIndex> {
   const raw = await kv.get(PRODUCT_INDEX_KEY, 'text');
   const parsed = raw === null ? null : parseContentJson(raw);
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
@@ -118,7 +118,7 @@ export async function readProductIndex(kv: KVNamespace): Promise<ProductIndex> {
   return index;
 }
 
-export async function writeProductIndex(kv: KVNamespace, index: ProductIndex): Promise<void> {
+export async function writeProductIndex(kv: KeyValueStore, index: ProductIndex): Promise<void> {
   await kv.put(PRODUCT_INDEX_KEY, JSON.stringify(index));
 }
 
@@ -134,13 +134,13 @@ export async function writeProductIndex(kv: KVNamespace, index: ProductIndex): P
  * page view, which is the cost this index exists to avoid. Concurrent saves of the *same*
  * product are already serialised by the lock.
  */
-export async function rememberProduct(kv: KVNamespace, product: Product): Promise<void> {
+export async function rememberProduct(kv: KeyValueStore, product: Product): Promise<void> {
   const index = await readProductIndex(kv);
   index[product.id] = summarize(product);
   await writeProductIndex(kv, index);
 }
 
-export async function forgetProduct(kv: KVNamespace, productId: string): Promise<void> {
+export async function forgetProduct(kv: KeyValueStore, productId: string): Promise<void> {
   const index = await readProductIndex(kv);
   if (!(productId in index)) return;
   delete index[productId];
@@ -149,14 +149,14 @@ export async function forgetProduct(kv: KVNamespace, productId: string): Promise
 
 /** The stored slug for an id, or undefined. The resolver's minimal contract. */
 export async function productSlugFor(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   productId: string,
 ): Promise<string | undefined> {
   const index = await readProductIndex(kv);
   return index[productId]?.slug;
 }
 
-export async function listProductSummaries(kv: KVNamespace): Promise<ProductSummary[]> {
+export async function listProductSummaries(kv: KeyValueStore): Promise<ProductSummary[]> {
   return Object.values(await readProductIndex(kv));
 }
 
@@ -172,7 +172,7 @@ export interface TakenIdentifiers {
 }
 
 export async function takenIdentifiers(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   options: { exceptProductId?: string } = {},
 ): Promise<TakenIdentifiers> {
   const index = await readProductIndex(kv);

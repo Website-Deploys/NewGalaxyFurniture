@@ -23,7 +23,7 @@
  */
 
 import type { APIContext } from 'astro';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { ObjectBucket } from '@/lib/runtime/types';
 
 import { buildLqip, generateDerivatives, sanitizeOriginal } from '@/lib/images/derivatives';
 import { checkContentLength, generateImageId, validateUpload } from '@/lib/images/validate';
@@ -80,7 +80,7 @@ export async function POST(context: APIContext): Promise<Response> {
   const id = context.params.id ?? '';
   const { drafts, client, actor } = opened.context;
 
-  let bucket: R2Bucket;
+  let bucket: ObjectBucket;
   let codec: ImageCodec;
   try {
     bucket = getR2(context);
@@ -261,7 +261,7 @@ export async function POST(context: APIContext): Promise<Response> {
  * touch the media fields of the images it generated for.
  */
 async function finishDerivatives(input: {
-  bucket: R2Bucket;
+  bucket: ObjectBucket;
   codec: ImageCodec;
   drafts: Parameters<typeof resolveProduct>[0]['drafts'];
   client: Parameters<typeof resolveProduct>[0]['client'];

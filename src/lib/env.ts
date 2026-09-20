@@ -1,90 +1,36 @@
 /**
- * Typed access to the Worker runtime bindings and configuration.
+ * Typed access to runtime configuration and persistent storage — Netlify-native.
  *
- * Two rules this module exists to enforce:
+ * This module is the single seam between the application and its infrastructure. Nothing else
+ * reads `process.env` for a secret, constructs a database client, or opens a storage bucket:
+ * routes and stores ask this module for `getD1()`, `getKV()`, `getR2()`, `requireSecret()` or
+ * `getPublicConfig()`, and receive an object typed to the project's own storage interfaces
+ * (`src/lib/runtime/types.ts`).
  *
- * 1. Nothing reads `locals.runtime.env` directly. A missing binding surfaces as a
- *    stable, greppable error code instead of `undefined.get is not a function`
- *    three frames deeper.
- * 2. Secrets are read here and never returned to a caller that could serialize
- *    them. `requireSecret` returns the value for immediate server-side use; no
- *    function in this module hands out the whole env object with secrets on it.
+ * **Where configuration comes from.** On Netlify, environment variables and secrets are
+ * `process.env` inside a Function; public build-time values are also on `import.meta.env`. There is
+ * no Cloudflare runtime, no `cloudflare:workers` import, and no binding object — the "binding"
+ * accessors now return adapter-backed clients (Neon Postgres, Netlify Blobs) constructed on first
+ * use and cached per process.
  *
- * **Where the env comes from.** `Astro.locals.runtime.env` no longer exists.
- * @astrojs/cloudflare v14 (Astro 6+) removed it: `createLocals` now installs a
- * `runtime` property whose `env` getter *throws* a migration message, and the
- * supported access is `import { env } from 'cloudflare:workers'`. The original
- * implementation of this module read `context.locals.runtime.env`, which meant every
- * accessor here detonated the adapter's getter on first use and every binding-using
- * route would have returned a 500 — including the entire admin API. Bindings are
- * therefore read from `cloudflare:workers` below.
+ * Two rules preserved from the original design:
+ *   1. A missing/misconfigured dependency surfaces as a stable, greppable `EnvError` code rather
+ *      than a deep `undefined` failure.
+ *   2. Secrets are read here for immediate server-side use and never returned in a shape a caller
+ *      could serialise wholesale.
  *
- * The `context` parameter is retained on every accessor even though it is no longer
- * consulted for bindings. It keeps the call sites and the design's signatures intact,
- * and it is still meaningful: it is the caller's assertion that it is running on an
- * on-demand route, which is the only place bindings exist at all.
- *
- * Design: Architecture → Folder Structure (Bindings); Deployment.
- * Requirements: 25.12, 25.13, 28.5, 28.9.
+ * The `context` parameter is retained on every accessor for source compatibility with the ~30 call
+ * sites and to carry Netlify request context (client IP/geo) where a caller needs it; the storage
+ * accessors no longer depend on it.
  */
 
-import { env as cloudflareEnv } from 'cloudflare:workers';
+import { createBlobKeyValueStore } from '@/lib/runtime/blob-kv';
+import { createBlobObjectBucket } from '@/lib/runtime/blob-bucket';
+import { createNeonDatabase } from '@/lib/runtime/neon';
+import type { KeyValueStore, ObjectBucket, SqlDatabase } from '@/lib/runtime/types';
 
-import type {
-  D1Database,
-  Fetcher,
-  KVNamespace,
-  R2Bucket,
-  RateLimit,
-} from '@cloudflare/workers-types';
-
-/** Every binding and variable declared in `wrangler.toml` / set via `wrangler secret put`. */
-export interface WorkerEnv {
-  // KV
-  SESSIONS?: KVNamespace;
-  DRAFTS?: KVNamespace;
-  RATELIMIT?: KVNamespace;
-  // D1
-  DB?: D1Database;
-  // R2
-  MEDIA?: R2Bucket;
-  // Static assets
-  ASSETS?: Fetcher;
-  // Rate Limiting bindings (60 s windows; longer windows live in RATELIMIT KV)
-  RL_ADMIN_API?: RateLimit;
-  RL_EVENTS?: RateLimit;
-  // Public configuration
-  PUBLIC_SITE_URL?: string;
-  PUBLIC_WHATSAPP_NUMBERS?: string;
-  PUBLIC_PHONE_NUMBERS?: string;
-  // Secrets — server-side only
-  GITHUB_TOKEN?: string;
-  GITHUB_REPO?: string;
-  GITHUB_BRANCH?: string;
-  AI_PROVIDER?: string;
-  AI_API_KEY?: string;
-  AI_MODEL?: string;
-  SESSION_SECRET?: string;
-  CF_DEPLOY_HOOK_URL?: string;
-  /**
-   * Deploy-status credentials.
-   *
-   * Not in the design's secret list, and required by it: `/api/admin/deploy-status` is
-   * specified as reading "the Cloudflare deployments API for the latest build of the
-   * content branch", and that API needs an account id and an API token. The design names
-   * only `CF_DEPLOY_HOOK_URL`, which is write-only — it starts a build and reports
-   * nothing about one. All three are optional, and the endpoint returns a stable
-   * `CONFIGURATION_INCOMPLETE` when they are unset, so an environment without them
-   * degrades to "cannot report the deploy" rather than failing to build.
-   */
-  CF_ACCOUNT_ID?: string;
-  CF_API_TOKEN?: string;
-  /** Worker (script) name whose deployments are polled. Defaults to the wrangler `name`. */
-  CF_WORKER_NAME?: string;
-}
-
-export type BindingName = 'SESSIONS' | 'DRAFTS' | 'RATELIMIT' | 'DB' | 'MEDIA' | 'ASSETS';
-export type RateLimiterName = 'RL_ADMIN_API' | 'RL_EVENTS';
+/** Logical KV namespaces, each a separate Netlify Blobs store. */
+export type BindingName = 'SESSIONS' | 'DRAFTS' | 'RATELIMIT' | 'DB' | 'MEDIA';
 export type SecretName =
   | 'GITHUB_TOKEN'
   | 'GITHUB_REPO'
@@ -93,21 +39,30 @@ export type SecretName =
   | 'AI_API_KEY'
   | 'AI_MODEL'
   | 'SESSION_SECRET'
-  | 'CF_DEPLOY_HOOK_URL'
-  | 'CF_ACCOUNT_ID'
-  | 'CF_API_TOKEN'
-  | 'CF_WORKER_NAME';
+  | 'NETLIFY_DATABASE_URL'
+  /** Optional deploy-status credentials (Netlify build hook + API). */
+  | 'NETLIFY_BUILD_HOOK_URL'
+  | 'NETLIFY_API_TOKEN'
+  | 'NETLIFY_SITE_ID';
+
+/** The Blobs store name for each KV namespace. Prefixed so they never collide. */
+const KV_STORE_NAMES: Record<'SESSIONS' | 'DRAFTS' | 'RATELIMIT', string> = {
+  SESSIONS: 'ngf-sessions',
+  DRAFTS: 'ngf-drafts',
+  RATELIMIT: 'ngf-ratelimit',
+};
+
+/** The Blobs store name for image objects. */
+const MEDIA_STORE_NAME = 'ngf-media';
 
 /**
- * Stable error codes. These are matched on by the admin error envelope and by
- * tests, so they are part of the contract: rename with care.
+ * Stable error codes. Matched on by the admin error envelope and by tests, so they are part of the
+ * contract: rename with care. `RUNTIME_UNAVAILABLE` is retained for source compatibility; it is now
+ * only thrown if an accessor is somehow called with no environment at all.
  */
 export const ENV_ERROR_CODES = {
-  /** The runtime context carried no Cloudflare env at all (wrong render mode, or `astro dev` without platformProxy). */
   RUNTIME_UNAVAILABLE: 'RUNTIME_UNAVAILABLE',
-  /** The env exists but a required binding is missing from wrangler.toml or the deployment. */
   BINDING_UNAVAILABLE: 'BINDING_UNAVAILABLE',
-  /** A required variable or secret is unset or empty. */
   CONFIG_UNAVAILABLE: 'CONFIG_UNAVAILABLE',
 } as const;
 
@@ -127,105 +82,81 @@ export class EnvError extends Error {
 }
 
 /**
- * Retained for source compatibility with the accessors' original signatures. The
- * bindings no longer come from `locals` — see the note at the top of this file — so
- * this is now only a marker that the caller believes it holds a request context.
+ * Retained for source compatibility with the accessors' original signatures. It is the caller's
+ * assertion that it holds a request context (an on-demand route); the storage accessors no longer
+ * consult it, but keeping it avoids editing ~30 call sites and carries Netlify locals when present.
  */
 export interface RuntimeCarrier {
   locals?: unknown;
 }
 
-/**
- * Shape check only. Individual bindings are verified where they are used, so a
- * partially configured deployment fails at the binding that is actually missing.
- */
-function isWorkerEnv(value: unknown): value is WorkerEnv {
-  return typeof value === 'object' && value !== null;
+/* -------------------------------------------------------------------------- */
+/* Configuration (process.env + build-time public vars)                       */
+/* -------------------------------------------------------------------------- */
+
+/** Read a variable from the Netlify Function environment, then the build-time env. */
+function readEnv(name: string): string | undefined {
+  const runtime =
+    typeof process !== 'undefined' && process.env !== undefined ? process.env[name] : undefined;
+  if (runtime !== undefined && runtime !== '') return runtime;
+  const build = (import.meta.env as Record<string, string | undefined>)[name];
+  return build !== undefined && build !== '' ? build : undefined;
 }
 
-/**
- * The Cloudflare env for the current invocation.
- *
- * Throws `RUNTIME_UNAVAILABLE` rather than returning a fake env, because silently
- * continuing without bindings is how a privileged route ends up doing nothing and
- * reporting success. `context` is accepted and ignored (see the file header).
- */
-export function getWorkerEnv(_context?: RuntimeCarrier): WorkerEnv {
-  if (!isWorkerEnv(cloudflareEnv)) {
+/* -------------------------------------------------------------------------- */
+/* Storage accessors (cached per process)                                     */
+/* -------------------------------------------------------------------------- */
+
+let cachedDb: SqlDatabase | undefined;
+const cachedKv = new Map<string, KeyValueStore>();
+let cachedBucket: ObjectBucket | undefined;
+
+/** The SQL database (Neon Postgres). Requires `NETLIFY_DATABASE_URL` in the environment. */
+export function getD1(_context?: RuntimeCarrier): SqlDatabase {
+  if (cachedDb !== undefined) return cachedDb;
+  const url = readEnv('NETLIFY_DATABASE_URL') ?? readEnv('DATABASE_URL');
+  if (url === undefined) {
     throw new EnvError(
-      ENV_ERROR_CODES.RUNTIME_UNAVAILABLE,
-      'cloudflare:workers env',
-      'this route has no Cloudflare runtime; prerendered routes cannot use bindings',
+      ENV_ERROR_CODES.BINDING_UNAVAILABLE,
+      'DB',
+      'set NETLIFY_DATABASE_URL (Netlify DB / Neon) in the environment',
     );
   }
-  return cloudflareEnv;
+  cachedDb = createNeonDatabase(url);
+  return cachedDb;
 }
 
-function requireFrom<T>(name: string, value: T | undefined, hint: string): T {
-  if (value === undefined || value === null) {
-    throw new EnvError(ENV_ERROR_CODES.BINDING_UNAVAILABLE, name, hint);
-  }
-  return value;
-}
-
-/** A KV namespace binding, or `BINDING_UNAVAILABLE`. */
+/** A KV namespace (Netlify Blobs store). */
 export function getKV(
-  context: RuntimeCarrier,
+  _context: RuntimeCarrier,
   name: 'SESSIONS' | 'DRAFTS' | 'RATELIMIT',
-): KVNamespace {
-  const env = getWorkerEnv(context);
-  return requireFrom(
-    name,
-    env[name],
-    `add a [[kv_namespaces]] entry named ${name} to wrangler.toml`,
-  );
+): KeyValueStore {
+  const existing = cachedKv.get(name);
+  if (existing !== undefined) return existing;
+  const store = createBlobKeyValueStore(KV_STORE_NAMES[name]);
+  cachedKv.set(name, store);
+  return store;
 }
 
-/** The D1 database binding, or `BINDING_UNAVAILABLE`. */
-export function getD1(context: RuntimeCarrier): D1Database {
-  const env = getWorkerEnv(context);
-  return requireFrom('DB', env.DB, 'add a [[d1_databases]] entry bound as DB to wrangler.toml');
-}
-
-/** The R2 media bucket binding, or `BINDING_UNAVAILABLE`. */
-export function getR2(context: RuntimeCarrier): R2Bucket {
-  const env = getWorkerEnv(context);
-  return requireFrom(
-    'MEDIA',
-    env.MEDIA,
-    'add a [[r2_buckets]] entry bound as MEDIA to wrangler.toml',
-  );
-}
-
-/** A Rate Limiting binding, or `BINDING_UNAVAILABLE`. */
-export function getRateLimiter(context: RuntimeCarrier, name: RateLimiterName): RateLimit {
-  const env = getWorkerEnv(context);
-  return requireFrom(name, env[name], `add a [[ratelimits]] entry named ${name} to wrangler.toml`);
-}
-
-/** The static asset fetcher, or `BINDING_UNAVAILABLE`. */
-export function getAssets(context: RuntimeCarrier): Fetcher {
-  const env = getWorkerEnv(context);
-  return requireFrom(
-    'ASSETS',
-    env.ASSETS,
-    'add an [assets] block with binding = "ASSETS" to wrangler.toml',
-  );
+/** The media object bucket (Netlify Blobs store). */
+export function getR2(_context?: RuntimeCarrier): ObjectBucket {
+  if (cachedBucket !== undefined) return cachedBucket;
+  cachedBucket = createBlobObjectBucket(MEDIA_STORE_NAME);
+  return cachedBucket;
 }
 
 /**
- * A required secret or variable, trimmed. Throws `CONFIG_UNAVAILABLE` when unset
- * or blank. The returned value is for immediate server-side use only — never put
- * it in a response body, a log line, or a rendered template.
+ * A required secret or variable, trimmed. Throws `CONFIG_UNAVAILABLE` when unset or blank. The
+ * returned value is for immediate server-side use only — never put it in a response body, a log
+ * line, or a rendered template.
  */
-export function requireSecret(context: RuntimeCarrier, name: SecretName): string {
-  const env = getWorkerEnv(context);
-  const value = env[name];
-  if (typeof value !== 'string' || value.trim() === '') {
+export function requireSecret(_context: RuntimeCarrier, name: SecretName): string {
+  const value = readEnv(name);
+  if (value === undefined || value.trim() === '') {
     throw new EnvError(
       ENV_ERROR_CODES.CONFIG_UNAVAILABLE,
       name,
-      `set it with \`wrangler secret put ${name}\` — it is never read from the repository`,
+      `set it in the Netlify site environment — it is never read from the repository`,
     );
   }
   return value.trim();
@@ -246,31 +177,20 @@ export function optionalConfig(context: RuntimeCarrier, name: SecretName): strin
 /**
  * Public, non-secret configuration. Safe to pass to a template or an island.
  *
- * `PUBLIC_SITE_URL` falls back to Astro's build-time `import.meta.env` value so
- * prerendered routes — which have no Worker env — still resolve a canonical
- * origin, and never a hard-coded hostname.
+ * `PUBLIC_SITE_URL` resolves from the environment (runtime or build), so prerendered routes and
+ * functions alike get a canonical origin, never a hard-coded hostname.
  */
-export function getPublicConfig(context?: RuntimeCarrier): {
+export function getPublicConfig(_context?: RuntimeCarrier): {
   siteUrl: string;
   whatsappNumbers: string[];
   phoneNumbers: string[];
 } {
-  let env: WorkerEnv = {};
-  if (context !== undefined) {
-    try {
-      env = getWorkerEnv(context);
-    } catch {
-      env = {};
-    }
-  }
-
-  const buildTime = import.meta.env as Record<string, string | undefined>;
-  const siteUrl = env.PUBLIC_SITE_URL ?? buildTime.PUBLIC_SITE_URL;
+  const siteUrl = readEnv('PUBLIC_SITE_URL');
   if (siteUrl === undefined || siteUrl.trim() === '') {
     throw new EnvError(
       ENV_ERROR_CODES.CONFIG_UNAVAILABLE,
       'PUBLIC_SITE_URL',
-      'set it in wrangler.toml [vars] and in .dev.vars — canonical URLs must never be hard-coded',
+      'set it in the Netlify site environment and in .env — canonical URLs must never be hard-coded',
     );
   }
 
@@ -282,7 +202,21 @@ export function getPublicConfig(context?: RuntimeCarrier): {
 
   return {
     siteUrl: siteUrl.trim().replace(/\/$/, ''),
-    whatsappNumbers: split(env.PUBLIC_WHATSAPP_NUMBERS ?? buildTime.PUBLIC_WHATSAPP_NUMBERS),
-    phoneNumbers: split(env.PUBLIC_PHONE_NUMBERS ?? buildTime.PUBLIC_PHONE_NUMBERS),
+    whatsappNumbers: split(readEnv('PUBLIC_WHATSAPP_NUMBERS')),
+    phoneNumbers: split(readEnv('PUBLIC_PHONE_NUMBERS')),
   };
+}
+
+/**
+ * The client IP for a request, from Netlify's headers.
+ *
+ * Replaces the Cloudflare `cf-connecting-ip` header. Netlify sets `x-nf-client-connection-ip`, with
+ * `x-forwarded-for` as a fallback. Used only to key anonymous rate limits, never stored.
+ */
+export function clientIp(request: Request): string {
+  return (
+    request.headers.get('x-nf-client-connection-ip') ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    'unknown'
+  );
 }

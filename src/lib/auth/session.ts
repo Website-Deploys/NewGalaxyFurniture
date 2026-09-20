@@ -14,7 +14,7 @@
  *   most once every 5 minutes — a KV write per request would cost a round trip on
  *   every admin interaction to record information that changes nothing.
  *
- * Every function takes the `KVNamespace` explicitly instead of reaching for a
+ * Every function takes the `KeyValueStore` explicitly instead of reaching for a
  * request context. That is what lets `tests/unit/auth.session.integration.test.ts`
  * drive the real lifecycle against a real local KV namespace, and it keeps this
  * module free of Astro.
@@ -23,7 +23,7 @@
  * Requirements: 10.3, 10.6, 10.7, 25.11.
  */
 
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 import type { Role } from './permissions';
 
@@ -100,7 +100,7 @@ function ttlSeconds(session: Session, now: number): number {
   return Math.max(KV_MIN_TTL_SECONDS, Math.ceil((session.expiresAt - now) / 1000));
 }
 
-async function persist(kv: KVNamespace, session: Session, now: number): Promise<void> {
+async function persist(kv: KeyValueStore, session: Session, now: number): Promise<void> {
   await kv.put(kvKey(session.id), JSON.stringify(session), {
     expirationTtl: ttlSeconds(session, now),
   });
@@ -120,7 +120,7 @@ export interface CreateSessionInput {
  * hours without waiting, and so every timestamp in one request agrees.
  */
 export async function createSession(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   input: CreateSessionInput,
   now: number = Date.now(),
 ): Promise<Session> {
@@ -148,7 +148,7 @@ export async function createSession(
  * and remove it.
  */
 export async function readSession(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   id: string,
   now: number = Date.now(),
 ): Promise<Session | null> {
@@ -188,7 +188,7 @@ export async function readSession(
  * imprecision is invisible, and the saved write is on every single admin request.
  */
 export async function touchSession(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   session: Session,
   now: number = Date.now(),
 ): Promise<Session> {
@@ -205,7 +205,7 @@ export async function touchSession(
  * is nothing left to look it up against. Clearing the cookie is a courtesy to the
  * browser, not the security boundary.
  */
-export async function destroySession(kv: KVNamespace, id: string): Promise<void> {
+export async function destroySession(kv: KeyValueStore, id: string): Promise<void> {
   if (id === '') return;
   await kv.delete(kvKey(id));
 }
@@ -251,7 +251,7 @@ export function readSessionCookie(cookieHeader: string | null): string {
 
 /** Convenience: cookie header → validated session, or null. */
 export async function readSessionFromRequest(
-  kv: KVNamespace,
+  kv: KeyValueStore,
   request: Request,
   now: number = Date.now(),
 ): Promise<Session | null> {

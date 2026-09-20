@@ -54,7 +54,7 @@ export const AI_MAX_OUTPUT_TOKENS = 2_000;
  * a Cloudflare runtime. The factory's switch is exhaustive over this union, so adding a name here
  * fails to compile until an adapter and a case exist for it.
  */
-export const AI_PROVIDERS = ['openai', 'anthropic', 'workers-ai'] as const;
+export const AI_PROVIDERS = ['openai', 'anthropic'] as const;
 export type AIProviderName = (typeof AI_PROVIDERS)[number];
 
 export function isProviderName(value: unknown): value is AIProviderName {

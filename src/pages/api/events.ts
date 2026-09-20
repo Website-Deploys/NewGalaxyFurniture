@@ -30,13 +30,13 @@
 import type { APIContext } from 'astro';
 
 import { EVENTS_LIMIT_PER_MINUTE } from '@/lib/auth/rate-limit';
-import { clientAddress } from '@/lib/auth/guard';
 import { consumeBindingLimit } from '@/lib/auth/rate-limit';
 import { ERROR_CODES, errorResponse, logServerError, minutesPhrase } from '@/lib/errors';
-import { getD1, getWorkerEnv } from '@/lib/env';
+import { clientIp, getD1, getKV } from '@/lib/env';
 import { eventsFromBody } from '@/lib/analytics/ingest';
 import { isLikelyBot } from '@/lib/analytics/bots';
 import { MAX_BATCH_EVENTS, recordEvents } from '@/lib/analytics/rollup';
+import type { KeyValueStore } from '@/lib/runtime/types';
 
 export const prerender = false;
 
@@ -58,17 +58,20 @@ export async function POST(context: APIContext): Promise<Response> {
   const declared = Number.parseInt(context.request.headers.get('content-length') ?? '', 10);
   if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return accepted();
 
-  // 200 per minute per address (Requirement 20.4). The binding's period is 60 s, which is
-  // exactly this row's window, so no KV counter is needed.
-  let env: ReturnType<typeof getWorkerEnv> | null;
+  // 200 per minute per address (Requirement 20.4). A fixed 60 s KV (Netlify Blobs) window.
+  let rateLimitKv: KeyValueStore | null;
   try {
-    env = getWorkerEnv(context);
+    rateLimitKv = getKV(context, 'RATELIMIT');
   } catch {
-    // No runtime means no counters to write to either; the read below will decide.
-    env = null;
+    // No store means no counters to write to either; the read below will decide.
+    rateLimitKv = null;
   }
-  const address = clientAddress(context.request);
-  const decision = await consumeBindingLimit(env?.RL_EVENTS, `events:${address}`);
+  const address = clientIp(context.request);
+  const decision = await consumeBindingLimit(
+    rateLimitKv ?? undefined,
+    `events:${address}`,
+    EVENTS_LIMIT_PER_MINUTE,
+  );
   if (!decision.allowed) {
     return errorResponse(ERROR_CODES.RATE_LIMITED, {
       message: `Too many events. Try again in ${minutesPhrase(decision.retryAfterMinutes)}.`,
