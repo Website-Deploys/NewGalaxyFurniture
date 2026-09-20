@@ -19,8 +19,8 @@
  * Requirements: 8.1, 8.8, 19.6, 23.17.
  */
 import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
-import AnimatedRoom from '@/components/motion/AnimatedRoom.astro';
 import CallLink from '@/components/ui/CallLink.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getSiteSettings } from '@/lib/content/site';
@@ -29,6 +29,32 @@ import '@/styles/editorial.css';
 
 const settings = getSiteSettings();
 const serviceArea = settings.serviceArea.join(', ');
+
+/**
+ * The About hero photograph — the New Galaxy Furniture showroom.
+ *
+ * A real, static editorial asset, pre-optimised into responsive WebP (480–1440 px, ~21–104 KB) and
+ * committed under `public/brand/`, so it resolves as a plain same-origin file — the pattern the
+ * homepage hero uses, and the one that works under the Lighthouse CI static run (an `astro:assets`
+ * URL resolves to Netlify's runtime image endpoint, which is absent from a static `dist`). Modern
+ * format, responsive widths and ~67 KB at the rendered size keep the LCP and image audits green.
+ *
+ * It is this page's single largest contentful image, so it is prioritised and is the one image the
+ * page preloads; intrinsic dimensions and the fixed-ratio frame reserve its box against CLS.
+ */
+const ABOUT_HERO = {
+  width: 1672,
+  height: 941,
+  base: '/brand/about-showroom',
+  alt: 'The New Galaxy Furniture showroom in Bengaluru — a beige sofa, walnut coffee table and dining set beneath the words "Furniture that fits your life".',
+};
+const HERO_WIDTHS = [480, 768, 1040, 1440];
+const heroSrc = `${ABOUT_HERO.base}-1040.webp`;
+const heroSrcset = HERO_WIDTHS.map(
+  (w) => `${ABOUT_HERO.base}-${String(w)}.webp ${String(w)}w`,
+).join(', ');
+const heroSizes = '(min-width: 768px) 48vw, 100vw';
+const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
 
 const meta = pageMeta(Astro, {
   title: 'About',
@@ -39,17 +65,21 @@ const meta = pageMeta(Astro, {
 ---
 
 <BaseLayout meta={meta}>
+  <ImagePreload slot="head" hint={heroPreload} />
   <div class="ngf-page">
     {
       /*
-      The premium catalogue hero (Milestone 3, Checkpoint D). A copy column beside a drawing-board
-      panel holding ONE reused primitive as the brand mark: AnimatedRoom, titled so it is a
-      meaningful role="img", rendered trigger="none" so it draws its final static state and folds
-      into the hero's single group reveal. The whole hero is one [data-reveal][data-motion-group],
-      so it counts as one animating element.
+      The About hero (target design). A copy column — eyebrow, the business name, a one-paragraph
+      description, and three claim-free feature badges — beside the showroom photograph. The whole
+      hero is one [data-reveal][data-motion-group] so it counts as a single animating element, and
+      the photo is the page's one prioritised, preloaded image.
+
+      The three badges state only what the specification already establishes — made to order,
+      quality craftsmanship, sustainable materials as a making principle — with no number, date, or
+      certification invented.
     */
     }
-    <div class="ngf-page-head ngf-cathero ngf-cathero-index" data-reveal data-motion-group>
+    <div class="ngf-cathero ngf-abouthero" data-reveal data-motion-group>
       <div class="ngf-cathero-copy">
         <p class="ngf-cathero-eyebrow">About us</p>
         <h1>{settings.businessName}</h1>
@@ -57,18 +87,84 @@ const meta = pageMeta(Astro, {
           A furniture manufacturer and showroom in Bengaluru, making sofas, beds, dining furniture,
           storage and custom pieces for homes across {serviceArea}.
         </p>
+
+        <ul class="ngf-about-badges" aria-label="What we stand for">
+          <li class="ngf-about-badge">
+            <span class="ngf-about-badge-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M4 11V8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5V11"></path>
+                <path
+                  d="M3 11.5A1.5 1.5 0 0 1 4.5 13v3A1.5 1.5 0 0 1 3 17.5M21 11.5A1.5 1.5 0 0 0 19.5 13v3a1.5 1.5 0 0 0 1.5 1.5"
+                ></path>
+                <path d="M4 16h16M6 18v1.5M18 18v1.5"></path>
+              </svg>
+            </span>
+            <span class="ngf-about-badge-label">Custom made</span>
+          </li>
+          <li class="ngf-about-badge">
+            <span class="ngf-about-badge-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                  d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"
+                ></path>
+              </svg>
+            </span>
+            <span class="ngf-about-badge-label">Quality craftsmanship</span>
+          </li>
+          <li class="ngf-about-badge">
+            <span class="ngf-about-badge-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M11 20A7 7 0 0 1 18 4c1.5 0 2.5.3 3 .5.2.5.5 1.5.5 3A7 7 0 0 1 4.5 14.5"
+                ></path>
+                <path d="M5 19c2-4 5-6.5 9-8"></path>
+              </svg>
+            </span>
+            <span class="ngf-about-badge-label">Sustainable materials</span>
+          </li>
+        </ul>
       </div>
 
-      <div class="ngf-cathero-panel ngf-cathero-panel-wide">
-        <span class="ngf-cathero-glyph">
-          <AnimatedRoom
-            strokeWidth={1}
-            trigger="none"
-            title="A furnished room drawn in line — a sofa, a table and a lamp against a wall and window"
-          />
-        </span>
-        <span class="ngf-cathero-rule"></span>
-      </div>
+      <figure class="ngf-abouthero-figure">
+        <img
+          src={heroSrc}
+          srcset={heroSrcset}
+          sizes={heroSizes}
+          alt={ABOUT_HERO.alt}
+          width={ABOUT_HERO.width}
+          height={ABOUT_HERO.height}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </figure>
     </div>
 
     {
@@ -416,5 +512,74 @@ const meta = pageMeta(Astro, {
     font-family: var(--font-display);
     font-size: var(--text-h2);
     font-weight: 400;
+  }
+
+  /* About hero: photo beside the copy, with feature badges -------------------
+   *
+   * Reuses the shared `.ngf-cathero` two-column grid but swaps the drawing-board panel for the
+   * real showroom photograph in a rounded, ratio-reserved frame (so it never shifts the layout —
+   * the image-loading audit's rule 5), and adds a row of three claim-free feature badges under the
+   * lead paragraph, mirroring the reference.
+   */
+  @media (min-width: 768px) {
+    .ngf-abouthero {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      align-items: center;
+    }
+  }
+
+  .ngf-abouthero {
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .ngf-abouthero-figure {
+    margin: 0;
+    width: 100%;
+    aspect-ratio: 1672 / 941;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-abouthero-figure img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Feature badges (Custom made / Quality craftsmanship / Sustainable materials). */
+  .ngf-about-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1rem, 3vw, 2rem);
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ngf-about-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ngf-about-badge-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid color-mix(in srgb, var(--color-champagne) 45%, var(--color-taupe));
+    border-radius: var(--radius-pill);
+    color: var(--color-champagne);
+  }
+
+  .ngf-about-badge-label {
+    max-width: 8rem;
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    line-height: 1.3;
   }
 </style>

@@ -240,45 +240,246 @@
   display: none;
 }
 
-/* The restrained two-column dropdown (Requirement 9.2). */
-.ngf-header-panel {
+/* ------------------------------------------------------------------------- *
+ * Shop mega-menu (target design): a light two-panel dropdown.
+ *
+ * Left: every category as a full-width row with a chevron and a hover/focus/active
+ * highlight. Right: the preview for the row currently hovered or focused — an image
+ * (or a typographic fallback where there is no photograph), a heading, the category's
+ * own description, and a "Browse the full collection" CTA.
+ *
+ * The preview swap is pure CSS: `.ngf-shop-list:hover`/`:focus-within` hides the default
+ * preview, and each row's `:hover`/`:focus` reveals the matching preview by `data-cat`
+ * order. No JavaScript, so it runs under `script-src 'self'` and needs no island.
+ * ------------------------------------------------------------------------- */
+.ngf-shop-mega {
   position: absolute;
-  top: 100%;
-  left: -1rem;
+  top: calc(100% + 0.5rem);
+  left: -0.5rem;
   display: grid;
-  grid-template-columns: minmax(11rem, auto) minmax(14rem, 18rem);
-  gap: 2rem;
-  padding: 1.5rem;
-  background-color: var(--color-obsidian);
-  border-top: 1px solid var(--color-champagne);
-  box-shadow: var(--shadow-level2);
+  grid-template-columns: minmax(17rem, 22rem) minmax(20rem, 26rem);
+  gap: 0;
+  width: max-content;
+  max-width: min(52rem, calc(100vw - 2rem));
+  padding: 0.75rem;
+  background-color: var(--color-white);
+  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  border-radius: var(--radius-lg, 1.25rem);
+  box-shadow: var(--shadow-lift);
 }
 
-.ngf-header-panel-links {
+/* Left column — the category rows. */
+.ngf-shop-list {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
   margin: 0;
-  padding: 0;
+  padding: 0 0.75rem 0 0;
+  border-right: 1px solid color-mix(in srgb, var(--color-taupe) 40%, transparent);
   list-style: none;
 }
 
-.ngf-header-panel-links a {
-  text-transform: none;
-  letter-spacing: 0.02em;
+.ngf-shop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 48px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md, 0.75rem);
+  color: var(--color-obsidian);
+  font-family: var(--font-body);
   font-size: var(--text-body);
-}
-
-.ngf-header-panel-note p {
-  margin: 0 0 0.75rem;
-  font-size: var(--text-small);
-  opacity: 0.75;
-}
-
-.ngf-header-panel-note a {
-  font-size: var(--text-small);
+  letter-spacing: 0;
   text-transform: none;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.ngf-shop-chevron {
+  flex: none;
+  color: color-mix(in srgb, var(--color-obsidian) 55%, transparent);
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+/* Hover, keyboard focus, and the current page all read as the active row. */
+.ngf-shop-row:hover,
+.ngf-shop-row:focus-visible,
+.ngf-shop-row[aria-current='page'] {
+  background-color: color-mix(in srgb, var(--color-champagne) 22%, var(--color-white));
+  color: var(--color-obsidian);
+  outline: none;
+}
+.ngf-shop-row:hover .ngf-shop-chevron,
+.ngf-shop-row:focus-visible .ngf-shop-chevron {
   color: var(--color-champagne);
+}
+
+/* The first row is highlighted by default, until another row is hovered or focused. */
+.ngf-shop-list:not(:hover):not(:focus-within) .ngf-shop-row[data-default='true'] {
+  background-color: color-mix(in srgb, var(--color-champagne) 22%, var(--color-white));
+}
+.ngf-shop-list:not(:hover):not(:focus-within) .ngf-shop-row[data-default='true'] .ngf-shop-chevron {
+  color: var(--color-champagne);
+}
+
+/* Right column — the previews. They stack in one cell; one is shown at a time. */
+.ngf-shop-previews {
+  position: relative;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+}
+
+.ngf-shop-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  opacity: 0;
+  visibility: hidden;
+  /* All previews occupy the same cell; only the active one is visible. */
+  position: absolute;
+  inset: 0.5rem 0.5rem 0.5rem 1.25rem;
+}
+
+/* Default preview shown when nothing in the list is hovered or focused. */
+.ngf-shop-list:not(:hover):not(:focus-within)
+  ~ .ngf-shop-previews
+  .ngf-shop-preview[data-default='true'] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ngf-shop-preview-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  border-radius: var(--radius-md, 0.75rem);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-champagne) 30%, var(--color-white)),
+    color-mix(in srgb, var(--color-taupe) 34%, var(--color-white))
+  );
+}
+
+.ngf-shop-preview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Typographic fallback where a category has no photograph (Open Items item 5). */
+.ngf-header-nav .ngf-shop-preview-fallback {
+  padding: 1rem 1.25rem;
+  font-family: var(--font-display, var(--font-body));
+  font-size: var(--text-h3, 1.75rem);
+  font-weight: 500;
+  text-align: center;
+  color: var(--color-obsidian);
+}
+
+.ngf-shop-preview-title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: var(--text-h3, 1.75rem);
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--color-obsidian);
+}
+
+.ngf-shop-preview-blurb {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--color-obsidian) 68%, transparent);
+}
+
+.ngf-header-nav .ngf-shop-preview-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 0.25rem;
+  padding: 0.625rem 1.5rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-walnut);
+  color: var(--color-white);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.ngf-header-nav .ngf-shop-preview-cta:hover,
+.ngf-header-nav .ngf-shop-preview-cta:focus-visible {
+  background-color: var(--color-obsidian);
+  color: var(--color-white);
+  outline: none;
+}
+.ngf-shop-preview-cta svg {
+  flex: none;
+}
+
+/*
+ * Reveal the preview whose `data-cat` matches the hovered/focused row.
+ *
+ * The list and the previews are siblings in source order, and each list holds the same
+ * nine categories in the same order as the previews. `:has()` lets the panel light up the
+ * nth preview when the nth row is hovered or focused, with no per-slug selector to keep in
+ * sync. Where `:has()` is unavailable the default preview simply stays shown — the links
+ * all still work — so this is progressive enhancement, not a dependency.
+ */
+.ngf-shop-mega:has(
+    .ngf-shop-row:nth-of-type(1):hover,
+    .ngf-shop-list li:nth-child(1) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(1),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(2) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(2) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(2),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(3) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(3) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(3),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(4) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(4) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(4),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(5) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(5) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(5),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(6) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(6) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(6),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(7) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(7) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(7),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(8) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(8) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(8),
+.ngf-shop-mega:has(
+    .ngf-shop-list li:nth-child(9) .ngf-shop-row:hover,
+    .ngf-shop-list li:nth-child(9) .ngf-shop-row:focus-visible
+  )
+  .ngf-shop-preview:nth-of-type(9) {
+  opacity: 1;
+  visibility: visible;
 }
 
 .ngf-header-tools {

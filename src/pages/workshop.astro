@@ -27,6 +27,7 @@ import AnimatedChair from '@/components/motion/AnimatedChair.astro';
 import AnimatedSofa from '@/components/motion/AnimatedSofa.astro';
 import AnimatedTable from '@/components/motion/AnimatedTable.astro';
 import CallLink from '@/components/ui/CallLink.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getSiteSettings } from '@/lib/content/site';
@@ -34,6 +35,31 @@ import { pageMeta } from '@/lib/seo/page';
 import '@/styles/editorial.css';
 
 const settings = getSiteSettings();
+
+/**
+ * The Workshop hero photograph — the New Galaxy Furniture workshop in Bengaluru.
+ *
+ * Same static-asset treatment as the About, Contact and Custom Furniture heroes: pre-optimised
+ * responsive WebP under `public/brand/` (a plain same-origin file that resolves under the
+ * Lighthouse static run, unlike an `astro:assets` Netlify runtime URL), modern-format, responsive
+ * and small (~18–72 KB). This is a real photograph of the making — which is what Requirement 7.10
+ * asks for: the page shows what the workshop is, and still states no process, timeline or capability
+ * that has not been supplied. It is the page's single largest contentful image, so it is prioritised
+ * and preloaded; the fixed-ratio frame reserves its box against CLS.
+ */
+const WORKSHOP_HERO = {
+  width: 1672,
+  height: 941,
+  base: '/brand/workshop',
+  alt: 'The New Galaxy Furniture workshop in Bengaluru — sunlit timber workbenches with cut parts and hand tools, beside a wall carrying the New Galaxy Furniture mark and the line "Crafted for better living".',
+};
+const HERO_WIDTHS = [480, 768, 1040, 1440];
+const heroSrc = `${WORKSHOP_HERO.base}-1040.webp`;
+const heroSrcset = HERO_WIDTHS.map(
+  (w) => `${WORKSHOP_HERO.base}-${String(w)}.webp ${String(w)}w`,
+).join(', ');
+const heroSizes = '(min-width: 900px) 50vw, 100vw';
+const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
 
 /**
  * What the workshop builds, as a sequence of line-drawn silhouette studies. Each stage is a
@@ -78,14 +104,89 @@ const meta = pageMeta(Astro, {
 ---
 
 <BaseLayout meta={meta}>
+  <ImagePreload slot="head" hint={heroPreload} />
   <div class="ngf-page">
-    <div class="ngf-page-head">
-      <p class="ngf-page-eyebrow">The workshop</p>
-      <h1>Where the furniture is made</h1>
-      <p class="ngf-page-lead">
-        {settings.businessName} manufactures in Bengaluru. What leaves the workshop is what we photographed,
-        sized and finished ourselves.
-      </p>
+    {/* Hero: the workshop copy + feature badges, beside the workshop photograph. */}
+    <div class="ngf-workshop-hero">
+      <div class="ngf-workshop-hero-copy">
+        <p class="ngf-page-eyebrow">The workshop</p>
+        <h1>Where the furniture is made</h1>
+        <p class="ngf-page-lead">
+          {settings.businessName} manufactures in Bengaluru. What leaves the workshop is what we photographed,
+          sized and finished ourselves.
+        </p>
+
+        <ul class="ngf-workshop-badges" aria-label="What the workshop stands for">
+          <li class="ngf-workshop-badge">
+            <span class="ngf-workshop-badge-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M14 4l6 6-3 3-6-6z"></path>
+                <path d="M11 7 4 14a2 2 0 0 0 0 3l0 0a2 2 0 0 0 3 0l7-7"></path>
+              </svg>
+            </span>
+            <span class="ngf-workshop-badge-label">Skilled craftsmen</span>
+          </li>
+          <li class="ngf-workshop-badge">
+            <span class="ngf-workshop-badge-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 8l9-4 9 4-9 4z"></path>
+                <path d="M3 12l9 4 9-4M3 16l9 4 9-4"></path>
+              </svg>
+            </span>
+            <span class="ngf-workshop-badge-label">Quality materials</span>
+          </li>
+          <li class="ngf-workshop-badge">
+            <span class="ngf-workshop-badge-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </span>
+            <span class="ngf-workshop-badge-label">Built to last in your home</span>
+          </li>
+        </ul>
+      </div>
+
+      <figure class="ngf-workshop-hero-figure">
+        <img
+          src={heroSrc}
+          srcset={heroSrcset}
+          sizes={heroSizes}
+          alt={WORKSHOP_HERO.alt}
+          width={WORKSHOP_HERO.width}
+          height={WORKSHOP_HERO.height}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </figure>
     </div>
 
     {
@@ -186,6 +287,78 @@ const meta = pageMeta(Astro, {
 </BaseLayout>
 
 <style>
+  /* Hero: workshop copy + feature badges beside the workshop photo ------------ */
+  .ngf-workshop-hero {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  @media (min-width: 900px) {
+    .ngf-workshop-hero {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    }
+  }
+
+  .ngf-workshop-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .ngf-workshop-hero-figure {
+    margin: 0;
+    width: 100%;
+    aspect-ratio: 1672 / 941;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-workshop-hero-figure img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Feature badges (Skilled craftsmen / Quality materials / Built to last). */
+  .ngf-workshop-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1rem, 3vw, 2rem);
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ngf-workshop-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ngf-workshop-badge-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid color-mix(in srgb, var(--color-champagne) 45%, var(--color-taupe));
+    border-radius: var(--radius-pill);
+    color: var(--color-champagne);
+  }
+
+  .ngf-workshop-badge-label {
+    max-width: 8rem;
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    line-height: 1.3;
+  }
+
   /* -------------------------------------------------------------------------- */
   /* The architectural sequence reuses the shared `.ngf-process` language from   */
   /* `/custom-furniture`. The rules below are the same drawing-board panel,      */

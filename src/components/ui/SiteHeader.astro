@@ -29,6 +29,7 @@ import MobileNav from '@/components/ui/MobileNav';
 import SearchBox from '@/components/ui/SearchBox';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import { getSiteSettings } from '@/lib/content/site';
+import { getPublishedCategories } from '@/lib/content/catalogue';
 import { CATEGORY_NAV, HEADER_NAV, SUPPORT_NAV } from '@/lib/site/navigation';
 import { contactChannels, NUMBER_LABEL, NUMBER_LABEL_SPOKEN } from '@/lib/site/contact';
 import { buildEnquiryMessage, buildTelUrl, buildWhatsAppUrl } from '@/lib/whatsapp';
@@ -50,6 +51,27 @@ interface Props {
 const { indexUrl, categories, overHero = false, currentPath } = Astro.props;
 
 const settings = getSiteSettings();
+
+/**
+ * The Shop mega-menu's right-hand preview, one entry per category, keyed by the
+ * `/collection/{slug}` href its left-column row links to.
+ *
+ * Every value is real content read from `data/categories/*.json` — the category's own
+ * name and `shortDescription`. `image` is only set when the category carries a genuine
+ * `heroImageKey`; otherwise the preview renders a confident typographic tile, exactly as
+ * the homepage "Shop by category" section does, because there is no category photography
+ * to invent (Open Items item 5). No business fact is fabricated here.
+ */
+const categoryPreviews = new Map(
+  (await getPublishedCategories()).map((category) => [
+    `/collection/${category.slug}`,
+    {
+      name: category.name,
+      blurb: category.shortDescription,
+      image: typeof category.heroImageKey === 'string' ? `/img/${category.heroImageKey}` : null,
+    },
+  ]),
+);
 const channels = contactChannels(settings);
 const primary = channels[0];
 const generalMessage = buildEnquiryMessage({ kind: 'general' }, settings);
@@ -100,18 +122,97 @@ const mobilePages = [
                       <path d="M1 1l5 5 5-5" />
                     </svg>
                   </summary>
-                  {/* Two columns: the routes, and one orienting line. No invented facts. */}
-                  <div class="ngf-header-panel">
-                    <ul class="ngf-header-panel-links">
-                      {entry.items.map((item) => (
+                  {/*
+                    The Shop mega-menu (target design).
+
+                    Left: every category as a full-width row with a chevron, linking to its
+                    `/collection/{slug}` page. Right: a preview for the category currently
+                    hovered or focused, with a heading, the category's own description, and a
+                    "Browse the full collection" CTA.
+
+                    The hover/focus → preview swap is CSS only: each row carries `data-cat`
+                    and the panel keys the visible preview off `:hover`/`:focus-within` via
+                    sibling selectors, so the whole menu works with zero JavaScript and under
+                    `script-src 'self'`. The first category is shown by default.
+                  */}
+                  <div class="ngf-shop-mega">
+                    <ul class="ngf-shop-list">
+                      {entry.items.map((item, index) => (
                         <li>
-                          <a href={item.href}>{item.label}</a>
+                          <a
+                            href={item.href}
+                            class="ngf-shop-row"
+                            data-cat={item.href}
+                            data-default={index === 0 ? 'true' : undefined}
+                          >
+                            <span>{item.label}</span>
+                            <svg
+                              class="ngf-shop-chevron"
+                              viewBox="0 0 8 12"
+                              width="8"
+                              height="12"
+                              aria-hidden="true"
+                              focusable="false"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                            >
+                              <path d="M1 1l5 5-5 5" />
+                            </svg>
+                          </a>
                         </li>
                       ))}
                     </ul>
-                    <div class="ngf-header-panel-note">
-                      <p>{entry.note}</p>
-                      <a href="/collection">Browse the full collection</a>
+
+                    <div class="ngf-shop-previews">
+                      {entry.items.map((item, index) => {
+                        const preview = categoryPreviews.get(item.href);
+                        const heading = preview?.name ?? item.label;
+                        const blurb = preview?.blurb ?? entry.note;
+                        const image = preview?.image ?? null;
+                        return (
+                          <div
+                            class="ngf-shop-preview"
+                            data-cat={item.href}
+                            data-default={index === 0 ? 'true' : undefined}
+                            aria-hidden={index === 0 ? undefined : 'true'}
+                          >
+                            <div class="ngf-shop-preview-media">
+                              {image === null ? (
+                                <span class="ngf-shop-preview-fallback" aria-hidden="true">
+                                  {item.label}
+                                </span>
+                              ) : (
+                                <img
+                                  src={image}
+                                  alt=""
+                                  loading="lazy"
+                                  decoding="async"
+                                  width="640"
+                                  height="440"
+                                />
+                              )}
+                            </div>
+                            <h2 class="ngf-shop-preview-title">{heading} for every space</h2>
+                            <p class="ngf-shop-preview-blurb">{blurb}</p>
+                            <a class="ngf-shop-preview-cta" href={item.href}>
+                              Browse the full collection
+                              <svg
+                                viewBox="0 0 20 12"
+                                width="20"
+                                height="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <path d="M1 6h17m-6-5 6 5-6 5" />
+                              </svg>
+                            </a>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </details>

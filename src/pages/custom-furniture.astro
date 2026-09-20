@@ -25,11 +25,36 @@ import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
 import FurnitureAssembly from '@/components/motion/FurnitureAssembly.astro';
 import CallLink from '@/components/ui/CallLink.astro';
 import ContactNumbers from '@/components/ui/ContactNumbers.astro';
+import ImagePreload from '@/components/ui/ImagePreload.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getHomepage } from '@/lib/content/site';
 import { pageMeta } from '@/lib/seo/page';
 import '@/styles/editorial.css';
+
+/**
+ * The Custom Furniture hero photograph — a made-to-order living-room setting.
+ *
+ * Same static-asset treatment as the About and Contact heroes: pre-optimised responsive WebP under
+ * `public/brand/` (a plain same-origin file that resolves under the Lighthouse static run, unlike
+ * an `astro:assets` Netlify runtime URL), modern-format, responsive and small (~16–77 KB). It is
+ * this page's single largest contentful image, so it is prioritised and is the one image the page
+ * preloads; the fixed-ratio frame reserves its box against CLS. The "Your ideas / Our craftsmanship"
+ * line is baked into the photograph, so no text is overlaid or claimed by the page.
+ */
+const CUSTOM_HERO = {
+  width: 1942,
+  height: 809,
+  base: '/brand/custom-furniture',
+  alt: 'A made-to-order living room by New Galaxy Furniture — a large beige sectional, round walnut coffee table and brass pendant, beside the words "Your ideas. Our craftsmanship. A home that\u2019s uniquely yours."',
+};
+const HERO_WIDTHS = [520, 760, 1000, 1320];
+const heroSrc = `${CUSTOM_HERO.base}-1000.webp`;
+const heroSrcset = HERO_WIDTHS.map(
+  (w) => `${CUSTOM_HERO.base}-${String(w)}.webp ${String(w)}w`,
+).join(', ');
+const heroSizes = '(min-width: 900px) 52vw, 100vw';
+const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
 
 /**
  * The four stages of a commission, as a scroll-reactive sequence: DISCOVER → DESIGN → CRAFT →
@@ -82,14 +107,49 @@ const meta = pageMeta(Astro, {
 ---
 
 <BaseLayout meta={meta}>
+  <ImagePreload slot="head" hint={heroPreload} />
   <div class="ngf-page">
-    <div class="ngf-page-head">
-      <p class="ngf-page-eyebrow">Made to your specification</p>
-      <h1>Custom furniture</h1>
-      <p class="ngf-page-lead">
-        Send us the size, the timber, the finish, or a photograph of what you have in mind. We will
-        tell you what is possible and what it costs.
-      </p>
+    {/* Hero: the specification copy + primary action, beside the made-to-order room photograph. */}
+    <div class="ngf-custom-hero">
+      <div class="ngf-custom-hero-copy">
+        <p class="ngf-page-eyebrow">Made to your specification</p>
+        <h1>Custom furniture</h1>
+        <p class="ngf-page-lead">
+          Send us the size, the timber, the finish, or a photograph of what you have in mind. We
+          will tell you what is possible and what it costs.
+        </p>
+        <a class="ngf-custom-hero-cta" href="#ngf-custom-enquiry-heading">
+          Get started
+          <svg
+            viewBox="0 0 20 12"
+            width="20"
+            height="12"
+            aria-hidden="true"
+            focusable="false"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M1 6h17m-6-5 6 5-6 5"></path>
+          </svg>
+        </a>
+      </div>
+
+      <figure class="ngf-custom-hero-figure">
+        <img
+          src={heroSrc}
+          srcset={heroSrcset}
+          sizes={heroSizes}
+          alt={CUSTOM_HERO.alt}
+          width={CUSTOM_HERO.width}
+          height={CUSTOM_HERO.height}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </figure>
     </div>
 
     {
@@ -275,6 +335,71 @@ const meta = pageMeta(Astro, {
 </BaseLayout>
 
 <style>
+  /* Hero: specification copy beside the made-to-order room photo --------------- */
+  .ngf-custom-hero {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    margin-bottom: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  @media (min-width: 900px) {
+    .ngf-custom-hero {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    }
+  }
+
+  .ngf-custom-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .ngf-custom-hero-figure {
+    margin: 0;
+    width: 100%;
+    aspect-ratio: 1942 / 809;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-custom-hero-figure img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* The "Get started" pill — walnut ground with an arrow, matching the reference. */
+  .ngf-custom-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-top: 1.5rem;
+    min-height: 48px;
+    padding: 0.75rem 1.75rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-walnut);
+    color: var(--color-white);
+    font-size: var(--text-body);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-custom-hero-cta:hover,
+  .ngf-custom-hero-cta:focus-visible {
+    background-color: var(--color-obsidian);
+    outline: none;
+  }
+
+  .ngf-custom-hero-cta svg {
+    flex: none;
+  }
+
   .ngf-custom-lead {
     margin: 0.25rem 0 1.5rem;
     color: var(--color-espresso);

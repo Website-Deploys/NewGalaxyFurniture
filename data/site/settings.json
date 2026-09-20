@@ -21,11 +21,11 @@
     { "label": "Orders & Enquiries 2", "e164": "+918147083703" }
   ],
   "location": {
-    "addressLines": [],
-    "city": "",
-    "state": "",
-    "postalCode": null,
-    "mapUrl": null,
+    "addressLines": ["1, Thubarahalli, Varthur Main Road", "Next to ICICI Bank, Whitefield"],
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "postalCode": "560066",
+    "mapUrl": "https://maps.app.goo.gl/AwFa4wPaSpi4wSmC9",
     "geo": null
   },
   "serviceArea": ["Karnataka"],
@@ -41,11 +41,6 @@
     "ogImageKey": null
   },
   "placeholders": [
-    "site.location.addressLines",
-    "site.location.city",
-    "site.location.state",
-    "site.location.postalCode",
-    "site.location.mapUrl",
     "site.location.geo",
     "site.location.openingHours",
     "site.social.instagram",
