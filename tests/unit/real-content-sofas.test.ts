@@ -184,13 +184,17 @@ describe('Premium 3+1+1 Sofa Set: the published record, its images and its Whats
     expect(brownSofa.published).toBe(true);
     expect(brownSofa.stockStatus).toBe('IN_STOCK');
     expect(brownSofa.images).toHaveLength(4);
-    expect(brownSofa.primaryImage).toBe('img_tchmzkuoeb');
+    // The card/primary image is the product's own order-0 image (the front sofa view).
+    const frontImage = brownSofa.images.find((image) => image.order === 0);
+    expect(frontImage).toBeDefined();
+    expect(brownSofa.primaryImage).toBe(frontImage?.id);
     expect(isCatalogueProduct(brownSofa)).toBe(true);
     expect(checkPublishGate(brownSofa).ok).toBe(true);
   });
 
   it('gives every image a non-empty alt and a well-formed R2 original key under its product id', () => {
-    const keyPattern = /^products\/p_322e7n6mth\/img_[a-z0-9]{10}\/original\.webp$/;
+    // The stored original is JPEG for a JPEG source and WebP otherwise — the sanitizer's ext.
+    const keyPattern = /^products\/p_322e7n6mth\/img_[a-z0-9]{10}\/original\.(jpg|webp)$/;
     for (const image of brownSofa.images) {
       expect(image.alt.trim().length).toBeGreaterThan(0);
       expect(image.key).toMatch(keyPattern);
