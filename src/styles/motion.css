@@ -207,12 +207,22 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  /*
+   * The wipe animates only the *bottom* inset (100% → 0). The top and side insets are held at a
+   * small negative value so the clip region extends just beyond the glyph ink on every edge. A
+   * display serif set at a tight `line-height` (the hero `<h1>` uses 1.02) has ascenders and
+   * cap tops that reach slightly above the line box; a top inset of exactly 0 would clip them
+   * (and, because the revealed state also ends at the box edge, would leave the first line
+   * permanently shaved at the top). The negative offset keeps the reveal identical while never
+   * cutting into the letterforms. `-0.15em` tracks the font size, so it scales with the fluid
+   * heading and stays clear at every viewport.
+   */
   :where(:not([data-motion='off'])) [data-reveal='lines']:not([data-revealed]) .ngf-line {
-    clip-path: inset(0 0 100% 0);
+    clip-path: inset(-0.15em -0.15em 100% -0.15em);
   }
 
   :where(:not([data-motion='off'])) [data-reveal='lines'] .ngf-line {
-    clip-path: inset(0 0 0 0);
+    clip-path: inset(-0.15em -0.15em -0.15em -0.15em);
     transition: clip-path var(--dur-reveal) var(--ease-entrance);
   }
 
