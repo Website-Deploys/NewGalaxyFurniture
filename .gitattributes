@@ -1,0 +1,54 @@
+# Normalise line endings across every checkout.
+#
+# The project mandates LF (.editorconfig `end_of_line = lf`, .prettierrc
+# `endOfLine: "lf"`). Without this file, a Windows clone with the default
+# `core.autocrlf=true` rewrites text files to CRLF on checkout, which breaks
+# `prettier --check` and any test that asserts an LF literal (for example the
+# reviews page copy and the wrangler cron block). Declaring the working-tree
+# line ending here makes checkouts deterministic regardless of each machine's
+# git configuration.
+
+# Treat everything as text and store/check out with LF by default.
+* text=auto eol=lf
+
+# Source, config, and content: always LF, in the tree and on disk.
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.astro text eol=lf
+*.css   text eol=lf
+*.json  text eol=lf
+*.jsonc text eol=lf
+*.md    text eol=lf
+*.mdx   text eol=lf
+*.html  text eol=lf
+*.svg   text eol=lf
+*.sql   text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.txt   text eol=lf
+*.sh    text eol=lf
+
+# Binary assets: never touched.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.webp   binary
+*.avif   binary
+*.gif    binary
+*.ico    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.otf    binary
+*.eot    binary
+*.mp4    binary
+*.webm   binary
+*.pdf    binary
+*.zip    binary
+*.gz     binary
+*.br     binary
+*.wasm   binary

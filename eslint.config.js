@@ -117,9 +117,19 @@ export default defineConfig(
     extends: [tseslint.configs.disableTypeChecked],
   },
 
-  // Config files and scripts run in Node, not in the Worker.
+  // Config files and scripts run in Node, not in the Worker. Both `.ts` and the
+  // plain-JS script extensions (`.js`, `.mjs`, `.cjs`) are covered: a Node
+  // maintenance script under `scripts/` uses `console`/`process` no matter which
+  // extension it carries, and omitting `.mjs` left those globals undefined for
+  // any `.mjs` script — a lint failure on legitimate Node code.
   {
-    files: ['*.config.{js,mjs,ts}', '.size-limit.mjs', 'scripts/**/*.ts', 'tests/**/*.ts'],
+    files: [
+      '*.config.{js,mjs,ts}',
+      '.size-limit.mjs',
+      'scripts/**/*.ts',
+      'scripts/**/*.{js,mjs,cjs}',
+      'tests/**/*.ts',
+    ],
     languageOptions: {
       globals: {
         process: 'readonly',
@@ -133,6 +143,21 @@ export default defineConfig(
     rules: {
       'no-restricted-syntax': 'off',
     },
+  },
+
+  /**
+   * Plain-JS Node maintenance scripts are glue, not application code, and they
+   * reach for Node built-ins whose typings are untyped by design — `node:sqlite`'s
+   * `Statement.all()` returns `any` rows, so the type-aware `no-unsafe-*` rules
+   * fire on every read of a column. Type information adds nothing here (these
+   * scripts are outside the Worker's trust boundary and are run by hand), so they
+   * are linted without it, exactly as `.size-limit.mjs` already is. The `.ts`
+   * scripts keep full type-aware linting.
+   */
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: { parserOptions: { projectService: false, project: false } },
+    extends: [tseslint.configs.disableTypeChecked],
   },
 
   // Tests may name hosts and reach for looser types.

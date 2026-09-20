@@ -104,7 +104,17 @@ function main(): void {
   const scratch = join(scratchDir, `repair-sofa-kv-${String(Date.now())}.json`);
   try {
     writeFileSync(scratch, JSON.stringify(index), { mode: 0o600 });
-    wrangler(['kv', 'key', 'put', INDEX_KEY, '--binding', DRAFTS_BINDING, '--local', '--path', scratch]);
+    wrangler([
+      'kv',
+      'key',
+      'put',
+      INDEX_KEY,
+      '--binding',
+      DRAFTS_BINDING,
+      '--local',
+      '--path',
+      scratch,
+    ]);
   } finally {
     rmSync(scratch, { force: true });
   }

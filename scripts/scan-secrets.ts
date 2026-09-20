@@ -23,7 +23,7 @@
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { join, relative, resolve, sep } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 type Scope = 'all' | 'client';
 
@@ -91,7 +91,12 @@ function extensionOf(path: string): string {
 }
 
 function isClientReachable(relativePath: string): boolean {
-  const first = relativePath.split(sep)[0];
+  // Split on either separator: `relative()` yields the OS separator (a backslash
+  // on Windows), while callers and tests pass forward-slash paths. Keying off the
+  // platform `sep` alone would leave a Windows-style path unsplit — or a
+  // forward-slash path on Windows unsplit — and misclassify the server bundle as
+  // client-reachable, flagging every legitimate binding read as a leak.
+  const first = relativePath.split(/[/\\]/)[0];
   return first === undefined || !SERVER_ONLY_PREFIXES.includes(first);
 }
 

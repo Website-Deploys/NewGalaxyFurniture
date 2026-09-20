@@ -150,7 +150,10 @@ function main(): void {
       continue;
     }
 
-    const result = spawnSync('npx', args, { stdio: 'inherit', shell: process.platform === 'win32' });
+    const result = spawnSync('npx', args, {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
     if (result.status !== 0) {
       throw new Error(
         `wrangler put failed for ${object.key} (exit ${result.status ?? 'unknown'}). ` +

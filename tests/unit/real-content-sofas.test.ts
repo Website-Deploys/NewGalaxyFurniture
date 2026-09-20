@@ -198,7 +198,9 @@ describe('Premium 3+1+1 Sofa Set: the published record, its images and its Whats
     // primaryImage references one of the product's own images.
     expect(brownSofa.images.some((image) => image.id === brownSofa.primaryImage)).toBe(true);
     // Image order is a contiguous 0..3 permutation.
-    expect(brownSofa.images.map((image) => image.order).sort((a, b) => a - b)).toEqual([0, 1, 2, 3]);
+    expect(brownSofa.images.map((image) => image.order).sort((a, b) => a - b)).toEqual([
+      0, 1, 2, 3,
+    ]);
   });
 
   it('produces the exact required WhatsApp message, never mentioning Corner Sofa', () => {

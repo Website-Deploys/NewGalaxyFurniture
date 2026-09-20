@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { extname, join, relative } from 'node:path';
+import { extname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -368,7 +368,10 @@ describe('the domain appears only in PUBLIC_SITE_URL', () => {
           /PUBLIC_SITE_URL\?:/.test(text)
         );
       })
-      .map((file) => relative(SRC, file))
+      // Normalise to forward slashes: `relative()` yields the OS separator, and this
+      // assertion names the two resolvers by their POSIX paths so it reads the same on
+      // any platform.
+      .map((file) => relative(SRC, file).split(sep).join('/'))
       .sort();
 
     // `lib/env.ts` for the Worker's public config and `lib/seo/site-url.ts` for rendering.

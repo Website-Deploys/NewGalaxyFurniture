@@ -57,7 +57,7 @@ const db = new DatabaseSync(dbPath, { readOnly: true });
 
 const rows = db
   .prepare(
-    "SELECT key, blob_id, size, http_metadata FROM _mf_objects WHERE key LIKE ? ORDER BY key",
+    'SELECT key, blob_id, size, http_metadata FROM _mf_objects WHERE key LIKE ? ORDER BY key',
   )
   .all(`products/${PRODUCT_ID}/%`);
 
@@ -94,7 +94,10 @@ db.close();
 // Deterministic manifest: sorted by key, two-space indent, trailing newline.
 manifest.sort((a, b) => a.key.localeCompare(b.key));
 const manifestPath = join(STAGING, 'manifest.json');
-writeFileSync(manifestPath, JSON.stringify({ productId: PRODUCT_ID, objects: manifest }, null, 2) + '\n');
+writeFileSync(
+  manifestPath,
+  JSON.stringify({ productId: PRODUCT_ID, objects: manifest }, null, 2) + '\n',
+);
 
 console.log(`Exported ${manifest.length} R2 objects for ${PRODUCT_ID} to:`);
 console.log(`  ${STAGING}`);
