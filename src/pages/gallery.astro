@@ -26,38 +26,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getCatalogue } from '@/lib/content/catalogue';
 import { getSiteSettings } from '@/lib/content/site';
 import { resolvableGalleryTilesOf } from '@/lib/products/gallery-tiles';
+import { staticProductImages } from '@/lib/products/static-images';
 import { pageMeta } from '@/lib/seo/page';
 import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import '@/styles/editorial.css';
 
 const settings = getSiteSettings();
 const products = await getCatalogue();
-
-/**
- * Static image overrides, read from `public/products/{slug}/` at build time.
- *
- * Each file is named by the product image id it stands in for (e.g. `img_h0mv17oeuf.jpeg`), so the
- * mapping is unambiguous. These are committed, same-origin files that resolve in the browser
- * without the `/img/**` media bucket — which is what makes the gallery show real photographs even
- * before the objects are uploaded to the deployed bucket. A product with no such folder simply has
- * an empty map and falls back to the derivative pipeline.
- */
-function staticOverridesFor(slug: string): Record<string, string> {
-  const dir = join(process.cwd(), 'public', 'products', slug);
-  const out: Record<string, string> = {};
-  try {
-    for (const file of readdirSync(dir)) {
-      const dot = file.lastIndexOf('.');
-      const id = dot === -1 ? file : file.slice(0, dot);
-      out[id] = `/products/${slug}/${file}`;
-    }
-  } catch {
-    // No folder for this product: no overrides.
-  }
-  return out;
-}
 
 /**
  * One board per product that has photographs the browser can actually load, in catalogue order.
@@ -67,7 +42,7 @@ function staticOverridesFor(slug: string): Record<string, string> {
 const boards = products
   .map((product) => ({
     product,
-    tiles: resolvableGalleryTilesOf(product, staticOverridesFor(product.slug)),
+    tiles: resolvableGalleryTilesOf(product, staticProductImages(product.slug)),
   }))
   .filter((board) => board.tiles.length > 0);
 

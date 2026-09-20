@@ -37,13 +37,14 @@ import ProductDetail from '@/components/product/ProductDetail.astro';
 import RecentlyViewed from '@/components/product/RecentlyViewed';
 import RelatedProducts from '@/components/product/RelatedProducts.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
-import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
 import { aggregateRatingFor, getPublishedReviews } from '@/lib/content/reviews';
 import { getSiteSettings } from '@/lib/content/site';
 import { formatPriceOrLabel } from '@/lib/money';
 import { galleryImagesOf } from '@/lib/products/gallery-images';
+import { staticProductImages } from '@/lib/products/static-images';
+import { fallbackSrc } from '@/lib/images/srcset';
 import { manualRelatedSlugs, relatedProducts } from '@/lib/products/related';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/seo/jsonld';
 import { absoluteUrl, productDescriptionFallback, productTitleFallback } from '@/lib/seo/meta';
@@ -108,7 +109,27 @@ const related = relatedProducts(
 /* Gallery and recently viewed                                                */
 /* -------------------------------------------------------------------------- */
 
-const galleryImages = galleryImagesOf(product);
+const staticImages = staticProductImages(product.slug);
+
+/**
+ * The gallery island's images, with any committed static file swapped in for the `/img/**`
+ * derivative URLs. Until a product's images are in the deployed media bucket those derivative URLs
+ * 404 and the gallery shows only blurred placeholders; a static file resolves in the browser, so
+ * when one exists it becomes the `src`, the single `srcSet` candidate, the thumbnail and the zoom
+ * source. An image with no static file keeps the pipeline URLs unchanged.
+ */
+const galleryImages = galleryImagesOf(product).map((image) => {
+  const staticSrc = staticImages[image.id];
+  if (staticSrc === undefined) return image;
+  return {
+    ...image,
+    src: staticSrc,
+    srcSet: staticSrc,
+    thumbSrc: staticSrc,
+    zoomSrc: staticSrc,
+    zoomSrcSet: staticSrc,
+  };
+});
 const primary = galleryImages[0];
 
 /* -------------------------------------------------------------------------- */
@@ -121,15 +142,27 @@ const primary = galleryImages[0];
  * for them. Both draw from the same ordered gallery the interactive island uses, so they always
  * show this product's real photographs and never a stock image.
  *
- * The banner reuses the primary `ProductImageValue`; the closer-look strip is the remaining
- * angles. When a product has only one photograph the strip is empty and its whole block is
- * omitted, and when it has none the banner is omitted too — the marketing band degrades to just
- * the quote form rather than showing an empty frame (Requirement 4.3's omit-when-empty rule,
- * applied to presentational sections).
+ * Each entry carries its resolved `src` (a committed static file when one exists, else the `/img`
+ * derivative), so the banner and the closer-look tiles render as plain `<img>` that actually load
+ * rather than paint a placeholder forever.
  */
 const orderedImages = [...product.images].sort((a, b) => a.order - b.order);
-const bannerImage = primaryImageOf(product);
-const closerLookImages = orderedImages.filter((image) => image.id !== bannerImage?.id);
+const bannerRecord = primaryImageOf(product);
+const bannerImage =
+  bannerRecord === null
+    ? null
+    : {
+        record: bannerRecord,
+        src:
+          staticImages[bannerRecord.id] ??
+          fallbackSrc({ productId: product.id, image: bannerRecord }),
+      };
+const closerLookImages = orderedImages
+  .filter((image) => image.id !== bannerRecord?.id)
+  .map((image) => ({
+    record: image,
+    src: staticImages[image.id] ?? fallbackSrc({ productId: product.id, image }),
+  }));
 
 const recentCard = {
   name: product.name,
@@ -211,7 +244,9 @@ const meta = pageMeta(Astro, {
     slot="head"
     hint={primary === undefined
       ? null
-      : { href: primary.src, srcset: primary.srcSet, sizes: primary.sizes }}
+      : primary.srcSet === primary.src
+        ? { href: primary.src }
+        : { href: primary.src, srcset: primary.srcSet, sizes: primary.sizes }}
   />
 
   <div class="ngf-pdp">
@@ -251,9 +286,19 @@ const meta = pageMeta(Astro, {
       <ul class="ngf-pdp-features-list">
         <li class="ngf-pdp-feature">
           <span class="ngf-pdp-feature-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 11h18" /><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" />
-              <path d="M4 11a2 2 0 0 0-2 2v3h20v-3a2 2 0 0 0-2-2" /><path d="M4 18v2" /><path d="M20 18v2" />
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 11h18"></path><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"></path>
+              <path d="M4 11a2 2 0 0 0-2 2v3h20v-3a2 2 0 0 0-2-2"></path><path d="M4 18v2"
+              ></path><path d="M20 18v2"></path>
             </svg>
           </span>
           <span class="ngf-pdp-feature-body">
@@ -263,8 +308,18 @@ const meta = pageMeta(Astro, {
         </li>
         <li class="ngf-pdp-feature">
           <span class="ngf-pdp-feature-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3l7 3v5c0 4.2-2.8 7.6-7 8.9C7.8 18.6 5 15.2 5 11V6l7-3z" /><path d="M9 11.5l2 2 4-4.5" />
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 3l7 3v5c0 4.2-2.8 7.6-7 8.9C7.8 18.6 5 15.2 5 11V6l7-3z"></path><path
+                d="M9 11.5l2 2 4-4.5"></path>
             </svg>
           </span>
           <span class="ngf-pdp-feature-body">
@@ -274,8 +329,17 @@ const meta = pageMeta(Astro, {
         </li>
         <li class="ngf-pdp-feature">
           <span class="ngf-pdp-feature-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3l2.5 5 5.5.8-4 3.9.95 5.5L12 21.5 7.05 18.2 8 12.7 4 8.8 9.5 8z" />
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 3l2.5 5 5.5.8-4 3.9.95 5.5L12 21.5 7.05 18.2 8 12.7 4 8.8 9.5 8z"></path>
             </svg>
           </span>
           <span class="ngf-pdp-feature-body">
@@ -285,9 +349,20 @@ const meta = pageMeta(Astro, {
         </li>
         <li class="ngf-pdp-feature">
           <span class="ngf-pdp-feature-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 7h11" /><path d="M19 7h1" /><circle cx="17" cy="7" r="2" />
-              <path d="M4 17h5" /><path d="M13 17h7" /><circle cx="11" cy="17" r="2" />
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4 7h11"></path><path d="M19 7h1"></path><circle cx="17" cy="7" r="2"
+              ></circle>
+              <path d="M4 17h5"></path><path d="M13 17h7"></path><circle cx="11" cy="17" r="2"
+              ></circle>
             </svg>
           </span>
           <span class="ngf-pdp-feature-body">
@@ -311,18 +386,24 @@ const meta = pageMeta(Astro, {
       bannerImage !== null && (
         <section class="ngf-pdp-banner" data-reveal="mask">
           <div class="ngf-pdp-banner-media">
-            <ResponsiveImage
-              productId={product.id}
-              image={bannerImage}
-              context="card"
-              widths={[640, 960, 1280]}
+            <img
+              src={bannerImage.src}
+              width={bannerImage.record.width}
+              height={bannerImage.record.height}
+              alt={bannerImage.record.alt}
+              loading="lazy"
+              decoding="async"
               class="ngf-pdp-banner-image"
             />
           </div>
           <div class="ngf-pdp-banner-quote">
-            <p class="ngf-pdp-banner-line">“Designed for conversations, built for living.”</p>
+            <p class="ngf-pdp-banner-eyebrow">A sofa set that feels like home</p>
+            <p class="ngf-pdp-banner-line">Comfort for every moment</p>
             <span class="ngf-pdp-banner-rule" aria-hidden="true" />
-            <p class="ngf-pdp-banner-sub">A statement piece for modern homes.</p>
+            <p class="ngf-pdp-banner-sub">
+              Crafted for modern living spaces, the {product.name} brings together style, comfort
+              and durability — perfect for family time, entertaining, or simply relaxing.
+            </p>
           </div>
         </section>
       )
@@ -341,25 +422,29 @@ const meta = pageMeta(Astro, {
     */
     }
     <section class="ngf-pdp-enquiry" aria-labelledby="ngf-pdp-quote-heading" data-reveal>
-      {closerLookImages.length > 0 && (
-        <div class="ngf-pdp-closer" data-motion-group>
-          <h2 class="ngf-pdp-closer-heading">A Closer Look</h2>
-          <p class="ngf-pdp-closer-sub">See the {product.name} from every angle.</p>
-          <ul class="ngf-pdp-closer-grid">
-            {closerLookImages.map((image) => (
-              <li>
-                <ResponsiveImage
-                  productId={product.id}
-                  image={image}
-                  context="card"
-                  widths={[320, 480, 640]}
-                  class="ngf-pdp-closer-image"
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {
+        closerLookImages.length > 0 && (
+          <div class="ngf-pdp-closer" data-motion-group>
+            <h2 class="ngf-pdp-closer-heading">A Closer Look</h2>
+            <p class="ngf-pdp-closer-sub">See the {product.name} from every angle.</p>
+            <ul class="ngf-pdp-closer-grid">
+              {closerLookImages.map((image) => (
+                <li>
+                  <img
+                    src={image.src}
+                    width={image.record.width}
+                    height={image.record.height}
+                    alt={image.record.alt}
+                    loading="lazy"
+                    decoding="async"
+                    class="ngf-pdp-closer-image"
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
       <div class="ngf-pdp-quote">
         {
           /*
