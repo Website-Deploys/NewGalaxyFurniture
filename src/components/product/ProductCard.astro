@@ -34,6 +34,7 @@ import { getSiteSettings } from '@/lib/content/site';
 import { derivativeUrl } from '@/lib/images/srcset';
 import { formatPriceOrLabel } from '@/lib/money';
 import { stockLabel } from '@/lib/products/labels';
+import { staticProductImages } from '@/lib/products/static-images';
 import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 import { safeText } from '@/lib/security/sanitize';
 import { primaryImageOf } from '@/schemas/product';
@@ -62,6 +63,15 @@ const settings = getSiteSettings();
 const primary = primaryImageOf(product);
 const ordered = [...product.images].sort((a, b) => a.order - b.order);
 const second = ordered.find((image) => image.id !== primary?.id);
+
+/*
+ * Committed static overrides for this product's images (under `public/products/{slug}/`). Until the
+ * images are in the deployed media bucket the `/img/**` URLs 404 and the card shows only its
+ * alt-text placeholder; a static file resolves, so the primary photograph and the hover image use
+ * it when present.
+ */
+const staticImages = staticProductImages(product.slug);
+const primaryStaticSrc = primary === null ? undefined : staticImages[primary.id];
 
 const price = formatPriceOrLabel(product.price, product.priceOnEnquiry);
 
@@ -100,8 +110,12 @@ const enquiryHref = (() => {
   return buildWhatsAppUrl(number.e164, message);
 })();
 
-// The hover image, at a card-sized derivative. Only ever read by the hover media query.
-const hoverSrc = second === undefined ? null : derivativeUrl(product.id, second.id, 640, 'webp');
+// The hover image, at a card-sized derivative — or its committed static file when one exists.
+// Only ever read by the hover media query.
+const hoverSrc =
+  second === undefined
+    ? null
+    : (staticImages[second.id] ?? derivativeUrl(product.id, second.id, 640, 'webp'));
 ---
 
 <article
@@ -122,6 +136,7 @@ const hoverSrc = second === undefined ? null : derivativeUrl(product.id, second.
           context="card"
           eager={eager}
           priority={priority}
+          {...(primaryStaticSrc === undefined ? {} : { staticSrc: primaryStaticSrc })}
         />
       )
     }

@@ -25,6 +25,7 @@ import {
   type ImageRef,
 } from '@/lib/images/srcset';
 import type { ImagePreloadHint } from '@/lib/images/preload';
+import { staticProductImages } from '@/lib/products/static-images';
 import type { HeroImage } from '@/lib/site/hero-image';
 import { primaryImageOf, type Product } from '@/schemas/product';
 
@@ -70,9 +71,11 @@ export function heroShowcaseFrom(products: readonly Product[]): HeroShowcase | n
     if (primary === null) continue;
 
     const ref: ImageRef = { productId: product.id, image: primary };
-    const src = fallbackSrc(ref);
-    const srcset = buildSrcSet(ref, heroWidths(primary.width));
-    const sizes = pickSizes('hero');
+    const staticSrc = staticProductImages(product.slug)[primary.id];
+    const src = staticSrc ?? fallbackSrc(ref);
+    const srcset =
+      staticSrc === undefined ? buildSrcSet(ref, heroWidths(primary.width)) : undefined;
+    const sizes = staticSrc === undefined ? pickSizes('hero') : undefined;
 
     const image: HeroImage & { srcset: string; sizes: string } = {
       src,
@@ -82,13 +85,13 @@ export function heroShowcaseFrom(products: readonly Product[]): HeroShowcase | n
       alt: primary.alt,
       ...(primary.lqip === undefined ? {} : { lqip: primary.lqip }),
       supplied: true,
-      srcset,
-      sizes,
-    };
+      ...(srcset === undefined ? {} : { srcset }),
+      ...(sizes === undefined ? {} : { sizes }),
+    } as HeroImage & { srcset: string; sizes: string };
 
     return {
       image,
-      preload: { href: src, srcset, sizes },
+      preload: srcset === undefined ? { href: src } : { href: src, srcset, sizes },
     };
   }
   return null;
@@ -115,7 +118,8 @@ export function heroSlidesFrom(products: readonly Product[]): HeroSlide[] {
     if (primary === null) continue;
 
     const ref: ImageRef = { productId: product.id, image: primary };
-    const src = fallbackSrc(ref);
+    const staticSrc = staticProductImages(product.slug)[primary.id];
+    const src = staticSrc ?? fallbackSrc(ref);
     if (seen.has(src)) continue;
     seen.add(src);
 
@@ -126,8 +130,9 @@ export function heroSlidesFrom(products: readonly Product[]): HeroSlide[] {
       // The photograph's own alt text — never invented here.
       alt: primary.alt,
       ...(primary.lqip === undefined ? {} : { lqip: primary.lqip }),
-      srcset: buildSrcSet(ref, heroWidths(primary.width)),
-      sizes: pickSizes('hero'),
+      ...(staticSrc === undefined
+        ? { srcset: buildSrcSet(ref, heroWidths(primary.width)), sizes: pickSizes('hero') }
+        : {}),
     });
   }
 

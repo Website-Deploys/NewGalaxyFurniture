@@ -34,8 +34,12 @@ export interface ImagePreloadHint {
 export function cardImagePreload(
   productId: string,
   image: ProductImageValue | null,
+  staticSrc?: string,
 ): ImagePreloadHint | null {
   if (image === null) return null;
+  // A committed static file has a single candidate: preload the href alone so it pairs exactly with
+  // the rendered `<img>` (a bare `imagesrcset` with no width descriptor would be invalid anyway).
+  if (staticSrc !== undefined) return { href: staticSrc };
   const ref = { productId, image };
   return {
     href: fallbackSrc(ref),

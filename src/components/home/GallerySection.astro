@@ -16,6 +16,7 @@ import SectionHeader from '@/components/home/SectionHeader.astro';
 import EmptyState from '@/components/ui/EmptyState.astro';
 import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { staticProductImages } from '@/lib/products/static-images';
 import type { HomepageSection } from '@/schemas/homepage';
 import { primaryImageOf, type Product } from '@/schemas/product';
 
@@ -28,10 +29,19 @@ interface Props {
 const { section, products, limit = 8 } = Astro.props;
 
 const tiles = products
-  .map((product) => ({ product, image: primaryImageOf(product) }))
+  .map((product) => ({
+    product,
+    image: primaryImageOf(product),
+    staticImages: staticProductImages(product.slug),
+  }))
   .filter(
-    (entry): entry is { product: Product; image: NonNullable<typeof entry.image> } =>
-      entry.image !== null,
+    (
+      entry,
+    ): entry is {
+      product: Product;
+      image: NonNullable<typeof entry.image>;
+      staticImages: Record<string, string>;
+    } => entry.image !== null,
   )
   .slice(0, limit);
 ---
@@ -74,6 +84,9 @@ const tiles = products
                 image={tile.image}
                 context="card"
                 widths={[320, 480, 640]}
+                {...(tile.staticImages[tile.image.id] === undefined
+                  ? {}
+                  : { staticSrc: tile.staticImages[tile.image.id] })}
               />
               <span class="sr-only">{tile.product.name}</span>
             </a>

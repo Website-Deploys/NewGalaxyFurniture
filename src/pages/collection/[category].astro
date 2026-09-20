@@ -27,6 +27,7 @@ import { getAnalyticsSnapshot } from '@/lib/content/analytics-snapshot';
 import { getCatalogue, getPublishedCategories } from '@/lib/content/catalogue';
 import { getRankings } from '@/lib/content/site';
 import { cardImagePreload } from '@/lib/images/preload';
+import { staticProductImages } from '@/lib/products/static-images';
 import { isEagerCard } from '@/lib/images/staging';
 import { primaryImageOf } from '@/schemas/product';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/seo/jsonld';
@@ -77,7 +78,12 @@ const count = products.length;
  * element. `null` with an empty catalogue, so a page with no cards hints nothing (Requirement 22.10).
  */
 const leadImage = products[0] === undefined ? null : primaryImageOf(products[0]);
-const leadPreload = products[0] === undefined ? null : cardImagePreload(products[0].id, leadImage);
+const leadStaticSrc =
+  products[0] === undefined || leadImage === null
+    ? undefined
+    : staticProductImages(products[0].slug)[leadImage.id];
+const leadPreload =
+  products[0] === undefined ? null : cardImagePreload(products[0].id, leadImage, leadStaticSrc);
 
 /**
  * Metadata and structured data.

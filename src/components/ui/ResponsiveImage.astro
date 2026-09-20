@@ -52,10 +52,26 @@ interface Props {
   eager?: boolean;
   /** Candidate widths. Defaults to the capped card ladder, or the full ladder off a card. */
   widths?: readonly number[];
+  /**
+   * A committed same-origin file (under `public/`) to serve instead of the `/img/**` derivative.
+   * Present when the product's images are not yet in the deployed media bucket, so the card shows a
+   * real photograph rather than an alt-text placeholder. A single file has one candidate, so `srcset`
+   * is dropped; the reserved box and loading attributes are unchanged.
+   */
+  staticSrc?: string;
   class?: string;
 }
 
-const { productId, image, context, priority, eager, widths, class: className } = Astro.props;
+const {
+  productId,
+  image,
+  context,
+  priority,
+  eager,
+  widths,
+  staticSrc,
+  class: className,
+} = Astro.props;
 
 const ref = { productId, image };
 /*
@@ -65,9 +81,9 @@ const ref = { productId, image };
  */
 const candidates =
   widths ?? (context === 'card' ? cardWidths(image.width) : derivativeWidthsFor(image.width));
-const srcset = buildSrcSet(ref, candidates);
-const sizes = pickSizes(context);
-const src = fallbackSrc(ref);
+const srcset = staticSrc === undefined ? buildSrcSet(ref, candidates) : undefined;
+const sizes = staticSrc === undefined ? pickSizes(context) : undefined;
+const src = staticSrc ?? fallbackSrc(ref);
 
 /*
  * The gallery's primary image and the hero are their page's largest contentful paint, so they are
