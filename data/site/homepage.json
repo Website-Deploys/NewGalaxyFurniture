@@ -52,6 +52,14 @@
       "eyebrow": "How we work",
       "heading": "Craftsmanship you can ask about",
       "body": "We would rather show you the work than describe it. Ask about any piece — the timber, the joinery, the finish — and we will tell you exactly how it is put together before you commit to it.\n\nSend a photograph of something you like and we will tell you honestly what we can match and what we cannot.",
+      "image": {
+        "base": "/brand/home-craft",
+        "width": 1536,
+        "height": 1024,
+        "widths": [768, 1200],
+        "alt": "A craftsman's hands running a hand plane along a timber board, a curl of shaving lifting from the blade in a sunlit workshop.",
+        "caption": "Details make better homes"
+      },
       "awaitingCopy": false
     },
     {
@@ -60,6 +68,14 @@
       "eyebrow": "Buy direct",
       "heading": "Direct from the manufacturer",
       "body": "You are dealing with the people who build the furniture rather than a reseller. Ask for a change to a size, a timber or a finish and the answer comes back from the workshop instead of from a catalogue.\n\nTell us the budget you have in mind and we will tell you what is realistic within it.",
+      "image": {
+        "base": "/brand/home-manufacturer",
+        "width": 1672,
+        "height": 941,
+        "widths": [768, 1200],
+        "alt": "The New Galaxy Furniture workshop floor — craftsmen at workbenches beneath the words \"Furniture that feels like home\".",
+        "caption": "Furniture that feels like home"
+      },
       "awaitingCopy": false
     },
     {
@@ -70,6 +86,22 @@
       "body": "Send a measurement, a photograph or a rough sketch on WhatsApp. We will come back to you with what is possible, what it will cost and how long it will take — before anything is started.\n\nSize, timber, finish and upholstery are all yours to choose.",
       "ctaLabel": "Start a custom enquiry",
       "ctaHref": "/custom-furniture",
+      "image": {
+        "base": "/brand/home-custom",
+        "width": 1672,
+        "height": 941,
+        "widths": [768, 1200],
+        "alt": "A custom walnut dining table set with upholstered chairs, styled with plants and pendant lights in a sunlit room.",
+        "caption": "Your space\nYour furniture"
+      },
+      "secondaryImage": {
+        "base": "/brand/home-custom-detail",
+        "width": 1122,
+        "height": 1402,
+        "widths": [480, 768, 1040],
+        "alt": "A close view of a curved walnut chair back cradling a bouclé cushion.",
+        "caption": "A better fit for a better tomorrow"
+      },
       "awaitingCopy": false
     },
     {
@@ -80,6 +112,21 @@
       "body": "Seeing a piece in person tells you more than any photograph — the weight of it, the grain, how a seat actually feels. Come and sit on it.\n\nMessage us before you visit and we will make sure the pieces you want to see are out on the floor.",
       "ctaLabel": "Plan a visit",
       "ctaHref": "/workshop",
+      "image": {
+        "base": "/brand/home-showroom",
+        "width": 1670,
+        "height": 941,
+        "widths": [768, 1200],
+        "alt": "A living-room showroom setting — a large beige sofa, round walnut coffee table and plants beneath the words \"Spaces people love\".",
+        "caption": "Spaces people love"
+      },
+      "secondaryImage": {
+        "base": "/brand/home-showroom-a",
+        "width": 1670,
+        "height": 942,
+        "widths": [480, 768, 1040, 1440],
+        "alt": "A walnut sideboard styled with a table lamp, books and trailing plants in warm evening light."
+      },
       "awaitingCopy": false
     },
     {
@@ -87,6 +134,13 @@
       "enabled": true,
       "eyebrow": "In their words",
       "heading": "Customer reviews",
+      "image": {
+        "base": "/brand/home-reviews",
+        "width": 1122,
+        "height": 1402,
+        "widths": [480, 768, 1040],
+        "alt": "A single upholstered armchair with a walnut frame and a throw over one arm."
+      },
       "awaitingCopy": false
     },
     {

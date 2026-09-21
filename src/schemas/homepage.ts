@@ -42,6 +42,33 @@ export const HOMEPAGE_SECTION_KEYS = [
 
 export const HomepageSectionKey = z.enum(HOMEPAGE_SECTION_KEYS);
 
+/**
+ * An editorial photograph supplied for a section.
+ *
+ * This is a genuine, operator-supplied asset, so it is not placeholder-gated the way copy is: a
+ * section with no `image` keeps its existing hairline illustration, and one with an image paints the
+ * photograph. `base` is a same-origin path under `/brand/` and `widths` are the responsive
+ * derivatives that actually exist on disk — the component builds the `srcset` from exactly these, so
+ * it can never reference a width that was never generated. `caption` is the optional script-lettered
+ * line the reference overlays on the photo ("Details make better homes"); it carries no business
+ * claim, so it is free of the placeholder discipline that governs `body`.
+ *
+ * Requirements: 7.7, 7.10, 22.10.
+ */
+export const HomepageSectionImageSchema = z.object({
+  /** Same-origin base path, e.g. `/brand/home-craft`. Derivatives are `${base}-${width}.webp`. */
+  base: z.string().min(1).max(200),
+  /** Intrinsic dimensions of the largest derivative, so the box is reserved against CLS. */
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  /** The responsive widths that exist on disk. The srcset is built from exactly these. */
+  widths: z.array(z.number().int().positive()).min(1),
+  /** Required alt text — a photograph with no alt is an accessibility defect, not an option. */
+  alt: z.string().min(1).max(240),
+  /** Optional script-lettered overlay line. No business claim; free of placeholder discipline. */
+  caption: z.string().max(120).optional(),
+});
+
 export const HomepageSectionSchema = z
   .object({
     key: HomepageSectionKey,
@@ -54,6 +81,10 @@ export const HomepageSectionSchema = z
     body: z.string().max(2000).optional(),
     ctaLabel: z.string().max(40).optional(),
     ctaHref: z.string().max(200).optional(),
+    /** An editorial photograph for the section's panel, where the operator has supplied one. */
+    image: HomepageSectionImageSchema.optional(),
+    /** A second, smaller photograph — used by the custom-furniture band's detail image. */
+    secondaryImage: HomepageSectionImageSchema.optional(),
     /** True while `body` still holds a `[PLACEHOLDER — …]` marker awaiting real copy. */
     awaitingCopy: z.boolean().default(false),
   })
@@ -98,5 +129,6 @@ export const HomepageSchema = z
   });
 
 export type HomepageSection = z.infer<typeof HomepageSectionSchema>;
+export type HomepageSectionImage = z.infer<typeof HomepageSectionImageSchema>;
 export type Homepage = z.infer<typeof HomepageSchema>;
 export type HomepageSectionKeyValue = z.infer<typeof HomepageSectionKey>;

@@ -35,6 +35,28 @@ interface Props {
 
 const { section, reviews, limit = 6 } = Astro.props;
 const shown = reviews.slice(0, limit);
+
+/**
+ * The empty-state photograph, where the operator has supplied one.
+ *
+ * The reference shows a single upholstered armchair floating in the "no reviews yet" card. It is an
+ * editorial photo like the story bands', so it takes the same static responsive-WebP treatment: a
+ * `srcset` built from exactly the widths on disk, the box reserved by intrinsic ratio, lazy + async
+ * because it sits well below the fold. It is passed into `EmptyState`'s illustration slot, so it
+ * only ever appears in the empty state — once real reviews exist, the grid renders instead and the
+ * photo is never requested.
+ */
+const image = section.image;
+const emptyPhoto =
+  image !== undefined
+    ? {
+        src: `${image.base}-${String(Math.max(...image.widths))}.webp`,
+        srcset: image.widths.map((w) => `${image.base}-${String(w)}.webp ${String(w)}w`).join(', '),
+        width: image.width,
+        height: image.height,
+        alt: image.alt,
+      }
+    : null;
 ---
 
 <section
@@ -58,6 +80,24 @@ const shown = reviews.slice(0, limit);
         heading="No reviews published yet"
         message="We would rather show none than write our own. When customers send us their words, they will appear here."
       >
+        {emptyPhoto !== null && (
+          <figure
+            slot="illustration"
+            class="ngf-reviews-empty-photo"
+            style={`aspect-ratio: ${String(emptyPhoto.width)} / ${String(emptyPhoto.height)}`}
+          >
+            <img
+              src={emptyPhoto.src}
+              srcset={emptyPhoto.srcset}
+              sizes="(min-width: 768px) 22rem, 60vw"
+              width={emptyPhoto.width}
+              height={emptyPhoto.height}
+              alt={emptyPhoto.alt}
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        )}
         <WhatsAppLink
           slot="action"
           context={{ kind: 'general' }}
@@ -99,6 +139,25 @@ const shown = reviews.slice(0, limit);
     padding: 0;
     list-style: none;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  }
+
+  /*
+   * The empty-state photograph — the single armchair from the reference. Capped to a sensible column
+   * width, centred, and its box reserved by the intrinsic width/height on the element so it does not
+   * shift the card as it decodes. A soft drop shadow lifts it off the card, matching the reference's
+   * floating-object treatment.
+   */
+  .ngf-reviews-empty-photo {
+    width: clamp(12rem, 40vw, 20rem);
+    margin: 0;
+    filter: drop-shadow(0 18px 28px rgb(24 20 16 / 0.16));
+  }
+
+  .ngf-reviews-empty-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .ngf-review {

@@ -43,7 +43,7 @@
 import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
 import CraftsmanshipLines from '@/components/motion/CraftsmanshipLines.astro';
 import FurnitureAssembly from '@/components/motion/FurnitureAssembly.astro';
-import type { HomepageSection } from '@/schemas/homepage';
+import type { HomepageSection, HomepageSectionImage } from '@/schemas/homepage';
 
 interface Props {
   section: HomepageSection;
@@ -89,6 +89,40 @@ const cta =
   showCta && section.ctaLabel !== undefined && section.ctaHref !== undefined
     ? { label: section.ctaLabel, href: section.ctaHref }
     : null;
+
+/**
+ * The photograph, where the operator has supplied one.
+ *
+ * When present it replaces the hairline illustration panel with a real editorial photo — the same
+ * static responsive-WebP treatment `about.astro` uses: a `srcset` built from exactly the widths that
+ * exist on disk, a fixed intrinsic ratio so the box is reserved against CLS, and `loading="lazy"` /
+ * `decoding="async"` because these bands sit below the fold and the hero is the page's one
+ * prioritised image. When absent the band keeps its existing drawing-board panel, so sections with
+ * no photo are unchanged.
+ */
+function pictureOf(image: HomepageSectionImage): {
+  src: string;
+  srcset: string;
+  width: number;
+  height: number;
+  alt: string;
+} {
+  const widest = Math.max(...image.widths);
+  return {
+    src: `${image.base}-${String(widest)}.webp`,
+    srcset: image.widths.map((w) => `${image.base}-${String(w)}.webp ${String(w)}w`).join(', '),
+    width: image.width,
+    height: image.height,
+    alt: image.alt,
+  };
+}
+
+const photo = section.image !== undefined ? pictureOf(section.image) : null;
+const detail = section.secondaryImage !== undefined ? pictureOf(section.secondaryImage) : null;
+const photoSizes = '(min-width: 768px) 48vw, 100vw';
+const detailSizes = '(min-width: 768px) 22vw, 60vw';
+const caption = section.image?.caption;
+const detailCaption = section.secondaryImage?.caption;
 ---
 
 <section
@@ -102,17 +136,59 @@ const cta =
   data-reveal
 >
   <div class="ngf-story-inner">
-    <div class="ngf-story-panel">
-      <div class="ngf-story-ornament">
-        {
-          primitive === 'assembly' ? (
-            <FurnitureAssembly strokeWidth={1} />
-          ) : (
-            <CraftsmanshipLines strokeWidth={1} />
-          )
-        }
-      </div>
-    </div>
+    {
+      photo !== null ? (
+        <div class="ngf-story-photowrap">
+          <figure
+            class="ngf-story-photo"
+            style={`aspect-ratio: ${String(photo.width)} / ${String(photo.height)}`}
+          >
+            <img
+              src={photo.src}
+              srcset={photo.srcset}
+              sizes={photoSizes}
+              width={photo.width}
+              height={photo.height}
+              alt={photo.alt}
+              loading="lazy"
+              decoding="async"
+            />
+            {caption !== undefined && <figcaption class="ngf-story-script">{caption}</figcaption>}
+          </figure>
+
+          {detail !== null && (
+            <figure
+              class="ngf-story-detail"
+              style={`aspect-ratio: ${String(detail.width)} / ${String(detail.height)}`}
+            >
+              <img
+                src={detail.src}
+                srcset={detail.srcset}
+                sizes={detailSizes}
+                width={detail.width}
+                height={detail.height}
+                alt={detail.alt}
+                loading="lazy"
+                decoding="async"
+              />
+              {detailCaption !== undefined && (
+                <figcaption class="ngf-story-detail-caption">{detailCaption}</figcaption>
+              )}
+            </figure>
+          )}
+        </div>
+      ) : (
+        <div class="ngf-story-panel">
+          <div class="ngf-story-ornament">
+            {primitive === 'assembly' ? (
+              <FurnitureAssembly strokeWidth={1} />
+            ) : (
+              <CraftsmanshipLines strokeWidth={1} />
+            )}
+          </div>
+        </div>
+      )
+    }
 
     <div class="ngf-story-copy">
       {section.eyebrow !== undefined && <p class="ngf-story-eyebrow">{section.eyebrow}</p>}
@@ -164,6 +240,84 @@ const cta =
     display: grid;
     gap: clamp(1.5rem, 3.5vw, 3rem);
     align-items: center;
+  }
+
+  /*
+   * The photograph panel — the operator-supplied editorial photo that replaces the drawing board on
+   * the homepage's bottom bands. A fixed intrinsic ratio (set inline from the asset's own
+   * dimensions) reserves the box against CLS, the image fills it via `object-fit: cover`, and a soft
+   * radius + shadow match the drawing-board panel it stands in for so the band rhythm is unchanged.
+   */
+  .ngf-story-photowrap {
+    position: relative;
+    display: grid;
+    gap: clamp(0.75rem, 1.5vw, 1.15rem);
+  }
+
+  .ngf-story-photo {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-story-photo img,
+  .ngf-story-detail img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * The script-lettered overlay line ("Details make better homes"). Set over the lower-left of the
+   * photo with a soft gradient scrim so it stays legible on any photograph, and never baked into the
+   * image itself. It carries no business claim, so it is not placeholder-gated.
+   */
+  .ngf-story-script {
+    position: absolute;
+    right: clamp(1rem, 3vw, 2.5rem);
+    bottom: clamp(0.75rem, 2vw, 1.5rem);
+    left: clamp(1rem, 3vw, 2.5rem);
+    margin: 0;
+    color: var(--color-ivory);
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    font-style: italic;
+    line-height: 1.15;
+    text-shadow: 0 2px 12px rgb(24 20 16 / 0.45);
+    pointer-events: none;
+  }
+
+  /* The small detail photograph (the custom-furniture chair), stacked under the main photo. */
+  .ngf-story-detail {
+    position: relative;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-level1);
+  }
+
+  .ngf-story-detail-caption {
+    margin: 0.6rem 0 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 768px) {
+    /*
+     * On the custom-furniture band the main photo and the small detail sit side by side — the detail
+     * a narrow column on the right, mirroring the reference. Bands with no detail image keep the
+     * single photo at full width of the panel column.
+     */
+    .ngf-story-photowrap:has(.ngf-story-detail) {
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.75fr);
+      align-items: center;
+    }
   }
 
   /*
