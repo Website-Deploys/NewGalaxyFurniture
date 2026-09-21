@@ -18,7 +18,6 @@
  *
  * Requirements: 8.1, 8.8, 19.6, 23.17.
  */
-import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
 import CallLink from '@/components/ui/CallLink.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
@@ -55,6 +54,28 @@ const heroSrcset = HERO_WIDTHS.map(
 ).join(', ');
 const heroSizes = '(min-width: 768px) 48vw, 100vw';
 const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
+
+/**
+ * The "Our story" band photograph — a wide, sunlit workbench scene with blueprints, timber samples
+ * and a design board. Same static-asset treatment as the About hero: pre-optimised responsive WebP
+ * under `public/brand/` (a plain same-origin file that resolves under the Lighthouse static run),
+ * modern-format, responsive and small (~30–132 KB). It is the background of the band, well below
+ * the fold, so it is lazy and async — the showroom hero above stays the page's one prioritised
+ * image — and the band's fixed panoramic frame reserves its box against CLS. The heading and copy
+ * are overlaid by the page over a light scrim, so no text is baked into the photograph.
+ */
+const STORY_PHOTO = {
+  width: 2170,
+  height: 725,
+  base: '/brand/about-story',
+  alt: 'A sunlit New Galaxy Furniture workbench in Bengaluru — a blueprint, pencils and timber samples on a walnut table, with a design board of sketches and finishes on the wall.',
+};
+const STORY_WIDTHS = [768, 1200, 1680, 2170];
+const storySrc = `${STORY_PHOTO.base}-1680.webp`;
+const storySrcset = STORY_WIDTHS.map(
+  (w) => `${STORY_PHOTO.base}-${String(w)}.webp ${String(w)}w`,
+).join(', ');
+const storySizes = '(min-width: 1440px) 1440px, 100vw';
 
 const meta = pageMeta(Astro, {
   title: 'About',
@@ -293,18 +314,34 @@ const meta = pageMeta(Astro, {
 
     {
       /*
-      Our story, last and quiet. Requirement 8.8 / design Open Items item 1: nothing about the
-      workshop's history, scale, or achievements has been supplied, so nothing is claimed. The
-      placeholder is visible and labelled rather than filled with plausible copy, and it sits at the
-      end so the unbuilt section never dominates the page.
+      Our story — a wide photograph band that closes the page, matching the reference. The workbench
+      scene is the background; a light scrim keeps the overlaid copy legible on the left. The copy is
+      an invitation to talk, not a history: nothing about the workshop's age, scale or achievements
+      is claimed (Requirement 8.8), so the band carries a genuine next step rather than plausible
+      backstory that has not been supplied. The photograph is lazy and async — the showroom hero
+      above is the page's one prioritised image.
     */
     }
-    <section class="ngf-about-story ngf-page-body" aria-labelledby="ngf-about-story-heading">
-      <h2 id="ngf-about-story-heading">Our story</h2>
-      <PlaceholderCopy
-        body="[PLACEHOLDER — the story of the business: when it started, who runs it, and what it has built. No date, scale, capability, or achievement has been supplied, and none has been invented here.]"
-        contentKey="page.about.body"
+    <section class="ngf-about-story" aria-labelledby="ngf-about-story-heading" data-reveal>
+      <img
+        class="ngf-about-story-bg"
+        src={storySrc}
+        srcset={storySrcset}
+        sizes={storySizes}
+        alt={STORY_PHOTO.alt}
+        width={STORY_PHOTO.width}
+        height={STORY_PHOTO.height}
+        loading="lazy"
+        decoding="async"
       />
+      <div class="ngf-about-story-overlay">
+        <p class="ngf-about-story-rule" aria-hidden="true"></p>
+        <h2 id="ngf-about-story-heading">Our story</h2>
+        <p class="ngf-about-story-copy">
+          Tell us what you have in mind — the piece, the room it is for, the timber or finish you
+          prefer — and we will come back to you with options, timelines and prices.
+        </p>
+      </div>
     </section>
   </div>
 </BaseLayout>
@@ -505,13 +542,80 @@ const meta = pageMeta(Astro, {
     flex: none;
   }
 
-  /* Our story (quiet, last) ------------------------------------------------ */
+  /* Our story — a wide photograph band with overlaid copy --------------------- */
+
+  .ngf-about-story {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level2);
+    isolation: isolate;
+    /* The reserved box lives on the band itself (the image's ancestor), so the slot is held before
+       the photograph loads — the image-loading audit's rule 5. */
+    aspect-ratio: 2170 / 725;
+  }
+
+  @media (max-width: 720px) {
+    .ngf-about-story {
+      aspect-ratio: 3 / 4;
+    }
+  }
+
+  .ngf-about-story-bg {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * A light scrim, strongest on the left where the copy sits, fading to clear over the photograph's
+   * own detail on the right — so the dark serif heading and body stay legible over the warm wall
+   * without hiding the workbench scene.
+   */
+  .ngf-about-story-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: clamp(1.5rem, 5vw, 4rem);
+    background: linear-gradient(
+      to right,
+      rgb(250 248 244 / 0.92) 0%,
+      rgb(250 248 244 / 0.78) 32%,
+      rgb(250 248 244 / 0.3) 55%,
+      transparent 72%
+    );
+  }
+
+  .ngf-about-story-rule {
+    width: 2.5rem;
+    height: 1px;
+    margin: 0;
+    background-color: var(--color-taupe);
+  }
 
   .ngf-about-story h2 {
-    margin: 0 0 0.75rem;
+    margin: 0;
+    max-width: 12ch;
+    color: var(--color-obsidian);
     font-family: var(--font-display);
-    font-size: var(--text-h2);
+    font-size: var(--text-h1);
     font-weight: 400;
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+  }
+
+  .ngf-about-story-copy {
+    margin: 0;
+    max-width: 42ch;
+    color: var(--color-espresso);
+    font-size: var(--text-body);
+    line-height: 1.7;
   }
 
   /* About hero: photo beside the copy, with feature badges -------------------
