@@ -13,9 +13,8 @@
     {
       "key": "shopByCategory",
       "enabled": true,
-      "eyebrow": "Browse",
-      "heading": "Shop by category",
-      "subheading": "Start with the piece you came for.",
+      "eyebrow": "Find what fits you",
+      "heading": "Shop by Category",
       "awaitingCopy": false
     },
     {

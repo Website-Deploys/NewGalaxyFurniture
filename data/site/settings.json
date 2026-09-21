@@ -7,10 +7,10 @@
     "wordmarkFallback": "NEW GALAXY FURNITURE"
   },
   "heroImage": {
-    "src": "/brand/hero.png",
-    "width": 1470,
-    "height": 827,
-    "alt": "Brown leather sofa and recliner set in a styled living room"
+    "src": "/brand/home-hero-1680.webp",
+    "width": 1680,
+    "height": 946,
+    "alt": "A sunlit living room with a large brown leather sectional, a round walnut coffee table and a floor lamp beside floor-to-ceiling windows"
   },
   "whatsapp": [
     { "label": "Orders & Enquiries 1", "e164": "+919513443606" },

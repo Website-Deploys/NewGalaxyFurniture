@@ -23,6 +23,8 @@ export const CategoryIllustration = z.enum([
   'storage',
   'office',
   'outdoor',
+  'shoeStand',
+  'temple',
 ]);
 
 export const CategorySchema = z
@@ -53,7 +55,7 @@ export const CategorySchema = z
 export type Category = z.infer<typeof CategorySchema>;
 export type CategoryIllustrationValue = z.infer<typeof CategoryIllustration>;
 
-/** The nine categories seeded on first deployment (requirement 18.1). */
+/** The eleven categories seeded on first deployment (requirement 18.1). */
 export const SEEDED_CATEGORY_SLUGS = [
   'sofas',
   'beds',
@@ -64,4 +66,6 @@ export const SEEDED_CATEGORY_SLUGS = [
   'storage-display',
   'office',
   'outdoor',
+  'shoe-stands',
+  'temples',
 ] as const;

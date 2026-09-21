@@ -26,7 +26,7 @@
  *    number the requirement counts depend on which categories the operator happens to have
  *    published, which is not a property anyone can design against.
  *
- * The dispatch is exhaustive over the schema's nine keys, so adding a tenth to `CategoryIllustration`
+ * The dispatch is exhaustive over the schema's eleven keys, so adding a twelfth to `CategoryIllustration`
  * in `src/schemas/category.ts` is a TypeScript error here rather than a tile that silently renders
  * nothing.
  *
@@ -57,7 +57,7 @@ interface Stroke {
 }
 
 /**
- * The nine glyphs, as architectural line-art. Each is drawn in the same 72 × 56 field so the tiles
+ * The eleven glyphs, as architectural line-art. Each is drawn in the same 72 × 56 field so the tiles
  * align optically. The `.ngf-draw` strokes are the outline the drawing is built from; the
  * `.ngf-part` strokes are the details and the thin dimension/blueprint hairlines that arrive once
  * the outline is down. Kept to a handful of paths each so the whole set stays well inside the
@@ -138,6 +138,22 @@ const GLYPHS: Record<CategoryIllustrationValue, readonly Stroke[]> = {
     { d: 'M16 39v10M56 39v10', delay: 160 },
     { d: 'M16 30h40M16 24h40M16 18h40M16 18v16M56 18v16', part: true, delay: 320, y: -6 },
     { d: 'M4 52h20M30 52h14M50 52h18', part: true, delay: 520, y: 4 },
+  ],
+  // Shoe stand — a slim cabinet carcass, then tilted shoe racks, doors, handles, plinth.
+  shoeStand: [
+    { d: 'M14 8h44v40H14z', delay: 0 },
+    { d: 'M14 21h44M14 34h44', delay: 160 },
+    { d: 'M18 21l6-4h28M18 34l6-4h28M18 47l6-4h28', part: true, delay: 320, y: 0 },
+    { d: 'M50 14v3M50 27v3M50 40v3', part: true, delay: 460, y: 0 },
+    { d: 'M18 48v4M54 48v4M14 52h44', part: true, delay: 580, y: 4 },
+  ],
+  // Temple (mandir) — a stepped canopy and columns, then the arch, base cabinet, a finial datum.
+  temple: [
+    { d: 'M36 4l16 12H20z', delay: 0 },
+    { d: 'M24 16h24v6H24zM22 22v22M50 22v22', delay: 160 },
+    { d: 'M28 44V30a8 8 0 0 1 16 0v14', part: true, delay: 340, y: -4 },
+    { d: 'M18 44h36v8H18z', part: true, delay: 480, y: 6 },
+    { d: 'M36 4V0M28 52v4M44 52v4', part: true, delay: 600, y: 4 },
   ],
 };
 

@@ -95,19 +95,34 @@
 }
 
 .ngf-header-inner {
-  border: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-white) 60%, transparent);
   border-radius: var(--radius-pill);
-  background-color: color-mix(in srgb, var(--color-white) 88%, transparent);
-  box-shadow: var(--shadow-level1);
+  /*
+   * A glossy, frosted-glass pill (the reference). A translucent light ground under a soft top-down
+   * sheen highlight, lifted off the page by a low shadow and a faint inner light on the top edge, so
+   * it reads as a pane of glass floating over the hero rather than a flat white bar. Scroll still
+   * changes only background, shadow and border (Requirement 9.3) — no layout property animates.
+   */
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-white) 78%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 62%, transparent) 55%,
+    color-mix(in srgb, var(--color-white) 70%, transparent) 100%
+  );
+  box-shadow:
+    var(--shadow-level2),
+    inset 0 1px 0 color-mix(in srgb, var(--color-white) 85%, transparent);
   transition:
     background-color var(--dur-normal) var(--ease-standard),
     box-shadow var(--dur-normal) var(--ease-standard),
     border-color var(--dur-normal) var(--ease-standard);
-  backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.6) blur(18px);
+  -webkit-backdrop-filter: saturate(1.6) blur(18px);
 }
 
 /* Past the fold the pill commits to opaque white and lifts a little further off the page. */
 .ngf-header[data-scrolled='true'] .ngf-header-inner {
+  background-image: none;
   background-color: var(--color-white);
   box-shadow: var(--shadow-lift);
   border-color: color-mix(in srgb, var(--color-taupe) 75%, transparent);
@@ -116,6 +131,21 @@
 /* Transparent over the hero, solid once scrolled. */
 .ngf-header[data-over-hero='true'][data-scrolled='false'] {
   background-color: transparent;
+}
+
+/*
+ * Over the hero the pill leans further into glass — a touch more translucent and a stronger blur —
+ * so the warm room photograph glows through it, exactly as the reference shows.
+ */
+.ngf-header[data-over-hero='true'][data-scrolled='false'] .ngf-header-inner {
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-white) 66%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 48%, transparent) 55%,
+    color-mix(in srgb, var(--color-white) 58%, transparent) 100%
+  );
+  backdrop-filter: saturate(1.7) blur(22px);
+  -webkit-backdrop-filter: saturate(1.7) blur(22px);
 }
 
 .ngf-header-inner {

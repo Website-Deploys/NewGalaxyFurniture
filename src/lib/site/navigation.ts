@@ -73,6 +73,8 @@ export const HEADER_NAV: readonly NavEntry[] = [
       categoryLink('storage-display', 'Storage & Display'),
       categoryLink('office', 'Office'),
       categoryLink('outdoor', 'Outdoor'),
+      categoryLink('shoe-stands', 'Shoe Stands'),
+      categoryLink('temples', 'Temples'),
     ],
     note: 'Every piece we make, by room and by purpose. Browse the full collection.',
   },
@@ -98,6 +100,8 @@ export const CATEGORY_NAV: readonly NavLink[] = [
   categoryLink('storage-display', 'Storage & Display'),
   categoryLink('office', 'Office'),
   categoryLink('outdoor', 'Outdoor'),
+  categoryLink('shoe-stands', 'Shoe Stands'),
+  categoryLink('temples', 'Temples'),
 ];
 
 /** The supporting pages the footer carries alongside the categories. */

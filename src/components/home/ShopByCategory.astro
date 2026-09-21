@@ -1,22 +1,29 @@
 ---
 /**
- * Shop by category — the second homepage section.
+ * Shop by category — the second homepage section, rebuilt to match the reference as a row of
+ * photographic cards.
  *
- * The nine categories come from `data/categories/*.json` through `getPublishedCategories()`, so a
- * new category file appears here with no code change, and an unpublished one disappears. The tiles
- * are type-led hairline panels rather than photographic ones because there are no category
- * photographs (Open Items item 5) and a grey box captioned "Sofas" is worse than a confident
- * typographic tile.
+ * The reference presents six rooms — Sofas & Sectionals, Beds, Dining Tables, Chairs, Shoe Stands
+ * and Temples — each a photograph with a name, a one-line subtitle and a circular arrow, and each
+ * the whole card being a link to that category's `/collection/{slug}` page. Those six categories
+ * all exist as real `data/categories/*.json` files, so every card opens a genuine listing rather
+ * than a dead end.
  *
- * The count under each name excludes drafts and unpublished products, because it is derived from
- * `getCatalogue()` — the count on this page and the count on `/collection/{slug}` are the same
- * number from the same source (Requirement 1.16).
+ * The photographs are committed static WebP under `public/categories/{slug}/card-{480,768}.webp`,
+ * so they resolve as plain same-origin files (the pattern the hero and the other page photos use)
+ * and are cover-cropped into a fixed 4:3 frame that reserves its box against layout shift. They are
+ * lazy and async — the homepage's one prioritised image is the hero above — so a six-photo row
+ * never competes with the LCP.
+ *
+ * The presentational layer (which six tiles, in what order, each subtitle and photo) is declared
+ * here rather than in the category data, because a subtitle like "Comfort for every moment" and a
+ * chosen photograph are homepage art direction, not a fact about the category. Each tile is only
+ * rendered when its slug is among the published categories passed in, so an unpublished category
+ * silently drops out rather than linking somewhere that 404s.
  *
  * Requirements: 1.16, 7.1, 9.7.
  */
 import SectionHeader from '@/components/home/SectionHeader.astro';
-import ArrowMotion from '@/components/motion/ArrowMotion.astro';
-import CategoryIllustration from '@/components/motion/CategoryIllustration.astro';
 import type { CategoryIllustrationValue } from '@/schemas/category';
 import type { HomepageSection } from '@/schemas/homepage';
 
@@ -24,7 +31,7 @@ export interface CategoryTile {
   slug: string;
   name: string;
   count: number;
-  /** The schema's illustration key, which selects the tile's glyph. */
+  /** The schema's illustration key. Kept for prop compatibility; the photo cards do not use it. */
   illustration: CategoryIllustrationValue;
 }
 
@@ -34,10 +41,32 @@ interface Props {
 }
 
 const { section, categories } = Astro.props;
+
+/**
+ * The six reference tiles, in order. `slug` maps each to its real category page; `subtitle` and the
+ * card photograph are the homepage's own art direction. `name` here matches the reference labels
+ * exactly (e.g. "Sofas & Sectionals", "Chairs" for the dining-chairs category).
+ */
+const REFERENCE_TILES: readonly { slug: string; name: string; subtitle: string }[] = [
+  { slug: 'sofas', name: 'Sofas & Sectionals', subtitle: 'Comfort for every moment' },
+  { slug: 'beds', name: 'Beds', subtitle: 'Rest, redefined' },
+  { slug: 'dining-tables', name: 'Dining Tables', subtitle: 'Bring people together' },
+  { slug: 'dining-chairs', name: 'Chairs', subtitle: 'Style in every seat' },
+  { slug: 'shoe-stands', name: 'Shoe Stands', subtitle: 'Organise in style' },
+  { slug: 'temples', name: 'Temples', subtitle: 'For a more peaceful home' },
+];
+
+const published = new Set(categories.map((category) => category.slug));
+const tiles = REFERENCE_TILES.filter((tile) => published.has(tile.slug)).map((tile) => ({
+  ...tile,
+  href: `/collection/${tile.slug}`,
+  img480: `/categories/${tile.slug}/card-480.webp`,
+  img768: `/categories/${tile.slug}/card-768.webp`,
+}));
 ---
 
 {
-  categories.length > 0 && (
+  tiles.length > 0 && (
     <section
       class="ngf-home-section ngf-home-categories"
       aria-labelledby="ngf-categories-heading"
@@ -45,98 +74,143 @@ const { section, categories } = Astro.props;
       data-motion-section
       data-reveal
     >
-      <SectionHeader
-        eyebrow={section.eyebrow}
-        heading={section.heading ?? 'Shop by category'}
-        subheading={section.subheading}
-        headingId="ngf-categories-heading"
-      />
-      {/*
-        One reveal for the whole grid, not one per tile. `data-motion-group` on the `<ul>` means the
-        nine tiles share a single parent animation and stagger from it — so the grid counts as one
-        animating element against Requirement 21.9's ceiling of twelve rather than nine.
-      */}
+      <div class="ngf-category-head">
+        <SectionHeader
+          eyebrow={section.eyebrow ?? 'Find what fits you'}
+          heading={section.heading ?? 'Shop by Category'}
+          subheading={section.subheading}
+          headingId="ngf-categories-heading"
+        />
+        <a class="ngf-category-viewall" href="/collection">
+          View all products
+          <svg
+            viewBox="0 0 20 12"
+            width="18"
+            height="11"
+            aria-hidden="true"
+            focusable="false"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M1 6h17M13 1l5 5-5 5" />
+          </svg>
+        </a>
+      </div>
+
       <ul class="ngf-category-grid" data-reveal data-motion-group>
-        {categories.map((category) => (
+        {tiles.map((tile) => (
           <li>
-            <a href={`/collection/${category.slug}`} class="ngf-category-tile" data-motion-lift>
+            <a href={tile.href} class="ngf-category-tile" data-motion-lift>
               <span class="ngf-category-frame">
-                <span class="ngf-category-glyph">
-                  {/*
-                    `trigger="none"`: the glyph renders its final drawn state and the tile's own
-                    reveal — inherited from the grid's single group animation — carries the motion.
-                    Nine glyphs each drawing themselves would be nine simultaneously animating
-                    elements, which is most of Requirement 21.9's budget spent on decoration.
-                  */}
-                  <CategoryIllustration
-                    illustration={category.illustration}
-                    strokeWidth={1}
-                    trigger="none"
-                  />
-                </span>
+                <img
+                  class="ngf-category-photo"
+                  src={tile.img480}
+                  srcset={`${tile.img480} 480w, ${tile.img768} 768w`}
+                  sizes="(min-width: 1024px) 16vw, (min-width: 480px) 45vw, 90vw"
+                  width={768}
+                  height={512}
+                  alt={tile.name}
+                  loading="lazy"
+                  decoding="async"
+                />
               </span>
               <span class="ngf-category-foot">
-                <span class="ngf-category-foot-row">
-                  <span class="ngf-category-name">{category.name}</span>
-                  <span class="ngf-category-arrow">
-                    <ArrowMotion size={16} />
-                  </span>
+                <span class="ngf-category-text">
+                  <span class="ngf-category-name">{tile.name}</span>
+                  <span class="ngf-category-sub">{tile.subtitle}</span>
                 </span>
-                {/*
-                  "Explore", not a count.
-
-                  The count was honest and useless: with no products uploaded every one of the nine
-                  tiles read "0 pieces", which tells a customer the shop is empty rather than inviting
-                  them into it. The number is not what anyone is deciding on at this point in the
-                  journey — the room is. Once products exist the tile still says Explore, because a
-                  category with four pieces and one with forty are both simply worth opening.
-                */}
-                <span class="ngf-category-count">Explore</span>
+                <span class="ngf-category-arrow" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 20 12"
+                    width="16"
+                    height="10"
+                    focusable="false"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 6h17M13 1l5 5-5 5" />
+                  </svg>
+                </span>
               </span>
             </a>
           </li>
         ))}
       </ul>
-
-      <p class="ngf-category-all">
-        {/* The shared elegant underline reveal (motion.css `.ngf-underline`): drawn by default,
-            so it degrades to a plain visible underline with no JS or under reduced motion, and it
-            draws in from the left on hover/focus-visible — the same inline-link language site-wide. */}
-        <a href="/collection" class="ngf-underline">
-          See the whole collection
-        </a>
-      </p>
     </section>
   )
 }
 
 <style>
   /*
-   * Nine separate cards rather than a hairline table.
-   *
-   * The grid used to be a 1 px taupe background showing through the gaps, which made the nine
-   * categories read as one grey spreadsheet — and at three columns the third row's cell borders did
-   * not line up with the two above it, so the last tile looked like a stray label. Individual cards
-   * with their own border cannot produce that artefact at any column count.
+   * The section head is a two-part row: the eyebrow/heading block on the left, and a
+   * "View all products" link aligned to the right on wide viewports (the reference). On a phone the
+   * link drops below the heading.
+   */
+  .ngf-category-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+  }
+
+  .ngf-category-head > :global(.ngf-section-head) {
+    margin-bottom: 0;
+  }
+
+  .ngf-category-viewall {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block: 0.4rem;
+    color: var(--color-obsidian);
+    font-size: var(--text-body);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: gap var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-category-viewall svg {
+    flex: none;
+    transition: transform var(--dur-fast) var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .ngf-category-viewall:hover svg,
+    .ngf-category-viewall:focus-visible svg {
+      transform: translateX(3px);
+    }
+  }
+
+  /*
+   * Six photo cards in a row on a wide viewport, matching the reference, collapsing to three, then
+   * two on smaller screens. Each card is a rounded photograph over a name, subtitle and circular
+   * arrow.
    */
   .ngf-category-grid {
     display: grid;
     gap: clamp(0.75rem, 1.5vw, 1.25rem);
-    margin: 0;
+    margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
     padding: 0;
     list-style: none;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @media (min-width: 480px) {
+  @media (min-width: 640px) {
     .ngf-category-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
   @media (min-width: 1024px) {
     .ngf-category-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
 
@@ -149,66 +223,38 @@ const { section, categories } = Astro.props;
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 1rem;
-    padding: clamp(1rem, 2vw, 1.25rem);
+    gap: 0.85rem;
+    padding: clamp(0.6rem, 1.2vw, 0.85rem);
     overflow: hidden;
     border: 1px solid var(--color-taupe);
     border-radius: var(--radius-lg);
     background-color: var(--color-white);
     color: var(--color-obsidian);
     text-decoration: none;
+    box-shadow: var(--shadow-level1);
     transition:
       transform var(--dur-normal) var(--ease-standard),
       box-shadow var(--dur-normal) var(--ease-standard),
       border-color var(--dur-normal) var(--ease-standard);
   }
 
-  /*
-   * The illustration frame — a drawing board inside the tile, the same ruled-cream language as the
-   * story and catalogue-hero panels. Giving the glyph its own framed field is what lets it read as
-   * the subject of the tile rather than a small mark floating in a mostly empty box: the frame fills
-   * the card's width at a fixed 5/4 landscape ratio, so every tile is the same shape at every column
-   * count, and the glyph sits centred at showroom scale within it.
-   */
+  /* The photo frame — a fixed 4:3 rounded window, cover-cropped, so every card is the same shape. */
   .ngf-category-frame {
     position: relative;
-    display: grid;
-    place-items: center;
-    aspect-ratio: 5 / 4;
-    padding: clamp(1rem, 3vw, 1.75rem);
+    display: block;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
     border-radius: var(--radius-md);
     background-color: var(--color-cream);
-    background-image:
-      linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
-    background-position: center;
-    background-size: 20px 20px;
   }
 
-  /* The architect's registration ticks, matching the site's other drawing-board panels. */
-  .ngf-category-frame::before,
-  .ngf-category-frame::after {
+  .ngf-category-photo {
     position: absolute;
-    width: 0.6rem;
-    height: 0.6rem;
-    border: 0 solid var(--color-taupe);
-    content: '';
-    pointer-events: none;
-  }
-
-  .ngf-category-frame::before {
-    top: 0.6rem;
-    left: 0.6rem;
-    border-top-width: 1px;
-    border-left-width: 1px;
-  }
-
-  .ngf-category-frame::after {
-    right: 0.6rem;
-    bottom: 0.6rem;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-normal) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -217,123 +263,96 @@ const { section, categories } = Astro.props;
       border-color: var(--color-walnut);
       box-shadow: var(--shadow-lift);
     }
+
+    .ngf-category-tile:hover .ngf-category-photo,
+    .ngf-category-tile:focus-visible .ngf-category-photo {
+      transform: scale(1.05);
+    }
   }
 
   .ngf-category-tile:focus-visible {
     border-color: var(--color-obsidian);
+    outline: 2px solid var(--color-obsidian);
+    outline-offset: 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ngf-category-tile {
+    .ngf-category-tile,
+    .ngf-category-photo {
       transition: none;
     }
 
     .ngf-category-tile:hover {
       transform: none;
     }
+
+    .ngf-category-tile:hover .ngf-category-photo {
+      transform: none;
+    }
   }
 
+  /* Name + subtitle on the left, a circular arrow on the right — the reference's card foot. */
   .ngf-category-foot {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    padding-inline: 0.25rem;
-  }
-
-  /* The name and the arrow share one baseline: identity on the left, the way in on the right. */
-  .ngf-category-foot-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    padding: 0.15rem 0.35rem 0.4rem;
+  }
+
+  .ngf-category-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
   }
 
   .ngf-category-name {
     font-family: var(--font-display);
     font-size: var(--text-h3);
+    font-weight: 400;
     line-height: 1.15;
   }
 
-  .ngf-category-count {
+  .ngf-category-sub {
     color: var(--color-walnut);
     font-size: var(--text-small);
-    letter-spacing: 0.02em;
+    line-height: 1.3;
   }
 
-  /*
-   * The one champagne element in this band (Requirement 21.2): a 16 px arrow stroke, now sitting
-   * beside the category name so the tile reads name → way-in on one line. Not a fill, not body
-   * text, and the tile's name and count are both obsidian/walnut.
-   */
+  /* The circular arrow, the reference's one warm accent per card. */
   .ngf-category-arrow {
     display: inline-flex;
     flex: none;
-    color: var(--color-champagne);
-    transition: transform var(--dur-normal) var(--ease-standard);
-  }
-
-  /*
-   * The glyph is the tile's subject, so it fills its framed field and is set in walnut — the same
-   * legible line colour the story and catalogue-hero panels use — rather than the faint taupe that
-   * read as a smudge at card size. The cap is generous so the illustration has real presence inside
-   * the frame at every column count.
-   */
-  .ngf-category-glyph {
-    display: block;
-    width: 100%;
-    max-width: 200px;
-    color: var(--color-walnut);
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid color-mix(in srgb, var(--color-champagne) 55%, var(--color-taupe));
+    border-radius: var(--radius-pill);
+    background-color: var(--color-cream);
+    color: var(--color-obsidian);
     transition:
-      color var(--dur-normal) var(--ease-standard),
-      transform var(--dur-normal) var(--ease-standard);
+      background-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
   }
 
-  .ngf-category-glyph :global(svg) {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  /* The glyph and the arrow move with the tile, so the hover reads as one movement. */
   @media (hover: hover) {
-    .ngf-category-tile:hover .ngf-category-glyph,
-    .ngf-category-tile:focus-visible .ngf-category-glyph {
-      color: var(--color-sage);
-      transform: scale(1.04);
-    }
-
-    /* Focus-visible nudges the arrow too, so a keyboard visitor gets the same acknowledgement. */
     .ngf-category-tile:hover .ngf-category-arrow,
     .ngf-category-tile:focus-visible .ngf-category-arrow {
-      transform: translateX(3px);
+      background-color: var(--color-champagne);
+      color: var(--color-white);
+      transform: translateX(2px);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ngf-category-glyph,
     .ngf-category-arrow {
       transition: none;
     }
 
-    .ngf-category-tile:hover .ngf-category-glyph,
     .ngf-category-tile:hover .ngf-category-arrow {
       transform: none;
     }
-  }
-
-  .ngf-category-all {
-    margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
-  }
-
-  /*
-   * The underline itself is the shared `.ngf-underline` utility from motion.css (drawn by default,
-   * elegant scaleX draw on hover/focus). This rule only carries the colour and the ≥ 44 px touch
-   * target: vertical padding rather than a stretched `min-height`, so the utility's 1 px line hugs
-   * the text baseline instead of sitting at the bottom of a tall flex box.
-   */
-  .ngf-category-all a {
-    display: inline-block;
-    padding-block: 0.6rem;
-    color: var(--color-obsidian);
   }
 </style>
