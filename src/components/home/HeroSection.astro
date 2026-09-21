@@ -755,7 +755,7 @@ const headingLines =
   .ngf-hero-heading {
     margin: 0;
     max-width: 15ch;
-    color: var(--color-white);
+    color: #ffffff !important;
     font-family: var(--font-display);
     font-size: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
     font-weight: 400;
@@ -763,8 +763,14 @@ const headingLines =
     letter-spacing: -0.02em;
     text-wrap: balance;
     /* The copy now sits over the darker photograph, as in the reference — a soft shadow keeps the
-       white legible over the brighter patches of the image. */
+       white legible over the brighter patches of the image. Forced white with an explicit hex so it
+       wins over the base heading colour on every environment, and applied to the per-line spans too
+       (the heading text lives inside `.ngf-line` spans emitted by TextReveal). */
     text-shadow: 0 1px 18px rgb(28 26 24 / 0.35);
+  }
+
+  .ngf-hero-heading :global(.ngf-line) {
+    color: #ffffff !important;
   }
 
   .ngf-hero-sub {
