@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Galaxy Furniture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Dancing+Script:wght@500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===================== HEADER / NAV ===================== -->
+  <header class="site-header" id="siteHeader">
+    <nav class="nav-pill" aria-label="Primary">
+      <a href="#top" class="brand" aria-label="New Galaxy Furniture home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="40" height="40">
+            <circle cx="24" cy="24" r="22" fill="none" stroke="#c99a5b" stroke-width="1.5"/>
+            <text x="24" y="30" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="20" fill="#c99a5b" font-weight="600">NG</text>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">NEW GALAXY</span>
+          <span class="brand-sub">FURNITURE</span>
+        </span>
+      </a>
+
+      <ul class="nav-links">
+        <li class="has-dropdown">
+          <button class="nav-link dropdown-toggle" aria-expanded="false" aria-haspopup="true">Shop <span class="caret">&#9662;</span></button>
+          <ul class="dropdown-menu">
+            <li><a href="#shop">Sofas</a></li>
+            <li><a href="#shop">Chairs</a></li>
+            <li><a href="#shop">Tables</a></li>
+            <li><a href="#shop">Beds</a></li>
+            <li><a href="#shop">Storage</a></li>
+          </ul>
+        </li>
+        <li><a class="nav-link" href="#custom">Custom Furniture</a></li>
+        <li><a class="nav-link" href="#about">About</a></li>
+        <li><a class="nav-link" href="#workshop">Workshop</a></li>
+        <li><a class="nav-link" href="#gallery">Gallery</a></li>
+        <li><a class="nav-link" href="#contact">Contact</a></li>
+      </ul>
+
+      <form class="nav-search" role="search" id="searchForm">
+        <span class="search-icon" aria-hidden="true">&#128269;</span>
+        <input type="search" id="searchInput" placeholder="Search by name, SKU, material, colour..." aria-label="Search" />
+      </form>
+
+      <button class="btn-enquire" id="enquireBtn">
+        <span class="whatsapp-dot" aria-hidden="true">&#128172;</span> Enquire
+      </button>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="top">
+
+    <!-- ===================== CRAFTSMANSHIP ===================== -->
+    <section class="section craftsmanship" id="craftsmanship">
+      <div class="wrap two-col">
+        <figure class="media reveal" data-reveal="left">
+          <img src="assets/craftsmanship.png" alt="Craftsman using a hand plane on timber" />
+          <figcaption class="script-overlay">Details<br/>make better<br/>homes</figcaption>
+        </figure>
+        <div class="copy reveal" data-reveal="right">
+          <span class="eyebrow">&mdash; How we work</span>
+          <h2 class="display">Craftsmanship<br/>you can ask about</h2>
+          <p>We would rather show you the work than describe it. Ask about any piece &mdash; the timber, the joinery, the finish &mdash; and we will tell you exactly how it is put together before you commit to it.</p>
+          <p>Send a photograph of something you like and we will tell you honestly what we can match and what we cannot.</p>
+          <ul class="feature-row">
+            <li class="feature">
+              <span class="feature-icon">&#128737;</span>
+              <span class="feature-text"><strong>Honest guidance</strong><small>No false promises</small></span>
+            </li>
+            <li class="feature">
+              <span class="feature-icon">&#9874;</span>
+              <span class="feature-text"><strong>Skilled craftsmen</strong><small>Years of experience</small></span>
+            </li>
+            <li class="feature">
+              <span class="feature-icon">&#127811;</span>
+              <span class="feature-text"><strong>Quality materials</strong><small>Built to last</small></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== DIRECT FROM MANUFACTURER ===================== -->
+    <section class="section direct alt-bg" id="custom">
+      <div class="wrap two-col">
+        <div class="copy reveal" data-reveal="left">
+          <span class="eyebrow">&mdash; Buy direct</span>
+          <h2 class="display">Direct from<br/>the manufacturer</h2>
+          <p>You are dealing with the people who build the furniture rather than a reseller. Ask for a change to a size, a timber or a finish and the answer comes back from the workshop instead of from a catalogue.</p>
+          <p>Tell us the budget you have in mind and we will tell you what is realistic within it.</p>
+          <ul class="feature-row">
+            <li class="feature">
+              <span class="feature-icon">&#127981;</span>
+              <span class="feature-text"><strong>No middlemen</strong><small>Better value</small></span>
+            </li>
+            <li class="feature">
+              <span class="feature-icon">&#129717;</span>
+              <span class="feature-text"><strong>Real materials</strong><small>Solid wood. No shortcuts</small></span>
+            </li>
+            <li class="feature">
+              <span class="feature-icon">&#8377;</span>
+              <span class="feature-text"><strong>Transparent pricing</strong><small>What you see is what you get</small></span>
+            </li>
+          </ul>
+        </div>
+        <figure class="media reveal" data-reveal="right">
+          <img src="assets/workshop.png" alt="New Galaxy workshop with craftsmen at work" />
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===================== BUILT TO MEASUREMENTS ===================== -->
+    <section class="section measurements" id="measurements">
+      <div class="wrap measure-grid">
+        <figure class="media big reveal" data-reveal="left">
+          <img src="assets/dining.png" alt="Custom dining table with upholstered chairs" />
+          <figcaption class="script-overlay">Your space<br/>Your furniture</figcaption>
+        </figure>
+        <div class="copy reveal" data-reveal="up">
+          <span class="eyebrow">&mdash; Made to order</span>
+          <h2 class="display">Built to your<br/>measurements</h2>
+          <p>Send a measurement, a photograph or a rough sketch on WhatsApp. We will come back to you with what is possible, what it will cost and how long it will take &mdash; before anything is started.</p>
+          <p>Size, timber, finish and upholstery are all yours to choose.</p>
+          <button class="btn-outline" id="customEnquiryBtn">Start a custom enquiry <span aria-hidden="true">&rarr;</span></button>
+        </div>
+        <figure class="media small reveal" data-reveal="right">
+          <img src="assets/chair.png" alt="Close-up of a curved wooden chair back" />
+          <figcaption class="caption-small">A better fit<br/>for a better tomorrow</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===================== SHOWROOM & WORKSHOP ===================== -->
+    <section class="section showroom alt-bg" id="workshop">
+      <div class="wrap show-grid">
+        <div class="copy reveal" data-reveal="left">
+          <span class="eyebrow">&mdash; Visit us</span>
+          <h2 class="display">Showroom &amp; workshop</h2>
+          <p>Seeing a piece in person tells you more than any photograph &mdash; the weight of it, the grain, how a seat actually feels. Come and sit on it.</p>
+          <p>Message us before you visit and we will make sure the pieces you want to see are out on the floor.</p>
+          <button class="btn-outline" id="planVisitBtn">Plan a visit <span aria-hidden="true">&rarr;</span></button>
+        </div>
+        <figure class="media center reveal" data-reveal="up">
+          <img src="assets/showroom.png" alt="Living room showroom, spaces people love" />
+        </figure>
+        <div class="show-stack">
+          <figure class="media reveal" data-reveal="right">
+            <img src="assets/sideboard.png" alt="Walnut sideboard styled with lamp and plants" />
+          </figure>
+          <figure class="media reveal" data-reveal="right">
+            <img src="assets/sidetable.png" alt="Round side table with armchair" />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CUSTOMER REVIEWS ===================== -->
+    <section class="section reviews" id="reviews">
+      <span class="side-label" aria-hidden="true">Real homes<br/>Real stories</span>
+      <div class="wrap reviews-wrap">
+        <span class="eyebrow centered">&mdash; In their words &mdash;</span>
+        <h2 class="display centered">Customer reviews</h2>
+        <div class="review-card reveal" data-reveal="up">
+          <img class="review-chair" src="assets/chair.png" alt="Upholstered armchair" />
+          <h3>No reviews published yet</h3>
+          <p>We would rather show none than write our own. When customers send us their words, they will appear here.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="site-footer" id="contact">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <span class="brand-name">NEW GALAXY</span>
+        <span class="brand-sub">FURNITURE</span>
+        <p>Furniture that feels like home. Built to order, direct from our workshop.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="#shop">Shop</a>
+        <a href="#custom">Custom Furniture</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#workshop">Workshop</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="tel:+910000000000">+91 00000 00000</a>
+        <a href="mailto:hello@newgalaxyfurniture.com">hello@newgalaxyfurniture.com</a>
+        <button class="btn-enquire footer-enquire" id="footerEnquireBtn"><span class="whatsapp-dot" aria-hidden="true">&#128172;</span> Enquire</button>
+      </div>
+    </div>
+    <p class="copyright">&copy; <span id="year"></span> New Galaxy Furniture. All rights reserved.</p>
+  </footer>
+
+  <!-- ===================== ENQUIRY MODAL ===================== -->
+  <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+      <h3 id="modalTitle">Start an enquiry</h3>
+      <p class="modal-sub" id="modalSub">Tell us what you have in mind and we will get back to you.</p>
+      <form id="enquiryForm" class="enquiry-form">
+        <label>Name <input type="text" name="name" required /></label>
+        <label>Phone / WhatsApp <input type="tel" name="phone" required /></label>
+        <label>What are you looking for? <textarea name="message" rows="3" required></textarea></label>
+        <button type="submit" class="btn-solid">Send enquiry</button>
+      </form>
+      <p class="modal-success" id="modalSuccess" hidden>Thank you &mdash; we&rsquo;ll be in touch shortly.</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
