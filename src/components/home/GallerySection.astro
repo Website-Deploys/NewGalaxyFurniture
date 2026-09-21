@@ -3,47 +3,71 @@
  * The homepage gallery band.
  *
  * The gallery draws on published product photography — there is no separate gallery collection, and
- * inventing one would give the operator a second place to upload the same photographs to. So this
- * band shows the primary image of the most recently added Catalogue products, each linking to the
- * piece it shows, which is the only gallery that cannot go stale.
+ * inventing one would give the operator a second place to upload the same photographs to. Rather
+ * than a flat grid of every product, the homepage band is a single-piece *showcase*: the flagship
+ * set shown from every angle, matching the reference — an eyebrow and display heading, a "01 / 04"
+ * counter with prev/next controls, one large image, and a thumbnail rail. The whole band links to
+ * the piece it shows, so it is a gallery that cannot go stale and always leads somewhere buyable.
+ *
+ * The flagship is the first product whose photographs the browser can actually load
+ * (`resolvableGalleryTilesOf`), in catalogue order. The band hands the island already-resolved URL
+ * strings, so the srcset builders and derivative ladder stay out of the client bundle.
  *
  * With no photography at all (Open Items item 5) it renders the designed "no images" empty state
  * required by Requirement 26.14 rather than an empty band or a grid of grey boxes.
  *
  * Requirements: 7.1, 15.17, 26.14.
  */
-import SectionHeader from '@/components/home/SectionHeader.astro';
+import HomeGalleryCarousel, {
+  type HomeGalleryImage,
+} from '@/components/home/HomeGalleryCarousel';
 import EmptyState from '@/components/ui/EmptyState.astro';
-import ResponsiveImage from '@/components/ui/ResponsiveImage.astro';
+import SectionHeader from '@/components/home/SectionHeader.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
+import { resolvableGalleryTilesOf } from '@/lib/products/gallery-tiles';
 import { staticProductImages } from '@/lib/products/static-images';
 import type { HomepageSection } from '@/schemas/homepage';
-import { primaryImageOf, type Product } from '@/schemas/product';
+import type { Product } from '@/schemas/product';
 
 interface Props {
   section: HomepageSection;
   products: readonly Product[];
-  limit?: number;
 }
 
-const { section, products, limit = 8 } = Astro.props;
+const { section, products } = Astro.props;
 
-const tiles = products
+/**
+ * The flagship: the first product, in catalogue order, whose photographs actually resolve in the
+ * browser. Everything else is shown on `/gallery`; the homepage band leads with one piece.
+ */
+const flagship = products
   .map((product) => ({
     product,
-    image: primaryImageOf(product),
-    staticImages: staticProductImages(product.slug),
+    tiles: resolvableGalleryTilesOf(product, staticProductImages(product.slug)),
   }))
-  .filter(
-    (
-      entry,
-    ): entry is {
-      product: Product;
-      image: NonNullable<typeof entry.image>;
-      staticImages: Record<string, string>;
-    } => entry.image !== null,
-  )
-  .slice(0, limit);
+  .find((entry) => entry.tiles.length > 0);
+
+const eyebrow = section.eyebrow;
+const heading = section.heading ?? 'Gallery';
+
+const images: HomeGalleryImage[] =
+  flagship?.tiles.map((tile) => ({
+    id: tile.id,
+    src: tile.src,
+    srcSet: tile.srcSet,
+    sizes: tile.sizes,
+    alt: tile.alt,
+    width: tile.width,
+    height: tile.height,
+    title: tile.title,
+    ...(tile.lqip === undefined ? {} : { lqip: tile.lqip }),
+  })) ?? [];
+
+const subheading =
+  flagship === undefined
+    ? (section.subheading ?? '')
+    : (section.subheading ??
+      `Explore the ${flagship.product.name} from every angle. See how it looks in real spaces and get a closer look at the details.`);
 ---
 
 <section
@@ -52,74 +76,280 @@ const tiles = products
   data-ngf-section="gallery"
   data-reveal
 >
-  <SectionHeader
-    eyebrow={section.eyebrow}
-    heading={section.heading ?? 'Gallery'}
-    subheading={section.subheading}
-    headingId="ngf-gallery-heading"
-    align={tiles.length === 0 ? 'center' : 'start'}
-  />
-
   {
-    tiles.length === 0 ? (
-      <EmptyState
-        tone="page"
-        heading="Photography is in progress"
-        message="Our pieces are being photographed. Tell us what you are looking for and we will send photographs of comparable work straight away."
-      >
-        <WhatsAppLink
-          slot="action"
-          context={{ kind: 'general' }}
-          variant="outline"
-          label="Ask for photographs"
+    flagship === undefined ? (
+      <>
+        <SectionHeader
+          eyebrow={eyebrow}
+          heading={heading}
+          subheading={section.subheading}
+          headingId="ngf-gallery-heading"
+          align="center"
         />
-      </EmptyState>
+        <EmptyState
+          tone="page"
+          heading="Photography is in progress"
+          message="Our pieces are being photographed. Tell us what you are looking for and we will send photographs of comparable work straight away."
+        >
+          <WhatsAppLink
+            slot="action"
+            context={{ kind: 'general' }}
+            variant="outline"
+            label="Ask for photographs"
+          />
+        </EmptyState>
+      </>
     ) : (
-      <ul class="ngf-gallery-band">
-        {tiles.map((tile) => (
-          <li>
-            <a href={`/product/${tile.product.slug}`} class="ngf-gallery-tile">
-              <ResponsiveImage
-                productId={tile.product.id}
-                image={tile.image}
-                context="card"
-                widths={[320, 480, 640]}
-                {...(tile.staticImages[tile.image.id] === undefined
-                  ? {}
-                  : { staticSrc: tile.staticImages[tile.image.id] })}
-              />
-              <span class="sr-only">{tile.product.name}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <HomeGalleryCarousel
+        client:visible
+        eyebrow={eyebrow}
+        heading={heading}
+        headingId="ngf-gallery-heading"
+        subheading={subheading}
+        productHref={`/product/${flagship.product.slug}`}
+        productName={flagship.product.name}
+        images={images}
+      />
     )
   }
 </section>
 
-<style>
-  .ngf-gallery-band {
-    display: grid;
+<style is:global>
+  /*
+   * The homepage gallery carousel.
+   *
+   * These styles are global because the markup is rendered by a React island — a scoped Astro
+   * `<style>` would not reach it. They are namespaced under `.ngf-home-gallery-card` so they touch
+   * nothing else. Colours, radii, type and shadows are the site's own tokens, so the band reads as
+   * part of the same system as every other section.
+   */
+  .ngf-home-gallery-card {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+  }
+
+  /* Top row: heading block on the left, counter + arrows on the right. */
+  .ngf-hg-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .ngf-hg-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    max-width: 44rem;
+  }
+
+  .ngf-hg-eyebrow {
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .ngf-hg-eyebrow::before {
+    display: block;
+    width: 1.75rem;
+    height: 1px;
+    background-color: var(--color-taupe);
+    content: '';
+  }
+
+  .ngf-hg-heading {
+    margin: 0;
+    color: var(--color-obsidian);
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+  }
+
+  .ngf-hg-sub {
+    margin: 0;
+    max-width: 48ch;
+    color: var(--color-walnut);
+    font-size: var(--text-body);
+    line-height: 1.7;
+  }
+
+  /* Counter + arrow controls. */
+  .ngf-hg-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-left: auto;
+    padding-top: 0.35rem;
+  }
+
+  .ngf-hg-counter {
+    color: var(--color-walnut);
+    font-size: var(--text-body);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .ngf-hg-arrows {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ngf-hg-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-cream);
+    color: var(--color-obsidian);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-hg-arrow:hover {
+    background-color: var(--color-white);
+    border-color: var(--color-walnut);
+  }
+
+  .ngf-hg-arrow:active {
+    transform: scale(0.96);
+  }
+
+  .ngf-hg-arrow:focus-visible {
+    outline: 2px solid var(--color-champagne);
+    outline-offset: 2px;
+  }
+
+  /* The large image stage: every frame stacked, the active one cross-faded in. */
+  .ngf-hg-viewport {
+    border-radius: var(--radius-lg);
+  }
+
+  .ngf-hg-viewport:focus-visible {
+    outline: 2px solid var(--color-champagne);
+    outline-offset: 3px;
+  }
+
+  .ngf-hg-stage {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-taupe);
+    background-color: var(--color-cream);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-hg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity var(--dur-normal) var(--ease-standard);
+  }
+
+  .ngf-hg-img[data-active='true'] {
+    opacity: 1;
+  }
+
+  /* Thumbnail rail. */
+  .ngf-hg-thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(0.5rem, 1.5vw, 1rem);
     margin: 0;
     padding: 0;
     list-style: none;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @media (min-width: 768px) {
-    .ngf-gallery-band {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+  .ngf-hg-thumb-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .ngf-hg-thumb {
+    display: block;
+    width: 100%;
+    padding: 0;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: none;
+    cursor: pointer;
+    opacity: 0.72;
+    transition:
+      opacity var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-hg-thumb:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  .ngf-hg-thumb[data-active='true'] {
+    opacity: 1;
+    border-color: var(--color-champagne);
+  }
+
+  .ngf-hg-thumb:focus-visible {
+    outline: 2px solid var(--color-champagne);
+    outline-offset: 2px;
+  }
+
+  .ngf-hg-thumb-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: calc(var(--radius-md) - 2px);
+  }
+
+  @media (max-width: 640px) {
+    .ngf-hg-controls {
+      margin-left: 0;
+    }
+
+    .ngf-hg-stage {
+      aspect-ratio: 4 / 3;
     }
   }
 
-  .ngf-gallery-tile {
-    display: block;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-  }
+  /* Respect reduced motion: no cross-fade, no lift. */
+  @media (prefers-reduced-motion: reduce) {
+    .ngf-hg-img,
+    .ngf-hg-thumb,
+    .ngf-hg-arrow {
+      transition: none;
+    }
 
-  .ngf-gallery-tile > :global(.ngf-image) {
-    height: 100%;
+    .ngf-hg-thumb:hover {
+      transform: none;
+    }
   }
 </style>
