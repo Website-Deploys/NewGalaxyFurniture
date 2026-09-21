@@ -10,18 +10,19 @@
  *
  * There is deliberately no paragraph here about seasoned timber, mortise-and-tenon joinery, hand-
  * rubbed finishes, or curing times. Every one of those would be plausible and none of them has been
- * confirmed. Milestone 3, Checkpoint D relights the page as an architectural/editorial workshop
- * story: a scroll-linked sequence of technical DRAWINGS on the shared `.ngf-process` drawing-board
- * panels — a sofa, a bed, a dining table and a chair, each drawn in line as a silhouette study —
- * with NO fabricated photographs. Every illustration is one of the four REUSED furniture primitives
- * (sofa, bed, table, chair), which are the four the site would otherwise render nowhere; the page
- * therefore both stays at exactly four distinct `data-ngf-primitive` names AND keeps the site's
- * nine-illustration set complete (Requirement 21.5). Every sequence is a single `data-motion-group`
- * reveal that stays visible-by-default so a broken script can never hide the content.
+ * confirmed. The page is a two-column "how it works" story: on the left, an eyebrow and heading, the
+ * four things the workshop builds drawn in line (a sofa, a bed, a dining table and a chair), a three
+ * -step commission outline, and the visiting / made-to-order notes with the WhatsApp and Call
+ * controls; on the right, a tall photograph of the workbench. Every illustration is one of the four
+ * REUSED furniture primitives (sofa, bed, table, chair), so the page stays at exactly four distinct
+ * `data-ngf-primitive` names AND keeps the site's nine-illustration set complete (Requirement 21.5).
+ * The furniture studies are one `data-motion-group` reveal that stays visible-by-default so a broken
+ * script can never hide the content. The photograph's "Good Furniture Takes Time" wall poster is
+ * part of the image itself; the page overlays only a decorative "Built for real lives" script mark
+ * and asserts no process, timeline or capability that has not been supplied.
  *
  * Requirements: 7.10, 8.1, 8.8, 21.15, 23.17.
  */
-import PlaceholderCopy from '@/components/home/PlaceholderCopy.astro';
 import AnimatedBed from '@/components/motion/AnimatedBed.astro';
 import AnimatedChair from '@/components/motion/AnimatedChair.astro';
 import AnimatedSofa from '@/components/motion/AnimatedSofa.astro';
@@ -30,36 +31,61 @@ import CallLink from '@/components/ui/CallLink.astro';
 import ImagePreload from '@/components/ui/ImagePreload.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { getSiteSettings } from '@/lib/content/site';
 import { pageMeta } from '@/lib/seo/page';
 import '@/styles/editorial.css';
 
-const settings = getSiteSettings();
-
 /**
- * The Workshop hero photograph — the New Galaxy Furniture workshop in Bengaluru.
+ * The Workshop story photograph — a tall, sunlit workbench scene, shown in the right column.
  *
  * Same static-asset treatment as the About, Contact and Custom Furniture heroes: pre-optimised
  * responsive WebP under `public/brand/` (a plain same-origin file that resolves under the
  * Lighthouse static run, unlike an `astro:assets` Netlify runtime URL), modern-format, responsive
- * and small (~18–72 KB). This is a real photograph of the making — which is what Requirement 7.10
+ * and small (~63–168 KB). It is a real photograph of the making — which is what Requirement 7.10
  * asks for: the page shows what the workshop is, and still states no process, timeline or capability
- * that has not been supplied. It is the page's single largest contentful image, so it is prioritised
- * and preloaded; the fixed-ratio frame reserves its box against CLS.
+ * that has not been supplied.
+ *
+ * The words "Good Furniture Takes Time" and "IDEAS · MATERIALS · CRAFT · HOMES" are BAKED INTO the
+ * photograph (a poster on the workshop wall), so the page overlays no copy of them — the only text
+ * the page adds is the "Built for real lives" script mark at the lower-right, which is decorative
+ * and makes no claim (Requirement 7.10). It is the page's single largest contentful image, so it is
+ * prioritised and preloaded; the fixed 2:3 frame reserves its box against CLS.
  */
 const WORKSHOP_HERO = {
-  width: 1672,
-  height: 941,
-  base: '/brand/workshop',
-  alt: 'The New Galaxy Furniture workshop in Bengaluru — sunlit timber workbenches with cut parts and hand tools, beside a wall carrying the New Galaxy Furniture mark and the line "Crafted for better living".',
+  width: 1024,
+  height: 1536,
+  base: '/brand/workshop-story',
+  alt: 'The New Galaxy Furniture workshop in Bengaluru — a sunlit timber workbench with a blueprint, hand tools and pencils, beside a wall poster reading "Good Furniture Takes Time — ideas, materials, craft, homes".',
 };
-const HERO_WIDTHS = [480, 768, 1040, 1440];
-const heroSrc = `${WORKSHOP_HERO.base}-1040.webp`;
+const HERO_WIDTHS = [480, 768, 1024];
+const heroSrc = `${WORKSHOP_HERO.base}-768.webp`;
 const heroSrcset = HERO_WIDTHS.map(
   (w) => `${WORKSHOP_HERO.base}-${String(w)}.webp ${String(w)}w`,
 ).join(', ');
-const heroSizes = '(min-width: 900px) 50vw, 100vw';
+const heroSizes = '(min-width: 960px) 42vw, 100vw';
 const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
+
+/**
+ * The three-step "how it works" sequence the reference carries beneath the furniture studies:
+ * share an idea, get a plan and quote, and we build it. Each is an invitation to talk, never a
+ * promise — no timeline, price or capability is asserted (Requirement 7.10).
+ */
+const steps = [
+  {
+    step: '1',
+    title: 'Share your idea',
+    copy: 'Tell us what you have in mind — the piece, the room it is for, the timber or finish you prefer, and a photo or sketch if you have one.',
+  },
+  {
+    step: '2',
+    title: 'Get a plan & quote',
+    copy: 'We come back with options, timelines and a clear, honest quote. Nothing is committed until you say so.',
+  },
+  {
+    step: '3',
+    title: 'We build it for you',
+    copy: 'Once everything is confirmed, our team gets to work. From our workshop to your home, we keep you updated along the way.',
+  },
+] as const;
 
 /**
  * What the workshop builds, as a sequence of line-drawn silhouette studies. Each stage is a
@@ -106,439 +132,401 @@ const meta = pageMeta(Astro, {
 <BaseLayout meta={meta}>
   <ImagePreload slot="head" hint={heroPreload} />
   <div class="ngf-page">
-    {/* Hero: the workshop copy + feature badges, beside the workshop photograph. */}
-    <div class="ngf-workshop-hero">
-      <div class="ngf-workshop-hero-copy">
-        <p class="ngf-page-eyebrow">The workshop</p>
-        <h1>Where the furniture is made</h1>
-        <p class="ngf-page-lead">
-          {settings.businessName} manufactures in Bengaluru. What leaves the workshop is what we photographed,
-          sized and finished ourselves.
-        </p>
+    <div class="ngf-workshop-layout">
+      {/* LEFT COLUMN — the whole "how it works" story. */}
+      <div class="ngf-workshop-main">
+        <header class="ngf-workshop-head">
+          <p class="ngf-page-eyebrow">Our workshop</p>
+          <h1>How it works</h1>
+          <p class="ngf-page-lead">
+            From a simple idea to a piece you'll love — here's how we bring your custom furniture to
+            life.
+          </p>
+        </header>
 
-        <ul class="ngf-workshop-badges" aria-label="What the workshop stands for">
-          <li class="ngf-workshop-badge">
-            <span class="ngf-workshop-badge-icon" aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M14 4l6 6-3 3-6-6z"></path>
-                <path d="M11 7 4 14a2 2 0 0 0 0 3l0 0a2 2 0 0 0 3 0l7-7"></path>
-              </svg>
-            </span>
-            <span class="ngf-workshop-badge-label">Skilled craftsmen</span>
-          </li>
-          <li class="ngf-workshop-badge">
-            <span class="ngf-workshop-badge-icon" aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M3 8l9-4 9 4-9 4z"></path>
-                <path d="M3 12l9 4 9-4M3 16l9 4 9-4"></path>
-              </svg>
-            </span>
-            <span class="ngf-workshop-badge-label">Quality materials</span>
-          </li>
-          <li class="ngf-workshop-badge">
-            <span class="ngf-workshop-badge-icon" aria-hidden="true">
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"></path>
-                <path d="m9 12 2 2 4-4"></path>
-              </svg>
-            </span>
-            <span class="ngf-workshop-badge-label">Built to last in your home</span>
-          </li>
-        </ul>
-      </div>
-
-      <figure class="ngf-workshop-hero-figure">
-        <img
-          src={heroSrc}
-          srcset={heroSrcset}
-          sizes={heroSizes}
-          alt={WORKSHOP_HERO.alt}
-          width={WORKSHOP_HERO.width}
-          height={WORKSHOP_HERO.height}
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-        />
-      </figure>
-    </div>
-
-    {
-      /*
-      The architectural sequence (Milestone 3, Checkpoint D), reusing the `.ngf-process` drawing-
-      board + connecting-line language from `/custom-furniture`. Its own top-level <section> so the
-      per-section reveal budget is isolated. The four stages are one [data-reveal][data-motion-group]
-      list, so the whole sequence counts as ONE animating element and staggers in as one group.
-
-      Each stage's illustration is a REUSED primitive rendered with trigger="none": it draws its
-      final static state, carries no data-reveal of its own, and is titled so it is a meaningful
-      role="img" describing the drawing rather than a decorative ornament. There is no photograph
-      here, and none is implied — Requirement 7.10 forbids asserting a making the operator has not
-      supplied, so the page shows intentional drawings, not stand-in imagery.
-    */
-    }
-    <section class="ngf-process" aria-labelledby="ngf-workshop-process-heading">
-      <h2 id="ngf-workshop-process-heading">What we build, drawn</h2>
-      <p class="ngf-process-lead">
-        Sofas, beds, dining tables and chairs — the four things the workshop builds, each set out in
-        line before it is made.
-      </p>
-
-      <ol class="ngf-process-steps" data-reveal data-motion-group>
-        <li class="ngf-process-step">
-          <div class="ngf-process-panel">
-            <span class="ngf-process-glyph">
+        {
+          /*
+          The four furniture studies, drawn in line. Reuses the site's four furniture primitives
+          (sofa, bed, table, chair) with trigger="none" so each draws its final static state and is
+          a titled role="img", not a decorative ornament. No photograph is implied — the making the
+          operator has not supplied is never asserted (Requirement 7.10).
+        */
+        }
+        <ol class="ngf-workshop-studies" data-reveal data-motion-group aria-label="What the workshop builds">
+          <li class="ngf-workshop-study">
+            <span class="ngf-workshop-study-glyph">
               <AnimatedSofa strokeWidth={1} trigger="none" title={stages[0].illustrationTitle} />
             </span>
-          </div>
-          <p class="ngf-process-num" aria-hidden="true">{stages[0].step}</p>
-          <h3 class="ngf-process-title">{stages[0].title}</h3>
-          <p class="ngf-process-copy">{stages[0].copy}</p>
-        </li>
-
-        <li class="ngf-process-step">
-          <div class="ngf-process-panel">
-            <span class="ngf-process-glyph">
+            <p class="ngf-workshop-study-num" aria-hidden="true">{stages[0].step}</p>
+            <h2 class="ngf-workshop-study-title">{stages[0].title}</h2>
+            <p class="ngf-workshop-study-copy">{stages[0].copy}</p>
+          </li>
+          <li class="ngf-workshop-study">
+            <span class="ngf-workshop-study-glyph">
               <AnimatedBed strokeWidth={1} trigger="none" title={stages[1].illustrationTitle} />
             </span>
-          </div>
-          <p class="ngf-process-num" aria-hidden="true">{stages[1].step}</p>
-          <h3 class="ngf-process-title">{stages[1].title}</h3>
-          <p class="ngf-process-copy">{stages[1].copy}</p>
-        </li>
-
-        <li class="ngf-process-step">
-          <div class="ngf-process-panel">
-            <span class="ngf-process-glyph">
+            <p class="ngf-workshop-study-num" aria-hidden="true">{stages[1].step}</p>
+            <h2 class="ngf-workshop-study-title">{stages[1].title}</h2>
+            <p class="ngf-workshop-study-copy">{stages[1].copy}</p>
+          </li>
+          <li class="ngf-workshop-study">
+            <span class="ngf-workshop-study-glyph">
               <AnimatedTable strokeWidth={1} trigger="none" title={stages[2].illustrationTitle} />
             </span>
-          </div>
-          <p class="ngf-process-num" aria-hidden="true">{stages[2].step}</p>
-          <h3 class="ngf-process-title">{stages[2].title}</h3>
-          <p class="ngf-process-copy">{stages[2].copy}</p>
-        </li>
-
-        <li class="ngf-process-step ngf-process-step-last">
-          <div class="ngf-process-panel">
-            <span class="ngf-process-glyph">
+            <p class="ngf-workshop-study-num" aria-hidden="true">{stages[2].step}</p>
+            <h2 class="ngf-workshop-study-title">{stages[2].title}</h2>
+            <p class="ngf-workshop-study-copy">{stages[2].copy}</p>
+          </li>
+          <li class="ngf-workshop-study">
+            <span class="ngf-workshop-study-glyph">
               <AnimatedChair strokeWidth={1} trigger="none" title={stages[3].illustrationTitle} />
             </span>
-          </div>
-          <p class="ngf-process-num" aria-hidden="true">{stages[3].step}</p>
-          <h3 class="ngf-process-title">{stages[3].title}</h3>
-          <p class="ngf-process-copy">{stages[3].copy}</p>
-        </li>
-      </ol>
-    </section>
+            <p class="ngf-workshop-study-num" aria-hidden="true">{stages[3].step}</p>
+            <h2 class="ngf-workshop-study-title">{stages[3].title}</h2>
+            <p class="ngf-workshop-study-copy">{stages[3].copy}</p>
+          </li>
+        </ol>
 
-    <div class="ngf-page-body">
-      <h2>How we make it</h2>
-      <PlaceholderCopy
-        body="[PLACEHOLDER — describe the making: timber selection and seasoning, joinery, upholstery, finishing, and quality checks, in your own words. No process, material specification, tolerance, or timeline has been supplied, and none has been invented here.]"
-        contentKey="page.workshop.body"
-      />
+        {/* The three-step process, each with a circular line icon. */}
+        <ol class="ngf-workshop-steps" aria-label="How a commission works">
+          <li class="ngf-workshop-step">
+            <span class="ngf-workshop-step-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.6 8.6 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z"></path>
+              </svg>
+            </span>
+            <h3 class="ngf-workshop-step-title">{steps[0].step}. {steps[0].title}</h3>
+            <p class="ngf-workshop-step-copy">{steps[0].copy}</p>
+          </li>
+          <li class="ngf-workshop-step">
+            <span class="ngf-workshop-step-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>
+                <path d="M14 3v5h5M9 13h6M9 17h6M9 9h1"></path>
+              </svg>
+            </span>
+            <h3 class="ngf-workshop-step-title">{steps[1].step}. {steps[1].title}</h3>
+            <p class="ngf-workshop-step-copy">{steps[1].copy}</p>
+          </li>
+          <li class="ngf-workshop-step">
+            <span class="ngf-workshop-step-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v3m0 14v3M2 12h3m14 0h3m-3.2-6.8-2.1 2.1M7.3 16.7l-2.1 2.1m0-13.6 2.1 2.1m9.4 9.4 2.1 2.1"></path>
+              </svg>
+            </span>
+            <h3 class="ngf-workshop-step-title">{steps[2].step}. {steps[2].title}</h3>
+            <p class="ngf-workshop-step-copy">{steps[2].copy}</p>
+          </li>
+        </ol>
 
-      <h2>Visiting</h2>
-      <p>
-        The showroom address, opening hours and a map link are published on the <a href="/contact"
-          >contact page</a
-        > as soon as they are confirmed. Until then, call or message us and we will arrange a time.
-      </p>
+        {/* Visiting + Made to order, each with a circular line icon. */}
+        <ul class="ngf-workshop-notes" aria-label="Visiting and made-to-order">
+          <li class="ngf-workshop-note">
+            <span class="ngf-workshop-note-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path>
+                <circle cx="12" cy="10" r="2.5"></circle>
+              </svg>
+            </span>
+            <div class="ngf-workshop-note-body">
+              <h3 class="ngf-workshop-note-title">Visiting</h3>
+              <p class="ngf-workshop-note-copy">
+                The showroom address, opening hours and a map link are published on the <a
+                  href="/contact">contact page</a
+                > as soon as they are confirmed. Until then, call or message us and we will arrange a time.
+              </p>
+            </div>
+          </li>
+          <li class="ngf-workshop-note">
+            <span class="ngf-workshop-note-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 11h18M5 11V8.5A2 2 0 0 1 7 6.5h10a2 2 0 0 1 2 2V11"></path>
+                <path d="M4 11a2 2 0 0 0-2 2v3h20v-3a2 2 0 0 0-2-2M4 18v1.5M20 18v1.5"></path>
+              </svg>
+            </span>
+            <div class="ngf-workshop-note-body">
+              <h3 class="ngf-workshop-note-title">Made to order</h3>
+              <p class="ngf-workshop-note-copy">
+                Most of the catalogue can be built to a size, timber or finish you choose rather than
+                the one shown. Start from <a href="/custom-furniture">custom furniture</a> and tell us
+                what the room needs.
+              </p>
+            </div>
+          </li>
+        </ul>
 
-      <h2>Made to order</h2>
-      <p>
-        Most of the catalogue can be built to a size, timber or finish you choose rather than the
-        one shown. Start from <a href="/custom-furniture">custom furniture</a> and tell us what the room
-        needs.
-      </p>
-
-      <div class="ngf-page-actions">
-        <WhatsAppLink context={{ kind: 'general' }} />
-        <CallLink variant="outline" />
+        <div class="ngf-page-actions ngf-workshop-actions">
+          <WhatsAppLink context={{ kind: 'general' }} />
+          <CallLink variant="outline" />
+        </div>
       </div>
+
+      {/* RIGHT COLUMN — the tall workshop photograph, sticky on wide screens. */}
+      <aside class="ngf-workshop-aside">
+        <figure class="ngf-workshop-photo">
+          <img
+            src={heroSrc}
+            srcset={heroSrcset}
+            sizes={heroSizes}
+            alt={WORKSHOP_HERO.alt}
+            width={WORKSHOP_HERO.width}
+            height={WORKSHOP_HERO.height}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+          {
+            /* The one line the page adds — decorative script, aria-hidden. The heading and the
+               "ideas · materials · craft · homes" line are baked into the photograph itself. */
+          }
+          <figcaption class="ngf-workshop-photo-script" aria-hidden="true">
+            Built<br />for real lives
+          </figcaption>
+        </figure>
+      </aside>
     </div>
   </div>
 </BaseLayout>
 
 <style>
-  /* Hero: workshop copy + feature badges beside the workshop photo ------------ */
-  .ngf-workshop-hero {
+  /* -------------------------------------------------------------------------- */
+  /* The two-column workshop layout: the "how it works" story on the left, the   */
+  /* tall workshop photograph on the right.                                      */
+  /* -------------------------------------------------------------------------- */
+  .ngf-workshop-layout {
     display: grid;
-    gap: clamp(1.5rem, 4vw, 3rem);
-    align-items: center;
-    margin-bottom: clamp(2.5rem, 6vw, 4rem);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: start;
   }
 
-  @media (min-width: 900px) {
-    .ngf-workshop-hero {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  @media (min-width: 960px) {
+    .ngf-workshop-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
     }
   }
 
-  .ngf-workshop-hero-copy {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+  .ngf-workshop-main {
     min-width: 0;
   }
 
-  .ngf-workshop-hero-figure {
+  .ngf-workshop-head {
+    margin-bottom: clamp(2rem, 5vw, 3rem);
+  }
+
+  .ngf-workshop-head h1 {
+    margin: 0.5rem 0 0;
+  }
+
+  .ngf-workshop-head .ngf-page-lead {
+    margin-top: 1rem;
+    max-width: 46ch;
+  }
+
+  /* The four furniture studies, drawn in line, in a row across the left column. */
+  .ngf-workshop-studies {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2rem) 1.25rem;
+    margin: 0 0 clamp(2.5rem, 6vw, 3.5rem);
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 720px) {
+    .ngf-workshop-studies {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-workshop-study {
+    position: relative;
+    min-width: 0;
+  }
+
+  /* A hairline divider between studies, matching the reference's ruled columns. */
+  @media (min-width: 720px) {
+    .ngf-workshop-study:not(:first-child) {
+      padding-left: 1.25rem;
+      border-left: 1px solid color-mix(in srgb, var(--color-taupe) 60%, transparent);
+    }
+  }
+
+  .ngf-workshop-study-glyph {
+    display: block;
+    width: 100%;
+    max-width: 120px;
+    height: 68px;
+    color: var(--color-walnut);
+  }
+
+  .ngf-workshop-study-glyph :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .ngf-workshop-study-num {
+    margin: 0.9rem 0 0;
+    color: var(--color-champagne);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    line-height: 1;
+  }
+
+  .ngf-workshop-study-title {
+    margin: 0.35rem 0 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 400;
+  }
+
+  .ngf-workshop-study-copy {
+    margin: 0.5rem 0 0;
+    color: var(--color-espresso);
+    font-size: var(--text-small);
+    line-height: 1.55;
+  }
+
+  /* The three numbered steps, each with a circular line icon. */
+  .ngf-workshop-steps {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 clamp(2.5rem, 6vw, 3.5rem);
+    padding: 0;
+    list-style: none;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 720px) {
+    .ngf-workshop-steps {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .ngf-workshop-step {
+    min-width: 0;
+  }
+
+  .ngf-workshop-step-icon,
+  .ngf-workshop-note-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-champagne) 45%, var(--color-taupe));
+    border-radius: var(--radius-pill);
+    color: var(--color-champagne);
+  }
+
+  .ngf-workshop-step-title {
+    margin: 0.9rem 0 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 400;
+  }
+
+  .ngf-workshop-step-copy {
+    margin: 0.4rem 0 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    line-height: 1.6;
+  }
+
+  /* Visiting + Made to order. */
+  .ngf-workshop-notes {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 clamp(2rem, 4vw, 2.5rem);
+    padding: 0;
+    list-style: none;
+  }
+
+  .ngf-workshop-note {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .ngf-workshop-note-title {
+    margin: 0.35rem 0 0;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 400;
+  }
+
+  .ngf-workshop-note-copy {
+    margin: 0.4rem 0 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    line-height: 1.6;
+  }
+
+  .ngf-workshop-actions {
+    margin-top: 0;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* The tall workshop photograph on the right, sticky on wide viewports.        */
+  /* -------------------------------------------------------------------------- */
+  .ngf-workshop-aside {
+    min-width: 0;
+  }
+
+  @media (min-width: 960px) {
+    .ngf-workshop-aside {
+      position: sticky;
+      top: clamp(5rem, 8vh, 7rem);
+    }
+  }
+
+  .ngf-workshop-photo {
+    position: relative;
     margin: 0;
     width: 100%;
-    aspect-ratio: 1672 / 941;
+    aspect-ratio: 1024 / 1536;
     overflow: hidden;
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-level2);
   }
 
-  .ngf-workshop-hero-figure img {
+  .ngf-workshop-photo img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  /* Feature badges (Skilled craftsmen / Quality materials / Built to last). */
-  .ngf-workshop-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: clamp(1rem, 3vw, 2rem);
-    margin: 1.5rem 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .ngf-workshop-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .ngf-workshop-badge-icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border: 1px solid color-mix(in srgb, var(--color-champagne) 45%, var(--color-taupe));
-    border-radius: var(--radius-pill);
-    color: var(--color-champagne);
-  }
-
-  .ngf-workshop-badge-label {
-    max-width: 8rem;
-    color: var(--color-espresso);
-    font-size: var(--text-small);
-    line-height: 1.3;
-  }
-
-  /* -------------------------------------------------------------------------- */
-  /* The architectural sequence reuses the shared `.ngf-process` language from   */
-  /* `/custom-furniture`. The rules below are the same drawing-board panel,      */
-  /* connecting line and reduced-motion contract, kept scoped to this page.      */
-  /* -------------------------------------------------------------------------- */
-
   /*
-   * The gap below the drawn sequence used to be a full `--spacing-section` (up to 9rem), which left
-   * a dead screen of whitespace before "How we make it". A tighter, premium gap keeps the sequence
-   * and the making copy reading as one page rather than two distant blocks.
+   * The one line the page adds over the photograph: a warm script mark at the lower-right. The
+   * heading and the "ideas · materials · craft · homes" line are part of the photograph itself, so
+   * nothing is re-overlaid — this is a decorative, aria-hidden flourish only. Fraunces italic
+   * stands in for a script face; a soft shadow keeps it legible over the warm timber beneath.
    */
-  .ngf-process {
-    max-width: none;
-    margin: 0 0 clamp(2.5rem, 6vw, 4rem);
-  }
-
-  .ngf-process > h2 {
-    margin: 0;
-    font-size: var(--text-h2);
-  }
-
-  .ngf-process-lead {
-    max-width: var(--measure-prose);
-    margin: 0.75rem 0 1.75rem;
-    color: var(--color-walnut);
-  }
-
-  .ngf-process-steps {
-    display: grid;
-    gap: 1.5rem 1.5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  @media (min-width: 640px) {
-    .ngf-process-steps {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .ngf-process-steps {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-
-  .ngf-process-step {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    min-width: 0;
-  }
-
-  /*
-   * The drawing-board panel keeps the shared 4/3 frame (a codified design contract). The excessive
-   * whitespace this page showed came from a small glyph stranded in that frame, so the fix is to
-   * give the illustration more of the panel — a larger glyph and tighter panel padding — rather
-   * than reshaping the frame.
-   */
-  .ngf-process-panel {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    padding: clamp(0.75rem, 3vw, 1.5rem);
-    overflow: hidden;
-    border: 1px solid var(--color-taupe);
-    border-radius: var(--radius-xl);
-    background-color: var(--color-cream);
-    background-image:
-      linear-gradient(to right, rgb(107 101 92 / 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(107 101 92 / 0.06) 1px, transparent 1px);
-    background-position: center;
-    background-size: 24px 24px;
-    box-shadow: var(--shadow-level1);
-  }
-
-  .ngf-process-panel::before,
-  .ngf-process-panel::after {
+  .ngf-workshop-photo-script {
     position: absolute;
-    width: 0.6rem;
-    height: 0.6rem;
-    border: 0 solid var(--color-taupe);
-    content: '';
-    pointer-events: none;
-  }
-
-  .ngf-process-panel::before {
-    top: 0.6rem;
-    left: 0.6rem;
-    border-top-width: 1px;
-    border-left-width: 1px;
-  }
-
-  .ngf-process-panel::after {
-    right: 0.6rem;
-    bottom: 0.6rem;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-  }
-
-  .ngf-process-glyph {
-    display: block;
-    width: 100%;
-    max-width: 240px;
-    color: var(--color-walnut);
-  }
-
-  .ngf-process-glyph :global(svg) {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  .ngf-process-step:not(.ngf-process-step-last)::after {
-    content: '';
-    position: absolute;
-    background-color: var(--color-taupe);
-    opacity: 0.7;
-    transform: scaleY(1);
-    transform-origin: top;
-    transition: transform var(--dur-story) var(--ease-draw);
-    pointer-events: none;
-  }
-
-  .ngf-process-step:not(.ngf-process-step-last)::after {
-    left: calc(clamp(1rem, 4vw, 1.75rem));
-    top: 100%;
-    width: 1px;
-    height: 2rem;
-    margin-top: -1.5rem;
-  }
-
-  @media (min-width: 1024px) {
-    .ngf-process-step:not(.ngf-process-step-last)::after {
-      top: calc((100% / 3) - 0.5rem);
-      left: 100%;
-      width: 1.5rem;
-      height: 1px;
-      margin-top: 0;
-      margin-left: -0.75rem;
-      transform: scaleX(1);
-      transform-origin: left;
-    }
-  }
-
-  .ngf-process-num {
-    margin: 1rem 0 0;
-    color: var(--color-champagne);
+    right: clamp(1.25rem, 4vw, 2rem);
+    bottom: clamp(1.25rem, 4vw, 2rem);
+    margin: 0;
+    color: var(--color-white);
     font-family: var(--font-display);
-    font-size: var(--text-h3);
-    line-height: 1;
-    letter-spacing: 0.02em;
+    font-style: italic;
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    font-weight: 400;
+    line-height: 1.08;
+    text-align: right;
+    text-shadow: 0 1px 10px rgb(28 26 24 / 0.55);
   }
 
-  .ngf-process-title {
-    margin: 0.4rem 0 0;
-    font-family: var(--font-display);
-    font-size: var(--text-h3);
-  }
-
-  .ngf-process-copy {
-    margin: 0.5rem 0 0;
-    color: var(--color-espresso);
-    font-size: var(--text-small);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-process-step::after {
-      transform: scaleY(0);
-    }
-  }
-
-  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-    :where(:not([data-motion='off'])) [data-reveal]:not([data-revealed]) .ngf-process-step::after {
-      transform: scaleX(0);
-    }
+  .ngf-workshop-photo-script::after {
+    display: block;
+    width: 3.5rem;
+    height: 2px;
+    margin: 0.5rem 0 0 auto;
+    background-color: var(--color-champagne);
+    content: '';
   }
 </style>
