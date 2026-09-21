@@ -57,6 +57,28 @@ const heroSizes = '(min-width: 900px) 52vw, 100vw';
 const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
 
 /**
+ * The "from your idea to a piece you'll love" photograph — a finished, made-to-order dining room —
+ * that closes the left column beneath the "what to send us" copy. Same static-asset treatment as
+ * the hero: pre-optimised responsive WebP under `public/brand/`, a plain same-origin file that
+ * resolves under the Lighthouse static run. It is *not* the page's prioritised image — the hero at
+ * the top of the page holds that one slot — so it is lazy and async, and its fixed 3:2 frame
+ * reserves its box against layout shift. The caption is overlaid by the page as a warm closing
+ * line; it makes no claim about capability, timeline or price (Requirement 8.4).
+ */
+const IDEA_PHOTO = {
+  width: 1440,
+  height: 960,
+  base: '/brand/custom-idea',
+  alt: 'A finished walnut dining table with upholstered chairs in a sunlit Bengaluru dining room, made to order by New Galaxy Furniture.',
+};
+const IDEA_WIDTHS = [480, 768, 1040, 1440];
+const ideaSrc = `${IDEA_PHOTO.base}-1040.webp`;
+const ideaSrcset = IDEA_WIDTHS.map(
+  (w) => `${IDEA_PHOTO.base}-${String(w)}.webp ${String(w)}w`,
+).join(', ');
+const ideaSizes = '(min-width: 900px) 48vw, 100vw';
+
+/**
  * The four stages of a commission, as a scroll-reactive sequence: DISCOVER → DESIGN → CRAFT →
  * DELIVER. Each stage is a drawing-board panel holding one reused primitive, so the page stays at
  * exactly four distinct `data-ngf-primitive` names (room, craftsmanship, assembly, furniture-line)
@@ -290,6 +312,34 @@ const meta = pageMeta(Astro, {
           We will come back with what is possible, what it costs, and an honest date. Nothing is
           committed until you say so.
         </p>
+
+        {
+          /*
+          The closing photograph: a finished, made-to-order dining room, with a warm overlaid line.
+          It fills the foot of the left column so the two columns balance, and gives the page a real
+          "here is the result" image beneath the process copy. Lazy and async — the hero above is the
+          page's one prioritised image — and its 3:2 frame reserves its box against layout shift.
+          The caption is decorative encouragement, not a claim (Requirement 8.4).
+        */
+        }
+        <figure class="ngf-custom-idea">
+          <img
+            src={ideaSrc}
+            srcset={ideaSrcset}
+            sizes={ideaSizes}
+            alt={IDEA_PHOTO.alt}
+            width={IDEA_PHOTO.width}
+            height={IDEA_PHOTO.height}
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption class="ngf-custom-idea-caption">
+            <span class="ngf-custom-idea-title">From your idea to a piece you'll love.</span>
+            <span class="ngf-custom-idea-sub">
+              Thoughtful design. Honest advice. Furniture that feels like home.
+            </span>
+          </figcaption>
+        </figure>
       </div>
 
       <div>
@@ -422,6 +472,58 @@ const meta = pageMeta(Astro, {
   .ngf-custom-compare {
     max-width: 40rem;
     margin-block: 1.5rem 2.5rem;
+  }
+
+  /* The closing "from your idea" photo with an overlaid caption ---------------- */
+  .ngf-custom-idea {
+    position: relative;
+    margin: 2.5rem 0 0;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-level2);
+  }
+
+  .ngf-custom-idea img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /*
+   * The overlaid caption sits at the lower-left over a dark gradient scrim, so the white text stays
+   * legible over any part of the photograph beneath it. The scrim is a pseudo-element rather than a
+   * background on the caption so it can span more of the frame than the text does.
+   */
+  .ngf-custom-idea-caption {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: clamp(1.25rem, 4vw, 2.25rem);
+    padding-top: clamp(3rem, 10vw, 5rem);
+    background: linear-gradient(to top, rgb(28 26 24 / 0.72) 0%, rgb(28 26 24 / 0.4) 45%, transparent 100%);
+    color: var(--color-white);
+  }
+
+  .ngf-custom-idea-title {
+    max-width: 22ch;
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .ngf-custom-idea-sub {
+    max-width: 42ch;
+    color: rgb(255 255 255 / 0.86);
+    font-size: var(--text-small);
+    line-height: 1.6;
   }
 
   /* -------------------------------------------------------------------------- */
