@@ -728,17 +728,18 @@ const headingLines =
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--color-walnut);
+    color: var(--color-white);
     font-size: var(--text-small);
     letter-spacing: 0.16em;
     text-transform: uppercase;
+    text-shadow: 0 1px 12px rgb(28 26 24 / 0.35);
   }
 
   .ngf-hero-kicker::before {
     display: block;
     width: 1.75rem;
     height: 1px;
-    background-color: var(--color-taupe);
+    background-color: color-mix(in srgb, var(--color-white) 70%, transparent);
     content: '';
   }
 
@@ -754,21 +755,25 @@ const headingLines =
   .ngf-hero-heading {
     margin: 0;
     max-width: 15ch;
-    color: var(--color-obsidian);
+    color: var(--color-white);
     font-family: var(--font-display);
     font-size: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
     font-weight: 400;
     line-height: 1.02;
     letter-spacing: -0.02em;
     text-wrap: balance;
+    /* The copy now sits over the darker photograph, as in the reference — a soft shadow keeps the
+       white legible over the brighter patches of the image. */
+    text-shadow: 0 1px 18px rgb(28 26 24 / 0.35);
   }
 
   .ngf-hero-sub {
     margin: 0;
     max-width: 40ch;
-    color: var(--color-espresso);
+    color: var(--color-white);
     font-size: clamp(1rem, 0.95rem + 0.4vw, 1.1875rem);
     line-height: 1.6;
+    text-shadow: 0 1px 14px rgb(28 26 24 / 0.35);
   }
 
   .ngf-hero-ctas {
@@ -810,11 +815,12 @@ const headingLines =
     transition: transform var(--dur-fast) var(--ease-standard);
   }
 
-  /* The secondary: a quiet dark outline on the light ground, understated beside the primary. */
+  /* The secondary: a quiet light outline on the photograph, white text, understated beside the
+     primary — reading over the darker image as in the reference. */
   .ngf-hero-cta-secondary {
-    border: 1px solid var(--color-taupe);
-    color: var(--color-obsidian);
-    background-color: color-mix(in srgb, var(--color-white) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-white) 55%, transparent);
+    color: var(--color-white);
+    background-color: color-mix(in srgb, var(--color-obsidian) 22%, transparent);
   }
 
   @media (hover: hover) {
@@ -832,8 +838,8 @@ const headingLines =
     }
 
     .ngf-hero-cta-secondary:hover {
-      border-color: var(--color-walnut);
-      background-color: var(--color-white);
+      border-color: var(--color-white);
+      background-color: color-mix(in srgb, var(--color-obsidian) 34%, transparent);
     }
   }
 
@@ -862,7 +868,7 @@ const headingLines =
     gap: 0.9rem 1.75rem;
     margin: 0.85rem 0 0;
     padding: 0;
-    color: var(--color-espresso);
+    color: var(--color-white);
     font-size: var(--text-small);
     list-style: none;
   }
@@ -874,7 +880,8 @@ const headingLines =
     max-width: 14rem;
   }
 
-  /* The glyph: a hairline sage icon in a small circle, decorative (the label carries the meaning). */
+  /* The glyph: a hairline light icon in a small circle, decorative (the label carries the meaning).
+     Drawn in white so it reads over the darker photograph, matching the reference. */
   .ngf-hero-assurance-icon {
     flex: none;
     display: inline-flex;
@@ -882,14 +889,15 @@ const headingLines =
     justify-content: center;
     width: 2.25rem;
     height: 2.25rem;
-    border: 1px solid color-mix(in srgb, var(--color-sage) 45%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-white) 50%, transparent);
     border-radius: var(--radius-pill);
-    background-color: color-mix(in srgb, var(--color-white) 55%, transparent);
-    color: var(--color-sage);
+    background-color: color-mix(in srgb, var(--color-white) 12%, transparent);
+    color: var(--color-white);
   }
 
   .ngf-hero-assurance-label {
     line-height: 1.25;
+    text-shadow: 0 1px 12px rgb(28 26 24 / 0.35);
   }
 
   /* ------------------------------------------------------------------ *
@@ -941,7 +949,7 @@ const headingLines =
     width: 0.85rem;
     height: 0.3rem;
     border-radius: var(--radius-pill);
-    background-color: color-mix(in srgb, var(--color-obsidian) 26%, transparent);
+    background-color: color-mix(in srgb, var(--color-white) 45%, transparent);
     transition:
       width var(--dur-normal) var(--ease-standard),
       background-color var(--dur-fast) var(--ease-standard);
@@ -949,17 +957,17 @@ const headingLines =
 
   .ngf-hero-dot[data-active='true']::before {
     width: 1.85rem;
-    background-color: color-mix(in srgb, var(--color-obsidian) 66%, transparent);
+    background-color: var(--color-white);
   }
 
   @media (hover: hover) {
     .ngf-hero-dot:hover::before {
-      background-color: color-mix(in srgb, var(--color-obsidian) 50%, transparent);
+      background-color: color-mix(in srgb, var(--color-white) 75%, transparent);
     }
   }
 
   .ngf-hero-dot:focus-visible {
-    outline: 2px solid var(--color-obsidian);
+    outline: 2px solid var(--color-white);
     outline-offset: 3px;
     border-radius: var(--radius-pill);
   }
