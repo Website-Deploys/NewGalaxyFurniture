@@ -659,34 +659,24 @@ const headingLines =
    * ------------------------------------------------------------------ */
 
   /*
-   * The scrim: a cream-to-transparent wash over the photograph, strongest at the left where the copy
-   * sits and clearing toward the right so the furniture reads. It sits above the image (z-index 1)
-   * and below the copy (z-index 2). On a phone the copy sits over the whole image, so the wash is a
-   * near-opaque vertical gradient that keeps the text legible over any part of the photograph; from
-   * the tablet breakpoint up it becomes the horizontal left-to-right fade of the reference.
+   * The scrim. The visible cream-to-transparent "fade" wash has been removed — the copy sits
+   * directly over the photograph's naturally bright left area, matching the reference, so there is
+   * no gradient veil over the image on desktop. On small screens the copy overlaps busier parts of
+   * the photograph, so a very faint, even ivory veil is kept there purely for text legibility; it is
+   * light enough not to read as a fade. It sits above the image (z-index 1) and below the copy.
    */
   .ngf-hero-scrim {
     position: absolute;
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--color-ivory) 92%, transparent) 0%,
-      color-mix(in srgb, var(--color-ivory) 70%, transparent) 45%,
-      color-mix(in srgb, var(--color-ivory) 40%, transparent) 100%
-    );
+    background: color-mix(in srgb, var(--color-ivory) 30%, transparent);
   }
 
   @media (min-width: 768px) {
     .ngf-hero-scrim {
-      background: linear-gradient(
-        to right,
-        color-mix(in srgb, var(--color-ivory) 94%, transparent) 0%,
-        color-mix(in srgb, var(--color-ivory) 82%, transparent) 32%,
-        color-mix(in srgb, var(--color-ivory) 40%, transparent) 58%,
-        transparent 78%
-      );
+      /* No veil at all from the tablet breakpoint up — the photograph shows through unmodified. */
+      background: none;
     }
   }
 
