@@ -139,6 +139,65 @@ p { color: var(--ink-soft); max-width: 46ch; margin: 0 0 1rem; }
 .section { padding: 72px 0; }
 .alt-bg { background: var(--cream-2); }
 
+/* ===================== OUR STORY (ABOUT) ===================== */
+.our-story {
+  position: relative;
+  min-height: min(64vw, 640px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--cream);
+}
+.our-story-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+/* soft light wash on the left so the copy stays readable over the wall */
+.our-story-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    100deg,
+    rgba(244,238,228,.85) 0%,
+    rgba(244,238,228,.62) 30%,
+    rgba(244,238,228,.18) 48%,
+    rgba(244,238,228,0) 62%
+  );
+}
+.our-story-wrap { position: relative; z-index: 2; width: 100%; }
+.our-story-copy { max-width: 34rem; padding: 40px 0; }
+.our-story-rule {
+  display: block;
+  width: 46px;
+  height: 1px;
+  background: var(--gold);
+  margin-bottom: 26px;
+}
+.our-story-title {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: .5px;
+  color: var(--ink);
+  margin: 0 0 22px;
+}
+.our-story-lead {
+  color: var(--ink);
+  opacity: .9;
+  font-size: clamp(1rem, 1.4vw, 1.15rem);
+  line-height: 1.7;
+  max-width: 30rem;
+  margin: 0 0 26px;
+}
+.our-story-btn { margin-top: 4px; }
+
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
 
 .media { position: relative; margin: 0; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 24px 60px rgba(43,38,33,.14); }
@@ -299,4 +358,18 @@ p { color: var(--ink-soft); max-width: 46ch; margin: 0 0 1rem; }
   /* keep image order sensible on mobile: image before text where design leads with image */
   .direct .copy { order: 2; }
   .direct .media { order: 1; }
+
+  /* Our story: pull the beige wall into view and deepen the wash for readability */
+  .our-story { min-height: 78vh; align-items: flex-end; }
+  .our-story-bg { object-position: 68% center; }
+  .our-story-scrim {
+    background: linear-gradient(
+      180deg,
+      rgba(244,238,228,.72) 0%,
+      rgba(244,238,228,.55) 30%,
+      rgba(244,238,228,.72) 100%
+    );
+  }
+  .our-story-copy { padding: 32px 0 44px; max-width: 100%; }
+  .our-story-lead { max-width: 100%; }
 }
