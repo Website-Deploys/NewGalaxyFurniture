@@ -57,9 +57,9 @@ p { color: var(--ink-soft); max-width: 46ch; margin: 0 0 1rem; }
 .script-overlay {
   font-family: "Dancing Script", cursive;
   color: #fff;
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
-  line-height: 1.1;
-  text-shadow: 0 2px 12px rgba(0,0,0,.35);
+  font-size: clamp(1.25rem, 1.8vw, 1.6rem);
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(0,0,0,.4);
 }
 
 /* ===================== HEADER / NAV ===================== */
@@ -136,7 +136,7 @@ p { color: var(--ink-soft); max-width: 46ch; margin: 0 0 1rem; }
 .nav-toggle span { width: 22px; height: 2px; background: var(--ink); border-radius: 2px; transition: .3s; }
 
 /* ===================== SECTIONS (shared) ===================== */
-.section { padding: 72px 0; }
+.section { padding: 56px 0; }
 .alt-bg { background: var(--cream-2); }
 
 /* ===================== OUR STORY (ABOUT) ===================== */
@@ -199,22 +199,23 @@ p { color: var(--ink-soft); max-width: 46ch; margin: 0 0 1rem; }
 .our-story-btn { margin-top: 4px; }
 
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.two-col .media { height: 400px; }
 
 .media { position: relative; margin: 0; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 24px 60px rgba(43,38,33,.14); }
 .media img { width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease); }
 .media:hover img { transform: scale(1.04); }
-.media .script-overlay { position: absolute; left: 26px; bottom: 24px; }
+.media .script-overlay { position: absolute; left: 26px; bottom: 22px; }
 
 /* feature rows */
-.feature-row { list-style: none; margin: 28px 0 0; padding: 0; display: flex; gap: 26px; flex-wrap: wrap; }
-.feature { display: flex; align-items: center; gap: 12px; }
+.feature-row { list-style: none; margin: 26px 0 0; padding: 0; display: flex; gap: 18px; flex-wrap: wrap; }
+.feature { display: flex; align-items: center; gap: 10px; }
 .feature-icon {
-  flex: none; width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(201,154,91,.16); display: grid; place-items: center; font-size: 1.05rem;
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(201,154,91,.16); display: grid; place-items: center; font-size: 1rem;
 }
-.feature-text { display: flex; flex-direction: column; line-height: 1.25; }
-.feature-text strong { font-weight: 500; font-size: .9rem; color: var(--ink); }
-.feature-text small { font-size: .72rem; color: var(--ink-soft); }
+.feature-text { display: flex; flex-direction: column; line-height: 1.2; }
+.feature-text strong { font-weight: 500; font-size: .85rem; color: var(--ink); }
+.feature-text small { font-size: .68rem; color: var(--ink-soft); }
 
 /* buttons within content */
 .btn-outline {
@@ -268,12 +269,12 @@ p { color: var(--ink-soft); max-width: 46ch; margin: 0 0 1rem; }
   font-size: .72rem; letter-spacing: .28em; text-transform: uppercase; color: var(--ink-soft); line-height: 2;
 }
 .review-card {
-  max-width: 620px; margin: 32px auto 0; text-align: center;
+  max-width: 900px; margin: 28px auto 0; text-align: center;
   background: rgba(247,242,234,.6); border: 1px solid var(--line);
-  border-radius: var(--radius-lg); padding: 48px 40px;
+  border-radius: var(--radius-lg); padding: 44px 40px;
   box-shadow: 0 20px 50px rgba(43,38,33,.08);
 }
-.review-chair { width: 200px; margin: 0 auto 18px; filter: drop-shadow(0 18px 24px rgba(43,38,33,.18)); }
+.review-chair { width: 180px; margin: 0 auto 16px; filter: drop-shadow(0 18px 24px rgba(43,38,33,.18)); }
 .review-card h3 { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 .4rem; }
 .review-card p { margin: 0 auto; }
 
