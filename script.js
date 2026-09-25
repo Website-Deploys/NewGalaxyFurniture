@@ -109,7 +109,6 @@
   const modalTriggers = [
     { id: "#enquireBtn", title: "Start an enquiry", sub: "Tell us what you have in mind and we will get back to you." },
     { id: "#footerEnquireBtn", title: "Start an enquiry", sub: "Tell us what you have in mind and we will get back to you." },
-    { id: "#storyEnquiryBtn", title: "Tell us your story", sub: "The piece, the room it\u2019s for, the timber or finish you prefer \u2014 and we\u2019ll come back with options, timelines and prices." },
     { id: "#customEnquiryBtn", title: "Start a custom enquiry", sub: "Send us a size, sketch or photo and we\u2019ll tell you what\u2019s possible." },
     { id: "#planVisitBtn", title: "Plan a visit", sub: "Let us know when you\u2019d like to come and what you\u2019d like to see." },
   ];
