@@ -73,6 +73,26 @@
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    /*
+     * Horizontal-overflow guard.
+     *
+     * The sticky header (`.ngf-header`, `position: sticky; top: 0`) sticks in the block axis but
+     * still tracks the inline axis: if anything on the page is wider than the viewport — an
+     * off-screen-positioned form honeypot, a grid/flex child that will not shrink, or a `100vw`
+     * element measured against a classic (non-overlay) scrollbar — the document gains horizontal
+     * scroll, and on a narrow/windowed viewport the header is carried sideways out of view along
+     * with it. `overflow-x: clip` removes that failure mode at the root: it clips any inline
+     * overflow to the viewport so no horizontal scrollbar can appear. Unlike `overflow-x: hidden`
+     * it does NOT turn `<html>` into a scroll container, so `position: sticky` on the header (and
+     * anywhere else) keeps working exactly as before at every width.
+     */
+    overflow-x: clip;
+  }
+
+  body {
+    /* Never let a child establish a wider line box than the viewport. Pairs with the clip above. */
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body {
