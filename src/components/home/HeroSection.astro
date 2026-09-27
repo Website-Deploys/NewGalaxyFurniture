@@ -835,20 +835,21 @@ const headingLines =
    * brighter second photograph.
    * ------------------------------------------------------------------ */
 
-  /* Eyebrow ("Manufacturer & showroom") and its leading rule. */
+  /* Eyebrow ("Manufacturer & showroom") — black on slide 2, with a light halo for legibility over
+     the photograph. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-kicker {
-    color: #ffffff;
-    text-shadow: 0 1px 16px rgb(28 26 24 / 0.55);
+    color: var(--color-obsidian);
+    text-shadow: 0 1px 16px rgb(250 248 244 / 0.55);
   }
 
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-kicker::before {
-    background-color: color-mix(in srgb, #ffffff 80%, transparent);
+    background-color: color-mix(in srgb, var(--color-obsidian) 70%, transparent);
   }
 
-  /* Sub-paragraph. */
+  /* Sub-paragraph — black on slide 2, with a light halo. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-sub {
-    color: #ffffff;
-    text-shadow: 0 1px 16px rgb(28 26 24 / 0.55);
+    color: var(--color-obsidian);
+    text-shadow: 0 1px 16px rgb(250 248 244 / 0.55);
   }
 
   /* Primary CTA — an obsidian pill with brightest-white text so the label is white too. */
@@ -1207,6 +1208,24 @@ const headingLines =
       font-weight: 600;
       letter-spacing: 0.18em;
       text-shadow: 0 1px 10px rgb(28 26 24 / 0.5);
+    }
+
+    /*
+     * Slide 2, phone only: the overlaid eyebrow turns black to match the rest of the slide-2 copy.
+     * Since it sits over the photograph (not on cream), the dark gradient behind it is swapped for a
+     * light one and the text-shadow for a light halo, so black stays legible over the image.
+     */
+    .ngf-hero-panel[data-hero-active='1'] .ngf-hero-eyebrow-mobile {
+      background: linear-gradient(to top, rgb(250 248 244 / 0.75), transparent);
+    }
+
+    .ngf-hero-panel[data-hero-active='1'] .ngf-hero-eyebrow-mobile .ngf-hero-kicker {
+      color: var(--color-obsidian);
+      text-shadow: 0 1px 10px rgb(250 248 244 / 0.6);
+    }
+
+    .ngf-hero-panel[data-hero-active='1'] .ngf-hero-eyebrow-mobile .ngf-hero-kicker::before {
+      background-color: color-mix(in srgb, var(--color-obsidian) 70%, transparent);
     }
 
     .ngf-hero-eyebrow-mobile .ngf-hero-kicker::before {
