@@ -518,16 +518,22 @@ const headingLines =
    */
   .ngf-hero {
     position: relative;
-    /* The header's rendered height, reserved so the copy clears the floating bar. Fluid because the
-       header itself is a little taller from the desktop breakpoint up. */
-    --ngf-hero-header-offset: 4.5rem;
+    /*
+     * The header's full rendered height, so the hero pulls all the way up to the top of the viewport
+     * with no gap above the photograph, and the same value is restored as internal top padding so
+     * the copy still clears the floating bar. The floating pill is inset from the top by its own
+     * 0.75rem padding, so this must cover pill height + that inset (measured ~82px on a phone, ~94px
+     * from the desktop breakpoint up) — otherwise a thin strip of the page ground shows above the
+     * image. A little generous so font-swap size changes never reopen the gap.
+     */
+    --ngf-hero-header-offset: 5.25rem;
     margin-top: calc(-1 * var(--ngf-hero-header-offset));
     isolation: isolate;
   }
 
   @media (min-width: 1024px) {
     .ngf-hero {
-      --ngf-hero-header-offset: 5.5rem;
+      --ngf-hero-header-offset: 6rem;
     }
   }
 
