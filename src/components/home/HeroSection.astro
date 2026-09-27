@@ -783,67 +783,67 @@ const headingLines =
   }
 
   /*
-   * Slide 2 — black heading. The panel's `data-hero-active` flips to "1"; the copy follows the
-   * panel as a sibling. The transition on `color` / `text-shadow` animates the swap.
+   * Slide 2 — brightest-white heading. The panel's `data-hero-active` flips to "1"; the copy
+   * follows the panel as a sibling. The transition on `color` / `text-shadow` animates the swap.
    */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy :global(.ngf-hero-heading),
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy :global(.ngf-hero-heading .ngf-line) {
-    color: var(--color-obsidian) !important;
-    text-shadow: 0 1px 16px rgb(250 248 244 / 0.65);
+    color: #ffffff !important;
+    text-shadow: 0 2px 22px rgb(28 26 24 / 0.55);
   }
 
   /* ------------------------------------------------------------------ *
-   * Slide 2 — every piece of hero copy turns black.
+   * Slide 2 — every piece of hero copy is the brightest white.
    *
    * The panel's `data-hero-active="1"` gates each rule; the copy follows the panel as a sibling.
    * Colours and their shadows transition (declared on each element above), so the whole block of
-   * copy morphs from the slide-1 white treatment to black as the slides crossfade. A soft light
-   * halo replaces the dark text-shadow so black stays crisp over the brighter second photograph.
+   * copy morphs as the slides crossfade. A stronger dark halo keeps the pure white legible over the
+   * brighter second photograph.
    * ------------------------------------------------------------------ */
 
   /* Eyebrow ("Manufacturer & showroom") and its leading rule. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-kicker {
-    color: var(--color-obsidian);
-    text-shadow: 0 1px 14px rgb(250 248 244 / 0.6);
+    color: #ffffff;
+    text-shadow: 0 1px 16px rgb(28 26 24 / 0.55);
   }
 
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-kicker::before {
-    background-color: color-mix(in srgb, var(--color-obsidian) 60%, transparent);
+    background-color: color-mix(in srgb, #ffffff 80%, transparent);
   }
 
   /* Sub-paragraph. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-sub {
-    color: var(--color-obsidian);
-    text-shadow: 0 1px 14px rgb(250 248 244 / 0.6);
+    color: #ffffff;
+    text-shadow: 0 1px 16px rgb(28 26 24 / 0.55);
   }
 
-  /* Primary CTA — white pill, black text on both slides (text stays black on slide 2). */
+  /* Primary CTA — an obsidian pill with brightest-white text so the label is white too. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-cta-primary {
-    background-color: var(--color-white);
-    color: var(--color-obsidian);
+    background-color: var(--color-obsidian);
+    color: #ffffff;
   }
 
-  /* Secondary CTA — text and outline turn obsidian so it reads on the bright image. */
+  /* Secondary CTA — brightest-white text on a light outline. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-cta-secondary {
-    color: var(--color-obsidian);
-    border-color: color-mix(in srgb, var(--color-obsidian) 45%, transparent);
-    background-color: color-mix(in srgb, var(--color-white) 30%, transparent);
+    color: #ffffff;
+    border-color: color-mix(in srgb, #ffffff 65%, transparent);
+    background-color: color-mix(in srgb, var(--color-obsidian) 30%, transparent);
   }
 
-  /* Assurance row — labels black, icon discs outlined in obsidian. */
+  /* Assurance row — labels brightest white, icon discs outlined in white. */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-assurances {
-    color: var(--color-obsidian);
+    color: #ffffff;
   }
 
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-assurance-label {
-    color: var(--color-obsidian);
-    text-shadow: 0 1px 12px rgb(250 248 244 / 0.6);
+    color: #ffffff;
+    text-shadow: 0 1px 14px rgb(28 26 24 / 0.55);
   }
 
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-assurance-icon {
-    color: var(--color-obsidian);
-    border-color: color-mix(in srgb, var(--color-obsidian) 40%, transparent);
-    background-color: color-mix(in srgb, var(--color-obsidian) 8%, transparent);
+    color: #ffffff;
+    border-color: color-mix(in srgb, #ffffff 60%, transparent);
+    background-color: color-mix(in srgb, #ffffff 14%, transparent);
   }
 
   @media (prefers-reduced-motion: reduce) {
