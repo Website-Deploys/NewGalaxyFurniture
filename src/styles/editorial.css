@@ -616,22 +616,68 @@
   }
 }
 
-/* Feature row (bottom of the page) ---------------------------------------- */
+/* Feature banner (bottom of the page) ------------------------------------
+   A warm sunlit interior photograph as the background, with three reassurance
+   columns and a Contact Us link centred over the wall, matching the reference.
+   Vertical hairlines separate the columns; on narrow screens the banner stacks
+   and the dividers become horizontal. */
 
 .ngf-gallery-feats {
+  position: relative;
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-level2);
+  isolation: isolate;
+  /* The reserved box lives on the banner (the image's ancestor), so the slot is held before the
+     photograph loads — the image-loading audit's rule 5. */
+  aspect-ratio: 2170 / 725;
+}
+
+@media (max-width: 860px) {
+  .ngf-gallery-feats {
+    aspect-ratio: auto;
+  }
+}
+
+.ngf-gallery-feats-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * A soft, warm scrim over the photograph so the dark serif titles and body stay legible on the
+ * sunlit wall without hiding the scene. Lightest in the centre where the content sits.
+ */
+.ngf-gallery-feats-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem 2rem;
-  padding-top: clamp(1.5rem, 4vw, 2.5rem);
-  border-top: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+  justify-content: center;
+  gap: 1.5rem 0;
+  width: 100%;
+  height: 100%;
+  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
+  background: linear-gradient(
+    to right,
+    rgb(245 239 230 / 0.15) 0%,
+    rgb(245 239 230 / 0.62) 26%,
+    rgb(245 239 230 / 0.62) 74%,
+    rgb(245 239 230 / 0.15) 100%
+  );
 }
 
 .ngf-gallery-feats-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem 2.5rem;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -639,8 +685,16 @@
 
 .ngf-gallery-feat {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+  padding: 0 clamp(1.25rem, 3vw, 2.5rem);
+  text-align: center;
+}
+
+/* Vertical hairline dividers between the feature columns. */
+.ngf-gallery-feat + .ngf-gallery-feat {
+  border-left: 1px solid color-mix(in srgb, var(--color-walnut) 32%, transparent);
 }
 
 .ngf-gallery-feat-icon {
@@ -648,39 +702,98 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3rem;
+  height: 3rem;
   border-radius: var(--radius-pill);
-  background-color: var(--color-cream);
-  color: var(--color-walnut);
+  background-color: color-mix(in srgb, var(--color-champagne) 22%, var(--color-white));
+  color: var(--color-espresso);
 }
 
 .ngf-gallery-feat-text {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .ngf-gallery-feat-title {
   color: var(--color-obsidian);
-  font-weight: 600;
-  line-height: 1.2;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 400;
+  line-height: 1.15;
 }
 
 .ngf-gallery-feat-sub {
-  color: var(--color-walnut);
+  color: var(--color-espresso);
   font-size: var(--text-small);
   line-height: 1.3;
 }
 
+/* The Contact Us column, separated from the features by its own hairline. */
 .ngf-gallery-feats-help {
-  margin: 0;
-  color: var(--color-walnut);
-  font-size: var(--text-small);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-start;
+  padding: 0 0 0 clamp(1.5rem, 3vw, 2.5rem);
+  margin-left: clamp(0.5rem, 2vw, 1.5rem);
+  border-left: 1px solid color-mix(in srgb, var(--color-walnut) 32%, transparent);
 }
 
-.ngf-gallery-feats-help a {
+.ngf-gallery-feats-help-lead {
+  margin: 0;
+  color: var(--color-espresso);
+  font-size: var(--text-small);
+  line-height: 1.3;
+}
+
+.ngf-gallery-feats-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--color-obsidian);
-  font-weight: 600;
-  text-underline-offset: 3px;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 400;
+  text-decoration: none;
+  transition: gap var(--dur-fast) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .ngf-gallery-feats-help-link:hover {
+    gap: 0.75rem;
+  }
+}
+
+/* Narrow screens: stack the banner, turn the dividers horizontal. */
+@media (max-width: 860px) {
+  .ngf-gallery-feats-inner {
+    flex-direction: column;
+    background: rgb(245 239 230 / 0.68);
+  }
+
+  .ngf-gallery-feats-list {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .ngf-gallery-feat {
+    padding: 1rem 0;
+  }
+
+  .ngf-gallery-feat + .ngf-gallery-feat {
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--color-walnut) 28%, transparent);
+  }
+
+  .ngf-gallery-feats-help {
+    align-items: center;
+    width: 100%;
+    padding: 1rem 0 0;
+    margin-left: 0;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--color-walnut) 28%, transparent);
+  }
 }
