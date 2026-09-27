@@ -21,8 +21,6 @@
  * Requirements: 8.6, 18.8, 18.10, 26.14.
  */
 import SectionHeader from '@/components/home/SectionHeader.astro';
-import EmptyState from '@/components/ui/EmptyState.astro';
-import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import type { HomepageSection } from '@/schemas/homepage';
 import type { Review } from '@/schemas/review';
 
@@ -37,101 +35,101 @@ const { section, reviews, limit = 6 } = Astro.props;
 const shown = reviews.slice(0, limit);
 
 /**
- * The empty-state photograph, where the operator has supplied one.
+ * The customer-reviews row, as a single supplied scene.
  *
- * The reference shows a single upholstered armchair floating in the "no reviews yet" card. It is an
- * editorial photo like the story bands', so it takes the same static responsive-WebP treatment: a
- * `srcset` built from exactly the widths on disk, the box reserved by intrinsic ratio, lazy + async
- * because it sits well below the fold. It is passed into `EmptyState`'s illustration slot, so it
- * only ever appears in the empty state — once real reviews exist, the grid renders instead and the
- * photo is never requested.
+ * When there are no published reviews the whole row is one editorial image — the "In their words /
+ * Customer reviews / No reviews published yet" scene the operator supplied — rather than markup
+ * assembled from a header, an empty-state card and a note. It is a static, pre-optimised responsive
+ * WebP under `public/brand/` (a plain same-origin file that resolves under the Lighthouse static
+ * run), lazy + async because it sits well below the fold, with its box reserved by intrinsic ratio
+ * so it introduces no CLS. Once real reviews exist the grid renders instead and this image is never
+ * requested.
  */
-const image = section.image;
-const emptyPhoto =
-  image !== undefined
-    ? {
-        src: `${image.base}-${String(Math.max(...image.widths))}.webp`,
-        srcset: image.widths.map((w) => `${image.base}-${String(w)}.webp ${String(w)}w`).join(', '),
-        width: image.width,
-        height: image.height,
-        alt: image.alt,
-      }
-    : null;
+const REVIEWS_SCENE = {
+  base: '/brand/home-reviews-scene',
+  widths: [768, 1200, 1680, 1973],
+  width: 1973,
+  height: 797,
+  alt: 'Customer reviews — in their words, real homes, real stories. A sunlit living room with a beige armchair; no reviews are published yet.',
+};
+const sceneSrc = `${REVIEWS_SCENE.base}-1680.webp`;
+const sceneSrcset = REVIEWS_SCENE.widths
+  .map((w) => `${REVIEWS_SCENE.base}-${String(w)}.webp ${String(w)}w`)
+  .join(', ');
 ---
 
 <section
   class="ngf-home-section ngf-home-reviews"
-  aria-labelledby="ngf-reviews-heading"
+  aria-label={section.heading ?? 'Customer reviews'}
   data-ngf-section="customerReviews"
   data-reveal
 >
-  <SectionHeader
-    eyebrow={section.eyebrow}
-    heading={section.heading ?? 'Customer reviews'}
-    subheading={section.subheading}
-    headingId="ngf-reviews-heading"
-    align={shown.length === 0 ? 'center' : 'start'}
-  />
-
   {
     shown.length === 0 ? (
-      <EmptyState
-        tone="page"
-        heading="No reviews published yet"
-        message="We would rather show none than write our own. When customers send us their words, they will appear here."
+      <figure
+        class="ngf-reviews-scene"
+        style={`aspect-ratio: ${String(REVIEWS_SCENE.width)} / ${String(REVIEWS_SCENE.height)}`}
       >
-        {emptyPhoto !== null && (
-          <figure
-            slot="illustration"
-            class="ngf-reviews-empty-photo"
-            style={`aspect-ratio: ${String(emptyPhoto.width)} / ${String(emptyPhoto.height)}`}
-          >
-            <img
-              src={emptyPhoto.src}
-              srcset={emptyPhoto.srcset}
-              sizes="(min-width: 768px) 22rem, 60vw"
-              width={emptyPhoto.width}
-              height={emptyPhoto.height}
-              alt={emptyPhoto.alt}
-              loading="lazy"
-              decoding="async"
-            />
-          </figure>
-        )}
-        <WhatsAppLink
-          slot="action"
-          context={{ kind: 'general' }}
-          variant="outline"
-          label="Talk to us on WhatsApp"
+        <img
+          src={sceneSrc}
+          srcset={sceneSrcset}
+          sizes="(min-width: 1440px) 1440px, 100vw"
+          width={REVIEWS_SCENE.width}
+          height={REVIEWS_SCENE.height}
+          alt={REVIEWS_SCENE.alt}
+          loading="lazy"
+          decoding="async"
         />
-      </EmptyState>
+      </figure>
     ) : (
-      <ul class="ngf-reviews-grid">
-        {shown.map((review) => (
-          <li class="ngf-review">
-            {/*
-              The rating is rendered as text, not as a star glyph run: five stars with three filled
-              reads as a rating a screen reader cannot parse, and `4 out of 5` is what the value is.
-            */}
-            <p class="ngf-review-rating">{review.rating} out of 5</p>
-            <blockquote class="ngf-review-text">{review.text}</blockquote>
-            <p class="ngf-review-attribution">
-              {review.customerName}
-              {review.date === undefined ? '' : ` · ${review.date}`}
-            </p>
-          </li>
-        ))}
-      </ul>
+      <>
+        <SectionHeader
+          eyebrow={section.eyebrow}
+          heading={section.heading ?? 'Customer reviews'}
+          subheading={section.subheading}
+          headingId="ngf-reviews-heading"
+          align="start"
+        />
+        <ul class="ngf-reviews-grid">
+          {shown.map((review) => (
+            <li class="ngf-review">
+              {/*
+                The rating is rendered as text, not as a star glyph run: five stars with three filled
+                reads as a rating a screen reader cannot parse, and `4 out of 5` is what the value is.
+              */}
+              <p class="ngf-review-rating">{review.rating} out of 5</p>
+              <blockquote class="ngf-review-text">{review.text}</blockquote>
+              <p class="ngf-review-attribution">
+                {review.customerName}
+                {review.date === undefined ? '' : ` · ${review.date}`}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <p class="ngf-reviews-note">
+          Reviews are collected by us from customers and published as they were given. We publish no
+          overall rating, because these are testimonials rather than verified purchase reviews.
+        </p>
+      </>
     )
   }
-
-  <p class="ngf-reviews-note" data-centered={shown.length === 0 ? 'true' : undefined}>
-    Reviews are collected by us from customers and published as they were given. We publish no
-    overall rating, because these are testimonials rather than verified purchase reviews.
-  </p>
 </section>
 
 <style>
+  /* The whole reviews row as one supplied scene, edge to edge within the section's measure. */
+  .ngf-reviews-scene {
+    margin: 0;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+  }
+
+  .ngf-reviews-scene img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
   .ngf-reviews-grid {
     display: grid;
     gap: 1.5rem;
@@ -139,35 +137,6 @@ const emptyPhoto =
     padding: 0;
     list-style: none;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  }
-
-  /*
-   * The empty-state photograph — the single armchair from the reference. Capped to a sensible column
-   * width, centred, and its box reserved by the intrinsic width/height on the element so it does not
-   * shift the card as it decodes. A soft drop shadow lifts it off the card, matching the reference's
-   * floating-object treatment.
-   */
-  /*
-   * The empty-state photograph is a compact object floating in the card (the reference shows a small
-   * armchair, not a full-height figure). Whatever the source asset's intrinsic ratio, it is bounded
-   * to a small footprint — capped width AND height — and contained inside that box so a tall crop
-   * never blows the card open. `aspect-ratio` set inline on the figure still reserves the box against
-   * CLS; `max-height` keeps it small.
-   */
-  .ngf-reviews-empty-photo {
-    width: auto;
-    max-width: clamp(9rem, 24vw, 12rem);
-    max-height: 12rem;
-    margin: 0;
-    filter: drop-shadow(0 18px 28px rgb(24 20 16 / 0.16));
-  }
-
-  .ngf-reviews-empty-photo img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    max-height: 12rem;
-    object-fit: contain;
   }
 
   .ngf-review {
@@ -207,12 +176,5 @@ const emptyPhoto =
     margin: 1.5rem 0 0;
     color: var(--color-walnut);
     font-size: var(--text-small);
-  }
-
-  /* When the section is an empty state its header centres, so the closing note follows it. */
-  .ngf-reviews-note[data-centered='true'] {
-    max-width: 52ch;
-    margin-inline: auto;
-    text-align: center;
   }
 </style>
