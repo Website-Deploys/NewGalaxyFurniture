@@ -7,11 +7,10 @@
  * its own settings value, and there is no fallback copy for any of them — an unsupplied address renders
  * *nothing*, not "Address coming soon" dressed as content and not a plausible Bengaluru address.
  *
- * What is supplied today: both numbers, and the service area. What is not: the address lines, the city,
- * the postal code, the map link, the geo coordinates, and the opening hours. All six are in
- * `SiteSettings.placeholders`, so they are on the admin content checklist (Requirement 8.8), and the
- * visible notice below tells a visitor plainly that the address is not published yet rather than
- * leaving them to wonder.
+ * What is supplied today: both numbers, the address, and the service area. What is not: the geo
+ * coordinates and the opening hours. Both are in `SiteSettings.placeholders`, so they are on the admin
+ * content checklist (Requirement 8.8). When the address is not supplied a visible notice tells a visitor
+ * plainly that it is not published yet rather than leaving them to wonder.
  *
  * Opening hours deserve their own note: there is no `openingHours` field in `SiteSettingsSchema`, the
  * checklist tracks `site.location.openingHours`, and this page therefore states no hours at all. A
@@ -22,25 +21,25 @@
  */
 import EnquiryIsland from '@/components/forms/EnquiryIsland.astro';
 import CallLink from '@/components/ui/CallLink.astro';
-import ImagePreload from '@/components/ui/ImagePreload.astro';
 import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { getSiteSettings } from '@/lib/content/site';
 import { localBusinessJsonLd } from '@/lib/seo/jsonld';
 import { pageMeta, siteOrigin } from '@/lib/seo/page';
-import { contactChannels } from '@/lib/site/contact';
+import { channelAriaLabel, contactChannels } from '@/lib/site/contact';
 import '@/styles/editorial.css';
 
 const settings = getSiteSettings();
-const { location, serviceArea, social } = settings;
+const { location, serviceArea } = settings;
 
-/** The two business numbers, real values from settings — the hero renders one block each. */
+/** The published business numbers, real values from settings. */
 const channels = contactChannels(settings);
 /**
- * The hero shows one number under WhatsApp and a second under Call, matching the reference. Both
- * numbers actually reach the same people on both channels (see the caption), but presenting one
- * per block reads more clearly than repeating the same number twice. Falls back to the single
- * number on both when only one is configured.
+ * The "Contact us directly" card shows one WhatsApp row and one Call row, each carrying a real
+ * number, matching the reference. Both numbers actually reach the same people on both channels,
+ * but presenting one per row reads more clearly than repeating the same number twice. Falls back
+ * to the single number on both when only one is configured. The rows are built from the shared
+ * link components so no surface hand-rolls a messaging or dialer URL (Requirement 5.11).
  */
 const whatsappChannel = channels.find((channel) => channel.whatsapp) ?? channels[0];
 const callChannel =
@@ -48,40 +47,12 @@ const callChannel =
   channels.find((channel) => channel.phone) ??
   channels[0];
 
-/**
- * The Contact hero photograph — the New Galaxy Furniture showroom.
- *
- * The same static-asset treatment as the About hero: pre-optimised responsive WebP under
- * `public/brand/`, so it resolves as a plain same-origin file (works under the Lighthouse static
- * run, unlike an `astro:assets` Netlify runtime URL), is modern-format, responsive and small
- * (~24–141 KB). It is this page's single largest contentful image, so it is prioritised and is the
- * one image the page preloads; the fixed-ratio frame reserves its box against CLS.
- */
-const CONTACT_HERO = {
-  width: 1672,
-  height: 941,
-  base: '/brand/contact-showroom',
-  alt: 'The New Galaxy Furniture showroom — a beige sectional and walnut coffee table beside the branded feature wall reading "Better spaces, brighter tomorrows".',
-};
-const HERO_WIDTHS = [480, 768, 1040, 1440];
-const heroSrc = `${CONTACT_HERO.base}-1040.webp`;
-const heroSrcset = HERO_WIDTHS.map(
-  (w) => `${CONTACT_HERO.base}-${String(w)}.webp ${String(w)}w`,
-).join(', ');
-const heroSizes = '(min-width: 900px) 50vw, 100vw';
-const heroPreload = { href: heroSrc, srcset: heroSrcset, sizes: heroSizes };
-
 const addressLines = location.addressLines.filter((line) => line.trim() !== '');
 const localityLine = [location.city, location.state, location.postalCode ?? '']
   .map((part) => part.trim())
   .filter((part) => part !== '')
   .join(', ');
 const hasAddress = addressLines.length > 0 || localityLine !== '';
-
-/** Requirement 19.6: only non-null social links, so there is never a dead icon. */
-const socialLinks = Object.entries(social).filter(
-  (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim() !== '',
-);
 
 /** `FurnitureStore` on `/contact` as well as `/` — the two pages a visitor looks for it on. */
 const meta = pageMeta(Astro, {
@@ -93,106 +64,23 @@ const meta = pageMeta(Astro, {
 ---
 
 <BaseLayout meta={meta}>
-  <ImagePreload slot="head" hint={heroPreload} />
   <div class="ngf-page">
-    {/* Hero: copy + the two numbers + primary actions, beside the showroom photograph. */}
-    <div class="ngf-contact-hero">
-      <div class="ngf-contact-hero-copy">
-        <p class="ngf-page-eyebrow">Contact</p>
-        <h1>Talk to us</h1>
-        <p class="ngf-page-lead">
-          Both numbers reach the same people, for orders and for enquiries. Message us with a
-          photograph or a size and we will come back with a price and an honest date.
-        </p>
-
-        {/* Both channels, each as an icon + label + real number, exactly as the reference. */}
-        <div class="ngf-contact-channels">
-          {
-            whatsappChannel !== undefined && (
-              <div class="ngf-contact-channel">
-                <span class="ngf-contact-channel-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.97L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2Zm5.8 14.03c-.24.68-1.4 1.3-1.94 1.35-.54.06-1.04.08-1.6-.1a13.4 13.4 0 0 1-4.2-2.4 11.3 11.3 0 0 1-2.3-3.1c-.24-.5-.32-.94-.32-1.34 0-.6.3-1.1.72-1.53.16-.16.34-.2.48-.2h.34c.16 0 .32 0 .46.32.16.38.6 1.46.66 1.56.06.1.1.22.02.38-.08.16-.14.26-.26.4l-.2.24c-.1.12-.2.24-.1.44.1.2.48.82 1.02 1.32.7.66 1.28.86 1.48.96.2.1.32.08.44-.04.12-.14.5-.58.64-.78.14-.2.28-.16.46-.1.18.06 1.16.56 1.36.66.2.1.34.14.38.22.04.1.04.52-.14 1.06Z" />
-                  </svg>
-                </span>
-                <span class="ngf-contact-channel-text">
-                  <span class="ngf-contact-channel-label">WhatsApp</span>
-                  <span class="ngf-contact-channel-value">{whatsappChannel.display}</span>
-                  <span class="ngf-contact-channel-note">Quick replies, photos, videos</span>
-                </span>
-              </div>
-            )
-          }
-          {
-            callChannel !== undefined && (
-              <div class="ngf-contact-channel">
-                <span class="ngf-contact-channel-icon" aria-hidden="true">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="22"
-                    height="22"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.6"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5a2 2 0 0 1 2-2Z" />
-                  </svg>
-                </span>
-                <span class="ngf-contact-channel-text">
-                  <span class="ngf-contact-channel-label">Call</span>
-                  <span class="ngf-contact-channel-value">{callChannel.display}</span>
-                  <span class="ngf-contact-channel-note">Talk to our team</span>
-                </span>
-              </div>
-            )
-          }
-        </div>
-
-        <div class="ngf-page-actions ngf-contact-actions">
-          <WhatsAppLink context={{ kind: 'general' }} variant="solid" />
-          <CallLink variant="outline" />
-          <a class="ngf-contact-custom-cta" href="/custom-furniture">Ask about custom furniture</a>
-        </div>
-      </div>
-
-      <figure class="ngf-contact-hero-figure">
-        <img
-          src={heroSrc}
-          srcset={heroSrcset}
-          sizes={heroSizes}
-          alt={CONTACT_HERO.alt}
-          width={CONTACT_HERO.width}
-          height={CONTACT_HERO.height}
-          loading="eager"
-          fetchpriority="high"
-          decoding="async"
-        />
-      </figure>
-    </div>
-
-    {/* Below the fold: the enquiry form beside the "where we are / deliver" cards. */}
+    {/* Two columns: the enquiry forms beside the showroom / delivery / direct-contact cards. */}
     <div class="ngf-contact-grid">
+      {/* ---- Left: Get in touch + Or ask us to call you ---- */}
       <div class="ngf-contact-card ngf-contact-form-card">
-        <h2 id="ngf-contact-form-heading" class="ngf-contact-card-title">
-          <span class="ngf-contact-card-tick" aria-hidden="true"></span>Send an enquiry
-        </h2>
-        <p class="ngf-contact-card-sub">
-          Tell us what you are looking for. We reply on WhatsApp or by phone, usually the same day.
-        </p>
+        <h1 id="ngf-contact-form-heading" class="ngf-contact-form-title">Get in touch</h1>
         <EnquiryIsland form="contact" context={{ kind: 'general' }} />
 
-        <h2
-          id="ngf-callback-form-heading"
-          class="ngf-contact-card-title ngf-contact-card-title-sep"
-        >
-          Or ask us to call you
-        </h2>
+        <hr class="ngf-contact-form-rule" />
+
+        <h2 id="ngf-callback-form-heading" class="ngf-contact-form-title">Or ask us to call you</h2>
         <EnquiryIsland form="callback" context={{ kind: 'general' }} />
       </div>
 
+      {/* ---- Right: three stacked cards ---- */}
       <div class="ngf-contact-side">
+        {/* Visit our showroom */}
         <div class="ngf-contact-card">
           <div class="ngf-contact-card-head">
             <span class="ngf-contact-card-icon" aria-hidden="true">
@@ -210,16 +98,13 @@ const meta = pageMeta(Astro, {
                 <circle cx="12" cy="11" r="2.2"></circle>
               </svg>
             </span>
-            <h2>Where we are</h2>
-          </div>
-          {
-            serviceArea.length > 0 && (
-              <p class="ngf-contact-card-lead">
-                A furniture manufacturer and showroom in Bengaluru, delivering and installing across{' '}
-                {serviceArea.join(', ')}.
+            <div class="ngf-contact-card-headings">
+              <h2>Visit our showroom</h2>
+              <p class="ngf-contact-card-sub">
+                See our furniture, materials and finishes in person.
               </p>
-            )
-          }
+            </div>
+          </div>
 
           <div class="ngf-contact-where">
             <div class="ngf-contact-where-text">
@@ -323,6 +208,7 @@ const meta = pageMeta(Astro, {
           </div>
         </div>
 
+        {/* Where we deliver */}
         {
           serviceArea.length > 0 && (
             <div class="ngf-contact-card">
@@ -343,7 +229,9 @@ const meta = pageMeta(Astro, {
                     <circle cx="17" cy="17" r="1.6" />
                   </svg>
                 </span>
-                <h2>Where we deliver</h2>
+                <div class="ngf-contact-card-headings">
+                  <h2>Where we deliver</h2>
+                </div>
               </div>
               <p class="ngf-contact-card-lead">
                 We manufacture in Bengaluru and deliver and install across {serviceArea.join(', ')}.
@@ -370,136 +258,107 @@ const meta = pageMeta(Astro, {
           )
         }
 
-        {
-          socialLinks.length > 0 && (
-            <div class="ngf-contact-card">
-              <div class="ngf-contact-card-head">
-                <h2>Elsewhere</h2>
-              </div>
-              <ul class="ngf-contact-social">
-                {socialLinks.map(([name, href]) => (
-                  <li>
-                    <a href={href} target="_blank" rel="noopener">
-                      {name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+        {/* Contact us directly */}
+        <div class="ngf-contact-card">
+          <div class="ngf-contact-card-head">
+            <span class="ngf-contact-card-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M6.5 3h3l1.5 4.5-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5a2 2 0 0 1 2-2Z" />
+              </svg>
+            </span>
+            <div class="ngf-contact-card-headings">
+              <h2>Contact us directly</h2>
+              <p class="ngf-contact-card-sub">
+                The fastest way to get a price, a photograph, or an honest delivery date is to ask.
+                Both numbers are for orders and enquiries.
+              </p>
             </div>
-          )
-        }
+          </div>
+
+          <div class="ngf-contact-directs">
+            {
+              whatsappChannel !== undefined && (
+                <WhatsAppLink
+                  context={{ kind: 'general' }}
+                  number={whatsappChannel.entry}
+                  variant="bare"
+                  class="ngf-contact-direct"
+                  ariaLabel={channelAriaLabel(whatsappChannel, 'whatsapp')}
+                >
+                  <span class="ngf-contact-direct-label">Order or Enquire on WhatsApp</span>
+                  <span class="ngf-contact-direct-value">{whatsappChannel.display}</span>
+                  <span class="ngf-contact-direct-arrow" aria-hidden="true">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 8h10M9 4l4 4-4 4" />
+                    </svg>
+                  </span>
+                </WhatsAppLink>
+              )
+            }
+            {
+              callChannel !== undefined && (
+                <CallLink
+                  number={callChannel.entry}
+                  variant="bare"
+                  class="ngf-contact-direct"
+                  ariaLabel={channelAriaLabel(callChannel, 'call')}
+                >
+                  <span class="ngf-contact-direct-label">Call us</span>
+                  <span class="ngf-contact-direct-value">{callChannel.display}</span>
+                  <span class="ngf-contact-direct-arrow" aria-hidden="true">
+                    <svg
+                      viewBox="0 0 16 16"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M3 8h10M9 4l4 4-4 4" />
+                    </svg>
+                  </span>
+                </CallLink>
+              )
+            }
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </BaseLayout>
 
 <style>
-  /* Hero: copy beside the showroom photo ---------------------------------- */
-  .ngf-contact-hero {
-    display: grid;
-    gap: clamp(1.5rem, 4vw, 3rem);
-    align-items: center;
-  }
-
-  @media (min-width: 900px) {
-    .ngf-contact-hero {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-  }
-
-  .ngf-contact-hero-copy {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    min-width: 0;
-  }
-
-  .ngf-contact-hero-figure {
-    margin: 0;
-    width: 100%;
-    aspect-ratio: 1672 / 941;
-    overflow: hidden;
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-level2);
-  }
-
-  .ngf-contact-hero-figure img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  /* The two number blocks (WhatsApp / Call). */
-  .ngf-contact-channels {
-    display: flex;
-    flex-wrap: wrap;
-    gap: clamp(1.25rem, 4vw, 2.5rem);
-    margin-top: 1.5rem;
-  }
-
-  .ngf-contact-channel {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.875rem;
-  }
-
-  .ngf-contact-channel-icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border-radius: var(--radius-pill);
-    background-color: color-mix(in srgb, var(--color-champagne) 18%, var(--color-white));
-    color: var(--color-champagne);
-  }
-
-  .ngf-contact-channel-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
-
-  .ngf-contact-channel-label {
-    font-size: 0.75rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-walnut);
-  }
-
-  .ngf-contact-channel-value {
-    font-family: var(--font-display);
-    font-size: clamp(1.2rem, 2.4vw, 1.6rem);
-    font-weight: 500;
-    font-variant-numeric: proportional-nums lining-nums;
-    letter-spacing: 0.01em;
-    line-height: 1.15;
-    color: var(--color-obsidian);
-  }
-
-  .ngf-contact-channel-note {
-    font-size: var(--text-small);
-    color: var(--color-walnut);
-  }
-
-  .ngf-contact-actions {
-    flex-wrap: wrap;
-    margin-top: 1.75rem;
-  }
-
-  /* Below-the-fold two-column grid ---------------------------------------- */
+  /* Two-column grid: forms beside the info cards ------------------------- */
   .ngf-contact-grid {
     display: grid;
     gap: 1.5rem;
-    margin-top: clamp(2.5rem, 6vw, 4rem);
     align-items: start;
   }
 
-  @media (min-width: 900px) {
+  @media (min-width: 960px) {
     .ngf-contact-grid {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 2rem;
     }
   }
 
@@ -509,19 +368,37 @@ const meta = pageMeta(Astro, {
     gap: 1.5rem;
   }
 
+  /* Shared card shell ---------------------------------------------------- */
   .ngf-contact-card {
-    padding: clamp(1.5rem, 3vw, 2rem);
+    padding: clamp(1.5rem, 3vw, 2.25rem);
     border: 1px solid var(--color-taupe);
     border-radius: var(--radius-xl);
     background-color: var(--color-white);
     box-shadow: var(--shadow-level1);
   }
 
+  /* Left form card ------------------------------------------------------- */
+  .ngf-contact-form-title {
+    margin: 0 0 1.25rem;
+    font-family: var(--font-display);
+    font-size: var(--text-h2);
+    font-weight: 400;
+    color: var(--color-obsidian);
+    line-height: 1.05;
+  }
+
+  .ngf-contact-form-rule {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--color-taupe);
+  }
+
+  /* Info-card head: champagne icon circle + heading (+ optional subtitle) - */
   .ngf-contact-card-head {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    align-items: flex-start;
+    gap: 0.875rem;
+    margin-bottom: 1rem;
   }
 
   .ngf-contact-card-icon {
@@ -529,11 +406,15 @@ const meta = pageMeta(Astro, {
     flex: none;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: var(--radius-pill);
     background-color: color-mix(in srgb, var(--color-champagne) 18%, var(--color-white));
     color: var(--color-champagne);
+  }
+
+  .ngf-contact-card-headings {
+    min-width: 0;
   }
 
   .ngf-contact-card h2 {
@@ -541,34 +422,14 @@ const meta = pageMeta(Astro, {
     font-family: var(--font-display);
     font-size: var(--text-h3);
     font-weight: 400;
-  }
-
-  /* The enquiry form card's own title has a champagne tick to the left. */
-  .ngf-contact-card-title {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: var(--text-h3);
-    font-weight: 400;
-  }
-
-  .ngf-contact-card-title-sep {
-    margin-top: 2rem;
-  }
-
-  .ngf-contact-card-tick {
-    display: inline-block;
-    width: 1.5rem;
-    height: 2px;
-    background-color: var(--color-champagne);
+    color: var(--color-obsidian);
   }
 
   .ngf-contact-card-sub {
-    margin: 0.5rem 0 1.25rem;
-    color: var(--color-espresso);
-    line-height: 1.55;
+    margin: 0.35rem 0 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    line-height: 1.5;
   }
 
   .ngf-contact-card-lead {
@@ -584,11 +445,32 @@ const meta = pageMeta(Astro, {
     line-height: 1.5;
   }
 
+  /* Visit our showroom: address beside a wide map thumbnail -------------- */
+  .ngf-contact-where {
+    display: grid;
+    gap: 1.25rem;
+    align-items: center;
+  }
+
+  @media (min-width: 560px) {
+    .ngf-contact-where {
+      grid-template-columns: minmax(0, 1fr) minmax(11rem, 14rem);
+    }
+  }
+
+  .ngf-contact-where-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .ngf-contact-lines {
     display: flex;
     flex-direction: column;
+    gap: 0.15rem;
     font-style: normal;
     color: var(--color-espresso);
+    line-height: 1.55;
   }
 
   .ngf-contact-directions {
@@ -611,25 +493,6 @@ const meta = pageMeta(Astro, {
     .ngf-contact-directions:hover {
       background-color: var(--color-cream);
     }
-  }
-
-  /* Where-we-are: address beside the map thumbnail. */
-  .ngf-contact-where {
-    display: grid;
-    gap: 1.25rem;
-    align-items: center;
-  }
-
-  @media (min-width: 520px) {
-    .ngf-contact-where {
-      grid-template-columns: minmax(0, 1fr) minmax(9rem, 12rem);
-    }
-  }
-
-  .ngf-contact-where-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
   }
 
   .ngf-contact-map {
@@ -680,7 +543,7 @@ const meta = pageMeta(Astro, {
     font-weight: 600;
   }
 
-  /* The three delivery chips. */
+  /* Where we deliver: inline dot chips ----------------------------------- */
   .ngf-contact-deliver {
     display: flex;
     flex-wrap: wrap;
@@ -706,39 +569,97 @@ const meta = pageMeta(Astro, {
     background-color: var(--color-champagne);
   }
 
-  .ngf-contact-social {
+  /* Contact us directly: full-width rows ---------------------------------
+     The rows are rendered by the shared WhatsAppLink / CallLink components, so each row is an
+     `<a class="ngf-cta ngf-cta-bare ngf-contact-direct">` containing the component's own glyph
+     `<svg class="ngf-cta-glyph">` followed by a `<span>` wrapping this page's slot. The slot
+     carries the label, the number, and the trailing arrow. `:global` reaches the component's
+     glyph and wrapper span, which do not carry this file's scope hash. */
+  .ngf-contact-directs {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  /*
-   * The custom-furniture CTA, styled to sit alongside the WhatsApp/Call pills: the same outline pill
-   * language, scoped here because those rules live inside CallLink's own style block. It is a plain
-   * internal link, so it introduces no new contact channel.
-   */
-  .ngf-contact-custom-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0.625rem 1.25rem;
-    border: 1px solid currentColor;
-    border-radius: var(--radius-hair);
-    color: var(--color-espresso);
-    font-size: var(--text-small);
-    font-weight: 600;
-    letter-spacing: 0.02em;
+  :global(.ngf-contact-direct.ngf-cta) {
+    display: flex;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.875rem;
+    min-height: 56px;
+    padding: 0.875rem 1.125rem;
+    border: 1px solid var(--color-taupe);
+    border-radius: var(--radius-md);
+    background-color: var(--color-cream);
+    color: var(--color-obsidian);
+    font-weight: 400;
     text-decoration: none;
-    transition: background-color var(--dur-fast) var(--ease-standard);
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
-    .ngf-contact-custom-cta:hover {
-      background-color: var(--color-cream);
+    :global(.ngf-contact-direct.ngf-cta:hover) {
+      background-color: color-mix(in srgb, var(--color-champagne) 12%, var(--color-white));
+      border-color: var(--color-champagne);
+    }
+  }
+
+  /* The component glyph, made into the champagne icon disc the reference shows. */
+  :global(.ngf-contact-direct .ngf-cta-glyph) {
+    box-sizing: content-box;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0.5rem;
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-champagne) 18%, var(--color-white));
+    color: var(--color-champagne);
+  }
+
+  /* The wrapper span the component puts the slot in becomes the row's flexing body. */
+  :global(.ngf-contact-direct > span) {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.5rem 0.875rem;
+    min-width: 0;
+  }
+
+  .ngf-contact-direct-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: var(--text-small);
+    font-weight: 600;
+    color: var(--color-obsidian);
+  }
+
+  .ngf-contact-direct-value {
+    flex: none;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 500;
+    font-variant-numeric: proportional-nums lining-nums;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    color: var(--color-obsidian);
+  }
+
+  .ngf-contact-direct-arrow {
+    display: inline-flex;
+    flex: none;
+    color: var(--color-walnut);
+  }
+
+  /* On very narrow rows the label wraps above the number rather than crushing it. */
+  @media (max-width: 420px) {
+    .ngf-contact-direct > :global(span) {
+      flex-wrap: wrap;
+    }
+
+    .ngf-contact-direct-label {
+      flex-basis: 100%;
     }
   }
 </style>

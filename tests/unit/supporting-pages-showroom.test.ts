@@ -214,19 +214,24 @@ describe('reviews — admin-controlled, no aggregate rating, honest empty state'
   });
 });
 
-describe('contact — simple, both numbers, no invented location', () => {
-  it('shows the business name and both numbers via ContactNumbers with WhatsApp and Call', () => {
-    expect(CONTACT).toContain('<ContactNumbers');
+describe('contact — reference two-column layout, both numbers, no invented location', () => {
+  it('drives both numbers through the shared WhatsAppLink and CallLink, never a hand-rolled URL', () => {
     expect(CONTACT).toContain('<WhatsAppLink');
     expect(CONTACT).toContain('<CallLink');
-    // No hand-rolled channels — the shared components own the URLs.
+    // No hand-rolled channels — the shared components own the URLs (Requirement 5.11).
     expect(CONTACT).not.toMatch(/wa\.me/);
     expect(CONTACT).not.toMatch(/href="tel:/);
   });
 
-  it('offers a custom-furniture CTA pointing at the enquiry page', () => {
-    expect(CONTACT).toMatch(/href="\/custom-furniture"/);
-    expect(CONTACT).toContain('ngf-contact-custom-cta');
+  it('lays the enquiry forms beside the three info cards from the reference', () => {
+    expect(CONTACT).toContain('ngf-contact-grid');
+    expect(CONTACT).toContain('Get in touch');
+    expect(CONTACT).toContain('Or ask us to call you');
+    expect(CONTACT).toContain('Visit our showroom');
+    expect(CONTACT).toContain('Contact us directly');
+    // The old showroom-photo hero is gone, so no empty band is left behind.
+    expect(CONTACT).not.toContain('ngf-contact-hero');
+    expect(CONTACT).not.toContain('Talk to us');
   });
 
   it('renders the service area from settings only', () => {
@@ -238,7 +243,6 @@ describe('contact — simple, both numbers, no invented location', () => {
     // The location block stays conditional on the settings value.
     expect(CONTACT).toContain('hasAddress ?');
     expect(CONTACT).toContain('location.mapUrl !== null');
-    expect(CONTACT).toContain('socialLinks.length > 0');
     // No fabricated postal code, hours, or literal coordinate string in the source.
     expect(CONTACT).not.toMatch(/\bMon(?:day)?[–-]/i);
     expect(CONTACT).not.toMatch(/\b\d{1,2}\s*(?:am|pm)\b/i);
