@@ -168,6 +168,9 @@ const tiles = REFERENCE_TILES.filter((tile) => published.has(tile.slug)).map((ti
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    /* A 44 px touch target (Requirement 24.3 / the responsive suite's touch-target sweep): the link
+       is centred in the taller box, so its look is unchanged while a thumb has the full height. */
+    min-height: 44px;
     padding-block: 0.4rem;
     color: var(--color-obsidian);
     font-size: var(--text-body);
