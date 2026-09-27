@@ -738,6 +738,9 @@ const headingLines =
     letter-spacing: 0.16em;
     text-transform: uppercase;
     text-shadow: 0 1px 12px rgb(28 26 24 / 0.35);
+    transition:
+      color var(--dur-normal) var(--ease-standard),
+      text-shadow var(--dur-normal) var(--ease-standard);
   }
 
   .ngf-hero-kicker::before {
@@ -746,6 +749,7 @@ const headingLines =
     height: 1px;
     background-color: color-mix(in srgb, var(--color-white) 70%, transparent);
     content: '';
+    transition: background-color var(--dur-normal) var(--ease-standard);
   }
 
   /*
@@ -788,6 +792,60 @@ const headingLines =
     text-shadow: 0 1px 16px rgb(250 248 244 / 0.65);
   }
 
+  /* ------------------------------------------------------------------ *
+   * Slide 2 — every piece of hero copy turns black.
+   *
+   * The panel's `data-hero-active="1"` gates each rule; the copy follows the panel as a sibling.
+   * Colours and their shadows transition (declared on each element above), so the whole block of
+   * copy morphs from the slide-1 white treatment to black as the slides crossfade. A soft light
+   * halo replaces the dark text-shadow so black stays crisp over the brighter second photograph.
+   * ------------------------------------------------------------------ */
+
+  /* Eyebrow ("Manufacturer & showroom") and its leading rule. */
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-kicker {
+    color: var(--color-obsidian);
+    text-shadow: 0 1px 14px rgb(250 248 244 / 0.6);
+  }
+
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-kicker::before {
+    background-color: color-mix(in srgb, var(--color-obsidian) 60%, transparent);
+  }
+
+  /* Sub-paragraph. */
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-sub {
+    color: var(--color-obsidian);
+    text-shadow: 0 1px 14px rgb(250 248 244 / 0.6);
+  }
+
+  /* Primary CTA — white pill, black text on both slides (text stays black on slide 2). */
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-cta-primary {
+    background-color: var(--color-white);
+    color: var(--color-obsidian);
+  }
+
+  /* Secondary CTA — text and outline turn obsidian so it reads on the bright image. */
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-cta-secondary {
+    color: var(--color-obsidian);
+    border-color: color-mix(in srgb, var(--color-obsidian) 45%, transparent);
+    background-color: color-mix(in srgb, var(--color-white) 30%, transparent);
+  }
+
+  /* Assurance row — labels black, icon discs outlined in obsidian. */
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-assurances {
+    color: var(--color-obsidian);
+  }
+
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-assurance-label {
+    color: var(--color-obsidian);
+    text-shadow: 0 1px 12px rgb(250 248 244 / 0.6);
+  }
+
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-assurance-icon {
+    color: var(--color-obsidian);
+    border-color: color-mix(in srgb, var(--color-obsidian) 40%, transparent);
+    background-color: color-mix(in srgb, var(--color-obsidian) 8%, transparent);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     :global(.ngf-hero-heading),
     :global(.ngf-hero-heading .ngf-line) {
@@ -807,6 +865,9 @@ const headingLines =
     font-size: clamp(1rem, 0.95rem + 0.4vw, 1.1875rem);
     line-height: 1.6;
     text-shadow: 0 1px 14px rgb(28 26 24 / 0.35);
+    transition:
+      color var(--dur-normal) var(--ease-standard),
+      text-shadow var(--dur-normal) var(--ease-standard);
   }
 
   .ngf-hero-ctas {
@@ -832,14 +893,15 @@ const headingLines =
     transition:
       transform var(--dur-fast) var(--ease-standard),
       box-shadow var(--dur-fast) var(--ease-standard),
-      background-color var(--dur-fast) var(--ease-standard),
-      border-color var(--dur-fast) var(--ease-standard);
+      background-color var(--dur-normal) var(--ease-standard),
+      color var(--dur-normal) var(--ease-standard),
+      border-color var(--dur-normal) var(--ease-standard);
   }
 
-  /* The primary: the obsidian pill, the one loud element, with white text. */
+  /* The primary CTA (slide 1): a white pill with black text, as requested. */
   .ngf-hero-cta-primary {
-    background-color: var(--color-obsidian);
-    color: var(--color-ivory);
+    background-color: var(--color-white);
+    color: var(--color-obsidian);
     box-shadow: var(--shadow-level1);
   }
 
@@ -848,8 +910,7 @@ const headingLines =
     transition: transform var(--dur-fast) var(--ease-standard);
   }
 
-  /* The secondary: a quiet light outline on the photograph, white text, understated beside the
-     primary — reading over the darker image as in the reference. */
+  /* The secondary (slide 1): a quiet light outline with white text over the darker image. */
   .ngf-hero-cta-secondary {
     border: 1px solid color-mix(in srgb, var(--color-white) 55%, transparent);
     color: var(--color-white);
@@ -863,7 +924,7 @@ const headingLines =
     }
 
     .ngf-hero-cta-primary:hover {
-      background-color: var(--color-espresso);
+      background-color: var(--color-ivory);
     }
 
     .ngf-hero-cta-primary:hover .ngf-hero-cta-arrow {
@@ -926,11 +987,18 @@ const headingLines =
     border-radius: var(--radius-pill);
     background-color: color-mix(in srgb, var(--color-white) 12%, transparent);
     color: var(--color-white);
+    transition:
+      color var(--dur-normal) var(--ease-standard),
+      border-color var(--dur-normal) var(--ease-standard),
+      background-color var(--dur-normal) var(--ease-standard);
   }
 
   .ngf-hero-assurance-label {
     line-height: 1.25;
     text-shadow: 0 1px 12px rgb(28 26 24 / 0.35);
+    transition:
+      color var(--dur-normal) var(--ease-standard),
+      text-shadow var(--dur-normal) var(--ease-standard);
   }
 
   /* ------------------------------------------------------------------ *
