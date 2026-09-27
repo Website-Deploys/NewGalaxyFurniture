@@ -408,6 +408,10 @@ const headingLines =
     let timer = 0;
     let paused = false;
 
+    // Reflect the active slide index on the root so the overlaid copy can restyle per slide
+    // (white on slide 1, black on slide 2) — the CSS keys the copy colour off this attribute.
+    root.dataset.heroActive = '0';
+
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     const motionOff = (): boolean =>
       reduce.matches || document.documentElement.getAttribute('data-motion') === 'off';
@@ -422,6 +426,7 @@ const headingLines =
       slides[current]?.setAttribute('data-active', 'true');
       dots[current]?.setAttribute('data-active', 'true');
       dots[current]?.setAttribute('aria-current', 'true');
+      root.dataset.heroActive = String(current);
     };
 
     const stop = (): void => {
@@ -752,7 +757,7 @@ const headingLines =
    * ~68px at the reference's wide viewport (the spec's premium 56-72px band), fluid down to 40px on a
    * phone; capped so it never overpowers the layout on very wide windows.
    */
-  .ngf-hero-heading {
+  :global(.ngf-hero-heading) {
     margin: 0;
     max-width: 15ch;
     color: #ffffff !important;
@@ -762,15 +767,37 @@ const headingLines =
     line-height: 1.02;
     letter-spacing: -0.02em;
     text-wrap: balance;
-    /* The copy now sits over the darker photograph, as in the reference — a soft shadow keeps the
-       white legible over the brighter patches of the image. Forced white with an explicit hex so it
-       wins over the base heading colour on every environment, and applied to the per-line spans too
-       (the heading text lives inside `.ngf-line` spans emitted by TextReveal). */
     text-shadow: 0 1px 18px rgb(28 26 24 / 0.35);
+    transition:
+      color var(--dur-normal) var(--ease-standard),
+      text-shadow var(--dur-normal) var(--ease-standard);
   }
 
-  .ngf-hero-heading :global(.ngf-line) {
+  :global(.ngf-hero-heading .ngf-line) {
     color: #ffffff !important;
+    transition: color var(--dur-normal) var(--ease-standard);
+  }
+
+  /*
+   * Slide 2 — black heading. The panel's `data-hero-active` flips to "1"; the copy follows the
+   * panel as a sibling. The transition on `color` / `text-shadow` animates the swap.
+   */
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy :global(.ngf-hero-heading),
+  .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy :global(.ngf-hero-heading .ngf-line) {
+    color: var(--color-obsidian) !important;
+    text-shadow: 0 1px 16px rgb(250 248 244 / 0.65);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.ngf-hero-heading),
+    :global(.ngf-hero-heading .ngf-line) {
+      transition: none;
+    }
+  }
+
+  :global([data-motion='off'] .ngf-hero-heading),
+  :global([data-motion='off'] .ngf-hero-heading .ngf-line) {
+    transition: none;
   }
 
   .ngf-hero-sub {
