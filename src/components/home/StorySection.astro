@@ -90,6 +90,15 @@ const cta =
     ? { label: section.ctaLabel, href: section.ctaHref }
     : null;
 
+/*
+ * An external CTA (e.g. the "Showroom & workshop" band's "Plan a visit", which points at the maps
+ * location) must open in a new tab and carry `rel="noopener"`, so it behaves like every other
+ * outbound link on the site and cannot script the opener. An internal path (e.g. "Start a custom
+ * enquiry" → /custom-furniture) stays a same-tab navigation. Detection is a simple protocol check;
+ * `mailto:`/`tel:` are treated as external too, so they open with the platform handler.
+ */
+const ctaIsExternal = cta !== null && /^(https?:|mailto:|tel:)/i.test(cta.href);
+
 /**
  * The photograph, where the operator has supplied one.
  *
@@ -246,7 +255,12 @@ const features = section.features ?? [];
 
       {
         cta !== null && (
-          <a class="ngf-story-cta" href={cta.href}>
+          <a
+            class="ngf-story-cta"
+            href={cta.href}
+            target={ctaIsExternal ? '_blank' : undefined}
+            rel={ctaIsExternal ? 'noopener' : undefined}
+          >
             <span>{cta.label}</span>
             {/* A hairline arrow that slides on hover. `transform` only. */}
             <span class="ngf-story-cta-arrow" aria-hidden="true" />
