@@ -179,9 +179,8 @@ export default function HomeGalleryCarousel({
               width={image.width}
               height={image.height}
               alt={image.alt}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              decoding={index === 0 ? 'sync' : 'async'}
-              fetchPriority={index === 0 ? 'high' : 'auto'}
+              loading="lazy"
+              decoding="async"
               data-active={index === active ? 'true' : 'false'}
               aria-hidden={index === active ? undefined : 'true'}
               style={image.lqip === undefined ? undefined : { backgroundImage: `url(${image.lqip})` }}
