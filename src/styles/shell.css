@@ -701,7 +701,7 @@ body[data-mobilenav-open='true'] .ngf-actionbar {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 65% center;
+  object-position: center top;
 }
 
 /* A left-to-right fade so the photo dissolves into the espresso menu column with no hard seam. */
@@ -713,8 +713,8 @@ body[data-mobilenav-open='true'] .ngf-actionbar {
   background: linear-gradient(
     to right,
     #1c1916 0%,
-    rgb(28 25 22 / 0.7) 34%,
-    rgb(28 25 22 / 0.15) 72%,
+    rgb(28 25 22 / 0.6) 22%,
+    rgb(28 25 22 / 0.1) 55%,
     rgb(28 25 22 / 0) 100%
   );
 }

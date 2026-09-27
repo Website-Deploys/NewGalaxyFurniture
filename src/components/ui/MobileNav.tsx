@@ -322,11 +322,9 @@ export default function MobileNav({
         <div className="ngf-mobilenav-scene" aria-hidden="true">
           <img
             className="ngf-mobilenav-scene-photo"
-            src="/brand/home-showroom-b-768.webp"
-            srcSet="/brand/home-showroom-b-480.webp 480w, /brand/home-showroom-b-768.webp 768w"
-            sizes="60vw"
-            width={1670}
-            height={942}
+            src="/brand/menu-scene.webp"
+            width={640}
+            height={2027}
             alt=""
             loading="lazy"
             decoding="async"
