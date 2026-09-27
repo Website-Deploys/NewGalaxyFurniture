@@ -60,6 +60,11 @@
         "alt": "A craftsman's hands running a hand plane along a timber board, a curl of shaving lifting from the blade in a sunlit workshop.",
         "caption": "Details make better homes"
       },
+      "features": [
+        { "icon": "shield", "label": "Honest guidance", "detail": "No false promises" },
+        { "icon": "tools", "label": "Skilled craftsmen", "detail": "Years of experience" },
+        { "icon": "leaf", "label": "Quality materials", "detail": "Built to last" }
+      ],
       "awaitingCopy": false
     },
     {
@@ -76,6 +81,11 @@
         "alt": "The New Galaxy Furniture workshop floor — craftsmen at workbenches beneath the words \"Furniture that feels like home\".",
         "caption": "Furniture that feels like home"
       },
+      "features": [
+        { "icon": "factory", "label": "No middlemen", "detail": "Better value" },
+        { "icon": "timber", "label": "Real materials", "detail": "Solid wood. No shortcuts" },
+        { "icon": "rupee", "label": "Transparent pricing", "detail": "What you see is what you get" }
+      ],
       "awaitingCopy": false
     },
     {
@@ -127,6 +137,13 @@
         "widths": [480, 768, 1040, 1440],
         "alt": "A walnut sideboard styled with a table lamp, books and trailing plants in warm evening light."
       },
+      "tertiaryImage": {
+        "base": "/brand/home-showroom-b",
+        "width": 1670,
+        "height": 942,
+        "widths": [480, 768, 1040],
+        "alt": "A round walnut side table beside an upholstered armchair, styled with a potted plant in warm daylight."
+      },
       "awaitingCopy": false
     },
     {
@@ -136,10 +153,10 @@
       "heading": "Customer reviews",
       "image": {
         "base": "/brand/home-reviews",
-        "width": 1122,
+        "width": 651,
         "height": 1402,
         "widths": [480, 768, 1040],
-        "alt": "A single upholstered armchair with a walnut frame and a throw over one arm."
+        "alt": "An upholstered armchair with a curved walnut frame in warm daylight."
       },
       "awaitingCopy": false
     },

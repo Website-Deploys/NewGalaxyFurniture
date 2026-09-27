@@ -69,6 +69,22 @@ export const HomepageSectionImageSchema = z.object({
   caption: z.string().max(120).optional(),
 });
 
+/**
+ * A single feature item — the icon-badge trio the reference shows under the craftsmanship and
+ * direct-manufacturer copy ("Honest guidance / No false promises", etc.).
+ *
+ * `icon` names one of a fixed, hand-drawn set the component knows how to render, so the operator
+ * cannot inject arbitrary markup and the SVGs stay part of the reviewed codebase. `label` and
+ * `detail` are short operator strings; they state a value proposition already established by the
+ * copy, not a fabricated number, date, or certification, so they are outside the placeholder
+ * discipline that governs `body`.
+ */
+export const HomepageSectionFeatureSchema = z.object({
+  icon: z.enum(['shield', 'tools', 'leaf', 'factory', 'timber', 'rupee']),
+  label: z.string().min(1).max(40),
+  detail: z.string().max(60).optional(),
+});
+
 export const HomepageSectionSchema = z
   .object({
     key: HomepageSectionKey,
@@ -85,6 +101,14 @@ export const HomepageSectionSchema = z
     image: HomepageSectionImageSchema.optional(),
     /** A second, smaller photograph — used by the custom-furniture band's detail image. */
     secondaryImage: HomepageSectionImageSchema.optional(),
+    /**
+     * A third, smaller photograph — used by the showroom band, which stacks two detail images
+     * (a sideboard above a side-table) in a column to the right of the main showroom photo, as the
+     * reference shows.
+     */
+    tertiaryImage: HomepageSectionImageSchema.optional(),
+    /** The icon-badge trio shown under the copy on the craftsmanship / buy-direct bands. */
+    features: z.array(HomepageSectionFeatureSchema).max(3).optional(),
     /** True while `body` still holds a `[PLACEHOLDER — …]` marker awaiting real copy. */
     awaitingCopy: z.boolean().default(false),
   })
@@ -130,5 +154,6 @@ export const HomepageSchema = z
 
 export type HomepageSection = z.infer<typeof HomepageSectionSchema>;
 export type HomepageSectionImage = z.infer<typeof HomepageSectionImageSchema>;
+export type HomepageSectionFeature = z.infer<typeof HomepageSectionFeatureSchema>;
 export type Homepage = z.infer<typeof HomepageSchema>;
 export type HomepageSectionKeyValue = z.infer<typeof HomepageSectionKey>;

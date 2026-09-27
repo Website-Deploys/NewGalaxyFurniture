@@ -35,105 +35,204 @@ const hasAddress = addressLines.length > 0 || location.city.trim() !== '';
   class="ngf-home-section ngf-home-contact"
   aria-labelledby="ngf-contact-heading"
   data-ngf-section="contactLocation"
+  data-surface="contact"
   data-reveal
 >
-  <SectionHeader
-    eyebrow={section.eyebrow}
-    heading={section.heading ?? 'Contact'}
-    subheading={section.subheading}
-    headingId="ngf-contact-heading"
-  />
+  <div class="ngf-contact-inner">
+    <SectionHeader
+      eyebrow={section.eyebrow}
+      heading={section.heading ?? 'Contact'}
+      subheading={section.subheading}
+      headingId="ngf-contact-heading"
+    />
 
-  <div class="ngf-contact-grid">
-    {
-      /*
-      `showCaption={false}`: the section's own body copy already tells the visitor what the two
-      numbers are for, and the shared caption directly above them repeated it word for word.
-    */
-    }
-    <div class="ngf-contact-numbers-card">
-      <p class="ngf-contact-numbers-eyebrow">Call or message us</p>
-      <ContactNumbers layout="stack" showCaption={false} />
-    </div>
-
-    <div class="ngf-contact-place">
+    <div class="ngf-contact-grid">
       {
-        hasAddress ? (
-          <address class="ngf-contact-address">
-            {addressLines.map((line) => (
-              <span>{line}</span>
-            ))}
-            {location.city.trim() !== '' && (
-              <span>
-                {[location.city, location.state, location.postalCode ?? '']
-                  .filter((part) => part.trim() !== '')
-                  .join(', ')}
+        /*
+        `showCaption={false}`: the section's own body copy already tells the visitor what the two
+        numbers are for, and the shared caption directly above them repeated it word for word.
+      */
+      }
+      <div class="ngf-contact-numbers-card">
+        <p class="ngf-contact-numbers-eyebrow">Call or message us</p>
+        <ContactNumbers layout="stack" showCaption={false} />
+      </div>
+
+      <div class="ngf-contact-place">
+        {
+          hasAddress ? (
+            <div class="ngf-contact-line">
+              <span class="ngf-contact-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" />
+                  <circle cx="12" cy="10" r="2.5" />
+                </svg>
               </span>
-            )}
-          </address>
-        ) : section.body === undefined ? null : section.awaitingCopy ? (
-          <PlaceholderCopy body={section.body} contentKey={`homepage.${section.key}.body`} />
-        ) : (
-          /*
-            Supplied copy is rendered as itself. It used to be routed through `PlaceholderCopy`
-            whichever it was, which meant that the moment real copy arrived the section still
-            printed the shared stand-in invitation instead — the same sentence four editorial
-            bands above it already carried, five times on one page.
-          */
-          <div class="ngf-contact-body">
-            {section.body.split(/\n{2,}/).map((paragraph) => (
-              <p>{paragraph}</p>
-            ))}
-          </div>
-        )
-      }
+              <div class="ngf-contact-line-body">
+                <address class="ngf-contact-address">
+                  {addressLines.map((line) => (
+                    <span>{line}</span>
+                  ))}
+                  {location.city.trim() !== '' && (
+                    <span>
+                      {[location.city, location.state, location.postalCode ?? '']
+                        .filter((part) => part.trim() !== '')
+                        .join(', ')}
+                    </span>
+                  )}
+                </address>
+                {
+                  /* Requirement 8.5: the map link renders only where the operator supplied one. */
+                  location.mapUrl !== null && (
+                    <a
+                      class="ngf-contact-map"
+                      href={location.mapUrl}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      Open in maps
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="13"
+                        height="13"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 2h8v8M14 2 6 10M11 9v4H2V4h4" />
+                      </svg>
+                    </a>
+                  )
+                }
+              </div>
+            </div>
+          ) : section.body === undefined ? null : section.awaitingCopy ? (
+            <PlaceholderCopy body={section.body} contentKey={`homepage.${section.key}.body`} />
+          ) : (
+            <div class="ngf-contact-body">
+              {section.body.split(/\n{2,}/).map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+            </div>
+          )
+        }
 
-      {
-        /* Requirement 8.5: the map link renders only where the operator supplied one. */
-        location.mapUrl !== null && (
-          <a class="ngf-contact-map" href={location.mapUrl} target="_blank" rel="noopener">
-            Open in maps
-          </a>
-        )
-      }
-
-      {
-        serviceArea.length > 0 && (
-          <p class="ngf-contact-area">
-            <span class="ngf-contact-area-label">We deliver and install across</span>
-            {serviceArea.join(', ')}
-          </p>
-        )
-      }
+        {
+          serviceArea.length > 0 && (
+            <div class="ngf-contact-line">
+              <span class="ngf-contact-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 6h10v9H3z" />
+                  <path d="M13 9h4l3 3v3h-7z" />
+                  <circle cx="7" cy="17.5" r="1.6" />
+                  <circle cx="17" cy="17.5" r="1.6" />
+                </svg>
+              </span>
+              <div class="ngf-contact-line-body">
+                <p class="ngf-contact-area-label">We deliver and install across</p>
+                <p class="ngf-contact-area">{serviceArea.join(', ')}</p>
+                <p class="ngf-contact-area-note">
+                  Have a location outside {serviceArea.join(', ')}? Contact us and we will tell you
+                  what we can do.
+                </p>
+              </div>
+            </div>
+          )
+        }
+      </div>
     </div>
   </div>
 </section>
 
 <style>
+  /*
+   * The contact band is full-bleed and paints the warm sunlit-wall photograph edge to edge (the
+   * reference). The plant and rattan chair sit in the photo's right third, so the content is held to
+   * the left with a soft ivory scrim behind it keeping the type legible over the wall. The homepage
+   * band rhythm zeroes block padding on full-bleed surfaces, so the inner element restores the
+   * measure and vertical padding — matching the other bands' cadence.
+   */
+  .ngf-home-contact[data-surface='contact'] {
+    position: relative;
+    background-color: var(--color-cream);
+    background-image:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--color-ivory) 92%, transparent) 0%,
+        color-mix(in srgb, var(--color-ivory) 78%, transparent) 32%,
+        color-mix(in srgb, var(--color-ivory) 30%, transparent) 55%,
+        transparent 72%
+      ),
+      image-set(
+        url('/brand/home-contact-1440.webp') 1x,
+        url('/brand/home-contact-2134.webp') 2x
+      );
+    background-position:
+      left center,
+      right center;
+    background-repeat: no-repeat, no-repeat;
+    background-size: cover, cover;
+  }
+
+  .ngf-contact-inner {
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding-block: clamp(3rem, 8vh, 6rem);
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ngf-contact-inner {
+      padding-inline: 2rem;
+    }
+  }
+
   .ngf-contact-grid {
     display: grid;
-    gap: 2rem;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    margin-top: clamp(1.5rem, 3vw, 2.5rem);
+    max-width: 62rem;
   }
 
   @media (min-width: 768px) {
     .ngf-contact-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
     }
   }
 
   /*
    * The numbers, framed as a quiet ivory card so the two ways to reach the business read as one
-   * clear, trustworthy block rather than two floating lines. Warm ivory (not white) with a hairline
-   * taupe border and the soft card radius keeps it inside the palette and consistent with the other
-   * surfaces on the page.
+   * clear, trustworthy block. Warm ivory with a hairline taupe border and the soft card radius keeps
+   * it inside the palette and lifts it off the photograph.
    */
   .ngf-contact-numbers-card {
     align-self: start;
     padding: clamp(1.25rem, 3vw, 1.75rem);
     border: 1px solid var(--color-taupe);
     border-radius: var(--radius-xl);
-    background-color: var(--color-ivory);
+    background-color: color-mix(in srgb, var(--color-ivory) 88%, transparent);
     box-shadow: var(--shadow-level1);
+    backdrop-filter: blur(2px);
   }
 
   .ngf-contact-numbers-eyebrow {
@@ -158,14 +257,42 @@ const hasAddress = addressLines.length > 0 || location.city.trim() !== '';
   .ngf-contact-place {
     display: flex;
     flex-direction: column;
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+    align-self: start;
+    padding-top: 0.25rem;
+  }
+
+  /* An icon-led line: a round-badged glyph beside its block of copy (address, delivery). */
+  .ngf-contact-line {
+    display: flex;
     align-items: flex-start;
     gap: 1rem;
+  }
+
+  .ngf-contact-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background-color: color-mix(in srgb, var(--color-champagne) 22%, transparent);
+    color: var(--color-obsidian);
+  }
+
+  .ngf-contact-line-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .ngf-contact-address {
     display: flex;
     flex-direction: column;
+    gap: 0.1rem;
+    color: var(--color-espresso);
     font-style: normal;
+    line-height: 1.55;
   }
 
   .ngf-contact-body {
@@ -184,23 +311,37 @@ const hasAddress = addressLines.length > 0 || location.city.trim() !== '';
   .ngf-contact-map {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
-    padding-inline: 1rem;
-    border: 1px solid var(--color-obsidian);
+    gap: 0.4rem;
     color: var(--color-obsidian);
+    font-size: var(--text-small);
     text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+
+  .ngf-contact-map:hover,
+  .ngf-contact-map:focus-visible {
+    color: var(--color-champagne);
+  }
+
+  .ngf-contact-area-label {
+    margin: 0;
+    color: var(--color-walnut);
+    font-size: var(--text-small);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 
   .ngf-contact-area {
     margin: 0;
     color: var(--color-espresso);
+    font-size: 1.05rem;
   }
 
-  .ngf-contact-area-label {
-    display: block;
+  .ngf-contact-area-note {
+    margin: 0.15rem 0 0;
+    max-width: 34ch;
     color: var(--color-walnut);
     font-size: var(--text-small);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    line-height: 1.55;
   }
 </style>

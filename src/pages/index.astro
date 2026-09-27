@@ -342,9 +342,11 @@ const meta = pageMeta(Astro, {
    * rule is about bleed, not about colour, and a future band may want it.
    */
   .ngf-home > .ngf-home-section[data-surface='dark'],
-  .ngf-home > .ngf-home-section[data-surface='tint'] {
+  .ngf-home > .ngf-home-section[data-surface='tint'],
+  .ngf-home > .ngf-home-section[data-surface='contact'] {
     max-width: none;
     padding-block: 0;
+    padding-inline: 0;
   }
 
   .ngf-home > .ngf-home-section[data-surface='dark'] > *,
