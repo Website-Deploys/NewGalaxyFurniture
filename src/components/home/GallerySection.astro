@@ -275,6 +275,16 @@ const subheading =
     opacity: 1;
   }
 
+  /*
+   * Resilience: if the island has not hydrated yet (it mounts client:visible) or JS is off, the
+   * server marks the first frame data-active='true', so the photograph is visible with no script.
+   * The stage keeps a real 3:2 height from aspect-ratio even before any image decodes, so the band
+   * can never collapse to an empty strip — the defect this fixes.
+   */
+  .ngf-hg-stage > .ngf-hg-img:first-of-type:not([data-active='false']) {
+    opacity: 1;
+  }
+
   /* Thumbnail rail. */
   .ngf-hg-thumbs {
     display: grid;
