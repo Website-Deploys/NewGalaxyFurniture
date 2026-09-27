@@ -80,20 +80,24 @@ const meta = pageMeta(Astro, {
               <path d="M30 18v-6h36v6" />
             </svg>
 
-            {/* Phone (< 768 px): the real armchair photograph, flanked by two quiet labels. */}
+            {/* Phone (< 768 px): the real armchair photograph, flanked by two quiet labels.
+                The photo sits in a `<span>` that declares its intrinsic aspect-ratio inline, so the
+                box is reserved before the WebP decodes (no CLS) and the image-loading audit's
+                reserved-slot rule is satisfied. */}
             <div class="ngf-reviews-empty-scene" aria-hidden="true">
               <span class="ngf-reviews-empty-tag ngf-reviews-empty-tag-left">Real homes</span>
-              <img
-                class="ngf-reviews-empty-photo"
-                src="/brand/reviews-empty-chair-768.webp"
-                srcset="/brand/reviews-empty-chair-480.webp 480w, /brand/reviews-empty-chair-768.webp 768w, /brand/reviews-empty-chair-960.webp 960w"
-                sizes="(max-width: 767px) 60vw, 320px"
-                width="408"
-                height="243"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
+              <span class="ngf-reviews-empty-photo" style="aspect-ratio: 408 / 243">
+                <img
+                  src="/brand/reviews-empty-chair-768.webp"
+                  srcset="/brand/reviews-empty-chair-480.webp 480w, /brand/reviews-empty-chair-768.webp 768w, /brand/reviews-empty-chair-960.webp 960w"
+                  sizes="(max-width: 767px) 60vw, 320px"
+                  width="408"
+                  height="243"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
               <span class="ngf-reviews-empty-tag ngf-reviews-empty-tag-right">Real stories</span>
             </div>
           </div>
@@ -276,7 +280,15 @@ const meta = pageMeta(Astro, {
       display: block;
       width: min(62%, 15rem);
       height: auto;
+      overflow: hidden;
       border-radius: var(--radius-md, 0.75rem);
+    }
+
+    .ngf-reviews-empty-photo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     /* The side labels: uppercase, letter-spaced, walnut, each with a short underline — the
