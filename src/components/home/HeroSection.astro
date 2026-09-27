@@ -131,12 +131,18 @@ const ctaHref = section.ctaHref ?? '/collection';
  * and it sits in the middle to match the reference's order (sizes · delivery · workshop). The `icon`
  * selects a small hairline glyph drawn in the markup below; it carries no text of its own.
  */
-const assurances: { icon: 'ruler' | 'truck' | 'hammer'; label: string }[] = [
-  { icon: 'ruler', label: 'Custom sizes and finishes' },
+const assurances: { icon: 'ruler' | 'truck' | 'hammer'; label: string; sub: string }[] = [
+  { icon: 'ruler', label: 'Custom sizes and finishes', sub: 'Made to fit your space' },
   ...(settings.serviceArea.length > 0
-    ? [{ icon: 'truck' as const, label: `Delivered across ${settings.serviceArea.join(', ')}` }]
+    ? [
+        {
+          icon: 'truck' as const,
+          label: `Delivered across ${settings.serviceArea.join(', ')}`,
+          sub: 'Safe and reliable delivery',
+        },
+      ]
     : []),
-  { icon: 'hammer', label: 'Direct from the workshop' },
+  { icon: 'hammer', label: 'Direct from the workshop', sub: 'Better quality. Better value.' },
 ];
 
 /** The heading's lines are the operator's own line breaks, exactly as `TextReveal` requires. */
@@ -219,6 +225,24 @@ const headingLines =
           legible without hiding the furniture on the right. Purely decorative. */
       }
       <div class="ngf-hero-scrim" aria-hidden="true"></div>
+
+      {
+        /*
+        The mobile eyebrow, overlaid at the BASE of the contained image (< 768 px only).
+
+        On a phone the hero is a stacked layout — the photograph is a contained banner at the top and
+        the copy sits on cream below it, matching the reference. The eyebrow reads over the image's
+        lower edge there, so it is rendered here inside the panel and shown only below 768 px; the
+        copy's own eyebrow is hidden at that breakpoint so the line is never duplicated. It is
+        `aria-hidden` because the identical text remains in the copy for assistive tech. Rendered only
+        when the section actually supplies an eyebrow.
+      */
+      }
+      {section.eyebrow !== undefined && (
+        <p class="ngf-hero-eyebrow-mobile" aria-hidden="true">
+          <span class="ngf-hero-kicker">{section.eyebrow}</span>
+        </p>
+      )}
 
       {
         /*
@@ -366,11 +390,14 @@ const headingLines =
                         stroke-linejoin="round"
                         focusable="false"
                       >
-                        <path d="M14.5 5.5 18 9l-3 3-3.5-3.5zM11.5 8.5 4 16v4h4l7.5-7.5" />
+                        <path d="M14.5 5.5a3.6 3.6 0 0 0-3.9 4.7l-6.2 6.2a1.4 1.4 0 0 0 2 2l6.2-6.2a3.6 3.6 0 0 0 4.7-3.9l-2.3 2.3-2.1-.6-.6-2.1z" />
                       </svg>
                     )}
                   </span>
-                  <span class="ngf-hero-assurance-label">{item.label}</span>
+                  <span class="ngf-hero-assurance-label">
+                    {item.label}
+                    <span class="ngf-hero-assurance-sub">{item.sub}</span>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -1078,6 +1105,246 @@ const headingLines =
   @media (prefers-reduced-motion: reduce) {
     .ngf-hero-dot::before {
       transition: none;
+    }
+  }
+
+  /* ================================================================== *
+   * MOBILE (< 768 px) — stacked layout
+   *
+   * The desktop hero is one full-bleed photograph with the copy overlaid on the left. The phone
+   * reference is a different composition: the photograph is a CONTAINED banner at the top of the
+   * section with the "MANUFACTURER & SHOWROOM" eyebrow sitting over its lower edge, and every other
+   * piece of copy — heading, sub, the two CTAs, the three assurances — stacks BELOW it on the page's
+   * cream ground in obsidian text. This whole block is scoped to `max-width: 767px`, so nothing here
+   * touches the locked desktop layout at ≥ 768 px.
+   * ================================================================== */
+
+  /* The mobile eyebrow lives inside the panel; it is only ever shown at phone widths. */
+  .ngf-hero-eyebrow-mobile {
+    display: none;
+  }
+
+  /* The assurance sub-label is a phone-only second line; hidden at ≥ 768 px so the desktop inline
+     assurance row is exactly as it was. */
+  .ngf-hero-assurance-sub {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    /* The section no longer reaches up under the header on mobile: the contained image is the top of
+       the page, with the floating header over its own top edge, exactly as the reference shows. */
+    .ngf-hero {
+      margin-top: calc(-1 * var(--ngf-hero-header-offset));
+      background-color: var(--color-cream);
+    }
+
+    /* One column, top-to-bottom flow: image first, copy second — a real stacked layout, not an
+       overlay. The generous overlay padding is dropped; the copy gets its own gutter below. */
+    .ngf-hero-inner {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 0;
+    }
+
+    /* The photograph becomes a CONTAINED banner in normal flow at the top, no longer an absolutely
+       positioned full-section ground. It carries the reserved header height as top padding so the
+       floating header never covers the furniture, and a soft rounded lower edge like the reference. */
+    .ngf-hero-panel {
+      position: relative;
+      inset: auto;
+      aspect-ratio: auto;
+      width: 100%;
+      height: auto;
+      /* A comfortable banner height: tall enough to read the showroom, short enough to leave the
+         copy above the fold-ish on a phone. */
+      min-height: clamp(19rem, 58vw + 8rem, 27rem);
+      border-bottom-left-radius: var(--radius-lg, 1.25rem);
+      border-bottom-right-radius: var(--radius-lg, 1.25rem);
+      overflow: hidden;
+    }
+
+    /* No cream veil over the contained image on mobile — the copy is no longer on top of it. */
+    .ngf-hero-scrim {
+      display: none;
+    }
+
+    /* The carousel indicators sit above the eyebrow's gradient band on mobile, not over the text. */
+    .ngf-hero-dots {
+      bottom: 3.75rem;
+      right: 1.25rem;
+    }
+
+    /* The image fills the contained banner; centre the furniture rather than pushing it right, since
+       the copy no longer overlaps it. */
+    .ngf-hero-slide {
+      object-position: center 40%;
+    }
+
+    /* The eyebrow, overlaid on the image's lower edge (white on the photograph, with a soft dark
+       gradient behind it for legibility), matching the reference. */
+    .ngf-hero-eyebrow-mobile {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 0;
+      z-index: 3;
+      display: flex;
+      justify-content: center;
+      margin: 0;
+      padding: 2.75rem 1.25rem 1.1rem;
+      background: linear-gradient(to top, rgb(28 26 24 / 0.55), transparent);
+      pointer-events: none;
+    }
+
+    .ngf-hero-eyebrow-mobile .ngf-hero-kicker {
+      color: var(--color-white);
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-shadow: 0 1px 10px rgb(28 26 24 / 0.5);
+    }
+
+    .ngf-hero-eyebrow-mobile .ngf-hero-kicker::before {
+      background-color: color-mix(in srgb, var(--color-white) 80%, transparent);
+    }
+
+    /* The copy block sits below the image on the cream ground, centred to the page gutter. It is a
+       normal grid item on desktop; on mobile it is simply the second flex child. */
+    .ngf-hero-copy {
+      z-index: auto;
+      align-self: stretch;
+      justify-self: stretch;
+      padding: 1.5rem 1.25rem clamp(1.5rem, 6vw, 2.5rem);
+    }
+
+    .ngf-hero-copy-inner {
+      max-width: none;
+      gap: 1.15rem;
+    }
+
+    /* The copy's own eyebrow is hidden on mobile — the overlaid one on the image carries it. */
+    .ngf-hero-copy .ngf-hero-eyebrow {
+      display: none;
+    }
+
+    /* Heading: obsidian on cream (the reference), no longer white over a photo. Slightly larger and
+       tighter to match the bold display look. */
+    :global(.ngf-hero-heading),
+    :global(.ngf-hero-heading .ngf-line) {
+      color: var(--color-obsidian) !important;
+      text-shadow: none !important;
+    }
+
+    :global(.ngf-hero-heading) {
+      max-width: none;
+      font-size: clamp(2.35rem, 1.2rem + 7vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+    }
+
+    /* Sub-text: muted ink on cream, no shadow. */
+    .ngf-hero-sub {
+      max-width: none;
+      color: var(--color-walnut);
+      text-shadow: none;
+    }
+
+    /* CTAs stack full-width like the reference: filled obsidian primary, outline secondary. */
+    .ngf-hero-ctas {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.85rem;
+      width: 100%;
+      margin-top: 0.6rem;
+    }
+
+    .ngf-hero-ctas :global(.ngf-hero-cta) {
+      width: 100%;
+      justify-content: space-between;
+      padding: 1.05rem 1.6rem;
+      font-size: 1.0625rem;
+    }
+
+    /* Primary: filled dark pill with white text (reference's "Explore the collection"). */
+    .ngf-hero-cta-primary {
+      background-color: var(--color-obsidian);
+      color: var(--color-white);
+      box-shadow: none;
+    }
+
+    .ngf-hero-cta-primary .ngf-hero-cta-arrow {
+      color: var(--color-white);
+    }
+
+    /* Secondary: quiet outline on cream with obsidian text (reference's "Custom furniture"). */
+    .ngf-hero-cta-secondary {
+      border: 1px solid color-mix(in srgb, var(--color-obsidian) 22%, transparent);
+      background-color: transparent;
+      color: var(--color-obsidian);
+    }
+
+    .ngf-hero-cta-secondary::after {
+      content: '';
+      width: 18px;
+      height: 11px;
+      background-color: currentColor;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 12' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 6h17M13 1l5 5-5 5'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 12' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 6h17M13 1l5 5-5 5'/%3E%3C/svg%3E") center / contain no-repeat;
+      flex: none;
+    }
+
+    /* Assurances become full-width rows with a light icon disc, a bold obsidian title and a muted
+       sub-label, separated by hairline dividers — the reference's list. The single label string is
+       split visually by wrapping; here each row keeps its one label and reads as a title. */
+    .ngf-hero-assurances {
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+      margin-top: 1.25rem;
+      color: var(--color-obsidian);
+    }
+
+    .ngf-hero-assurances li {
+      max-width: none;
+      width: 100%;
+      gap: 1rem;
+      padding: 1.1rem 0;
+      border-top: 1px solid color-mix(in srgb, var(--color-taupe) 55%, transparent);
+    }
+
+    .ngf-hero-assurances li:first-child {
+      border-top: 0;
+    }
+
+    /* The icon disc: a soft light circle with an obsidian glyph, larger than the desktop inline
+       icon, matching the reference's discs. */
+    .ngf-hero-assurance-icon {
+      width: 3.1rem;
+      height: 3.1rem;
+      border: 0;
+      background-color: color-mix(in srgb, var(--color-obsidian) 6%, var(--color-cream));
+      color: var(--color-obsidian);
+    }
+
+    .ngf-hero-assurance-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .ngf-hero-assurance-label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      color: var(--color-obsidian);
+      font-size: 1.0625rem;
+      font-weight: 600;
+      text-shadow: none;
+    }
+
+    .ngf-hero-assurance-sub {
+      display: block;
+      color: var(--color-walnut);
+      font-size: 0.9375rem;
+      font-weight: 400;
     }
   }
 </style>
