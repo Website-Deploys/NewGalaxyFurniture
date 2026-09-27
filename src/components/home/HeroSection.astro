@@ -1248,6 +1248,18 @@ const headingLines =
       text-shadow: none;
     }
 
+    /*
+     * Slide 2, phone only: the sub-paragraph below the heading is black. On the phone the copy sits
+     * on the cream ground beneath the image (not over the photo), so the desktop slide-2 rule that
+     * turns this text white would make it near-invisible here. Scoped to the phone and to the
+     * slide-2 state, and it changes only this paragraph's colour — nothing else. The selector
+     * repeats the slide-2 chain so it beats both the desktop white rule and the walnut default.
+     */
+    .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy .ngf-hero-sub {
+      color: var(--color-obsidian);
+      text-shadow: none;
+    }
+
     /* CTAs stack full-width like the reference: filled obsidian primary, outline secondary. */
     .ngf-hero-ctas {
       flex-direction: column;
