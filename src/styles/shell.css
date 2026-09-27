@@ -651,17 +651,22 @@
   background-color: currentColor;
 }
 
-/* Full-height panel, not a dropdown. */
+/* Full-height panel, not a dropdown. The espresso showroom photograph bleeds in from the right
+   edge (.ngf-mobilenav-scene); the menu content sits in a left column over a solid ground so every
+   row stays legible. */
 .ngf-mobilenav-panel {
   position: fixed;
   inset: 0;
   z-index: 60;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
   overflow-y: auto;
-  padding: 1.25rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px));
-  background-color: var(--color-obsidian);
+  /* Leave a slim margin on the right for the showroom photo to show through. */
+  padding: 1.1rem 20% 2rem 1.15rem;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  /* A deep espresso ground, a touch warmer than pure obsidian, matching the reference. */
+  background-color: #1c1916;
   color: var(--color-ivory);
 }
 
@@ -669,18 +674,83 @@
   display: none;
 }
 
-.ngf-mobilenav-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+/* While the menu owns the viewport, lock page scroll and stand the sticky action bar down —
+   the reference menu is the only surface on screen. */
+body[data-mobilenav-open='true'] {
+  overflow: hidden;
 }
 
+body[data-mobilenav-open='true'] .ngf-actionbar {
+  display: none;
+}
+
+/* ---- The showroom photograph bleeding in from the right edge ---- */
+.ngf-mobilenav-scene {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 0;
+  width: 34%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ngf-mobilenav-scene-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 65% center;
+}
+
+/* A left-to-right fade so the photo dissolves into the espresso menu column with no hard seam. */
+.ngf-mobilenav-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to right,
+    #1c1916 0%,
+    rgb(28 25 22 / 0.7) 34%,
+    rgb(28 25 22 / 0.15) 72%,
+    rgb(28 25 22 / 0) 100%
+  );
+}
+
+/* Every content block sits above the photograph. */
+.ngf-mobilenav-head,
+.ngf-mobilenav-section {
+  position: relative;
+  z-index: 1;
+}
+
+.ngf-mobilenav-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.25rem 0 0;
+}
+
+/* MENU: champagne, letter-spaced, with a short rule beneath — the reference's masthead. */
 .ngf-mobilenav-eyebrow {
+  position: relative;
   margin: 0;
+  padding-bottom: 0.55rem;
   font-size: var(--text-small);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  opacity: 0.7;
+  color: var(--color-champagne);
+}
+
+.ngf-mobilenav-eyebrow::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2.25rem;
+  height: 1px;
+  background-color: color-mix(in srgb, var(--color-champagne) 65%, transparent);
 }
 
 .ngf-mobilenav-close {
@@ -689,22 +759,30 @@
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
+  margin: -0.5rem -0.5rem 0 0;
   border: 0;
   background: none;
-  color: inherit;
-  font-size: 1.75rem;
-  line-height: 1;
+  color: var(--color-ivory);
   cursor: pointer;
 }
 
+/* ---- Sections ---- */
+.ngf-mobilenav-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A small grey letter-spaced label — the reference's "SHOP BY CATEGORY" / "MORE" headers.
+   No rule; the hairline dividers between rows carry the structure. */
 .ngf-mobilenav-heading {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.35rem;
+  padding: 0;
   font-family: var(--font-body);
-  font-size: var(--text-small);
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  opacity: 0.7;
+  color: color-mix(in srgb, var(--color-ivory) 55%, transparent);
 }
 
 .ngf-mobilenav-list {
@@ -715,44 +793,78 @@
   list-style: none;
 }
 
+/* A row: thumbnail · label · chevron. */
 .ngf-mobilenav-list a {
   display: flex;
   align-items: center;
-  min-height: 48px;
-  border-bottom: 1px solid rgb(203 187 169 / 0.2);
-  color: inherit;
-  font-family: var(--font-display);
-  font-size: var(--text-h3);
+  gap: 0.85rem;
+  min-height: 60px;
+  padding: 0.4rem 0;
+  color: var(--color-ivory);
   text-decoration: none;
+  /* The hairline divider under each row, aligned to run under the label, not the thumbnail. */
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ivory) 12%, transparent);
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 
-.ngf-mobilenav-cta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: auto;
-}
+/* The last row in each section keeps its divider (the reference shows one under every row). */
 
-.ngf-mobilenav-primary,
-.ngf-mobilenav-secondary {
+.ngf-mobilenav-icon {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-  border-radius: var(--radius-hair);
-  font-size: var(--text-small);
-  font-weight: 600;
-  text-decoration: none;
+  width: 2.9rem;
+  height: 2.9rem;
+  overflow: hidden;
 }
 
-.ngf-mobilenav-primary {
-  background-color: var(--color-ivory);
-  color: var(--color-obsidian);
+/* The photographic category thumbnail. Absent files render nothing (no broken-image box), so a
+   category without a thumbnail yet simply shows an empty slot rather than a placeholder icon. */
+/* The photographic category thumbnail, drawn as a background image so a not-yet-added file simply
+   renders nothing — no broken-image box — and the slot blends into the espresso ground. */
+.ngf-mobilenav-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
-.ngf-mobilenav-secondary {
-  border: 1px solid var(--color-taupe);
-  color: var(--color-ivory);
+/* The MORE section keeps line-icon glyphs, smaller and champagne-stroked. */
+.ngf-mobilenav-icon-line {
+  width: 2.2rem;
+  height: 2.2rem;
+  color: var(--color-champagne);
+}
+
+.ngf-mobilenav-label {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ngf-mobilenav-chevron {
+  flex: none;
+  color: color-mix(in srgb, var(--color-champagne) 80%, var(--color-ivory));
+}
+
+@media (hover: hover) {
+  .ngf-mobilenav-list a:hover {
+    opacity: 0.72;
+  }
+}
+
+.ngf-mobilenav-list a:focus-visible {
+  outline: 2px solid var(--color-champagne);
+  outline-offset: 2px;
 }
 
 /* ------------------------------------------------------------------------- *

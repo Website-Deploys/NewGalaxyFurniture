@@ -31,8 +31,8 @@ import WhatsAppLink from '@/components/ui/WhatsAppLink.astro';
 import { getSiteSettings } from '@/lib/content/site';
 import { getPublishedCategories } from '@/lib/content/catalogue';
 import { CATEGORY_NAV, HEADER_NAV, SUPPORT_NAV } from '@/lib/site/navigation';
-import { contactChannels, NUMBER_LABEL, NUMBER_LABEL_SPOKEN } from '@/lib/site/contact';
-import { buildEnquiryMessage, buildTelUrl, buildWhatsAppUrl } from '@/lib/whatsapp';
+import { contactChannels, NUMBER_LABEL_SPOKEN } from '@/lib/site/contact';
+import { buildEnquiryMessage, buildWhatsAppUrl } from '@/lib/whatsapp';
 
 interface Props {
   /** `/search-index/{hash}.json` — the header search fetches this on first intent. */
@@ -78,7 +78,6 @@ const generalMessage = buildEnquiryMessage({ kind: 'general' }, settings);
 
 // Pre-built server-side so the mobile island never assembles a `wa.me` URL itself.
 const whatsappHref = primary === undefined ? '#' : buildWhatsAppUrl(primary.e164, generalMessage);
-const telHref = primary === undefined ? '#' : buildTelUrl(primary.e164);
 
 const isCurrent = (href: string): boolean =>
   currentPath === href || (href !== '/' && currentPath.startsWith(`${href}/`));
@@ -268,10 +267,6 @@ const mobilePages = [
         client:idle
         categories={CATEGORY_NAV.map((link) => ({ label: link.label, href: link.href }))}
         pages={mobilePages}
-        whatsappHref={whatsappHref}
-        telHref={telHref}
-        telDisplay={primary?.display ?? ''}
-        numberLabel={NUMBER_LABEL}
       />
     </div>
   </div>
