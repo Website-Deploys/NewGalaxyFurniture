@@ -783,13 +783,13 @@ const headingLines =
   }
 
   /*
-   * Slide 2 — the heading is a warm woody grey (the walnut token), while the rest of the slide-2
-   * copy stays brightest white. The panel's `data-hero-active` flips to "1"; the copy follows the
-   * panel as a sibling. The transition on `color` / `text-shadow` animates the swap.
+   * Slide 2 — the heading is black, while the rest of the slide-2 copy stays brightest white. The
+   * panel's `data-hero-active` flips to "1"; the copy follows the panel as a sibling. The transition
+   * on `color` / `text-shadow` animates the swap.
    */
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy :global(.ngf-hero-heading),
   .ngf-hero-panel[data-hero-active='1'] ~ .ngf-hero-copy :global(.ngf-hero-heading .ngf-line) {
-    color: var(--color-walnut) !important;
+    color: var(--color-obsidian) !important;
     text-shadow: 0 1px 16px rgb(250 248 244 / 0.55);
   }
 
