@@ -36,7 +36,7 @@ export function resolveSiteUrl(fallback?: URL | null): string {
   if (typeof fromEnv === 'string' && fromEnv.trim() !== '') return normalise(fromEnv);
   if (fallback !== undefined && fallback !== null) return normalise(fallback.href);
   throw new Error(
-    'CONFIG_UNAVAILABLE PUBLIC_SITE_URL — set it in wrangler.toml [vars] and in .dev.vars; ' +
+    'CONFIG_UNAVAILABLE PUBLIC_SITE_URL — set it in the Netlify site environment and in .env; ' +
       'canonical URLs are never hard-coded.',
   );
 }

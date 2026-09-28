@@ -82,15 +82,37 @@ const safeNext =
 
         <div class="flex flex-col gap-2">
           <label for="password" class="text-small font-medium text-espresso">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-            aria-describedby="login-error"
-            class="min-h-[44px] border border-taupe bg-white px-3 py-2 text-obsidian focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagne"
-          />
+          <div class="relative flex items-center">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              aria-describedby="login-error"
+              class="min-h-[44px] w-full border border-taupe bg-white py-2 pr-[4.5rem] pl-3 text-obsidian focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagne"
+            />
+            {
+              /*
+              The toggle only appears once the client script enables it: without JavaScript there is
+              nothing to switch the input type, so a dead button would be a lie. It is a real
+              <button type="button"> — never a submit — carries aria-pressed for its on/off state and
+              aria-controls to name the field it governs, and is keyboard-operable with a visible
+              focus ring like every other control on the form.
+            */
+            }
+            <button
+              id="password-toggle"
+              type="button"
+              hidden
+              aria-pressed="false"
+              aria-controls="password"
+              aria-label="Show password"
+              class="absolute right-1 flex min-h-[38px] items-center px-3 py-1 text-small font-medium text-espresso underline underline-offset-2 hover:text-obsidian focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-champagne"
+            >
+              Show
+            </button>
+          </div>
         </div>
 
         <button
@@ -109,6 +131,31 @@ const safeNext =
       const submit = document.getElementById('login-submit') as HTMLButtonElement | null;
       const email = document.getElementById('email') as HTMLInputElement | null;
       const password = document.getElementById('password') as HTMLInputElement | null;
+      const passwordToggle = document.getElementById('password-toggle') as HTMLButtonElement | null;
+
+      /**
+       * Show/hide the password. Enabled only here, so it never appears when the script did not run
+       * (a visible-but-dead button would mislead). Flips the input `type`, keeps focus and the caret
+       * in the field, and mirrors state into `aria-pressed`/`aria-label` for assistive tech.
+       */
+      if (passwordToggle !== null && password !== null) {
+        passwordToggle.hidden = false;
+        passwordToggle.addEventListener('click', () => {
+          const reveal = password.type === 'password';
+          password.type = reveal ? 'text' : 'password';
+          passwordToggle.textContent = reveal ? 'Hide' : 'Show';
+          passwordToggle.setAttribute('aria-pressed', reveal ? 'true' : 'false');
+          passwordToggle.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+          // Return focus to the field so keyboard users keep typing where they left off.
+          const caret = password.value.length;
+          password.focus();
+          try {
+            password.setSelectionRange(caret, caret);
+          } catch {
+            // setSelectionRange is not supported on every input type/state; focus alone is enough.
+          }
+        });
+      }
 
       /** Same-site admin paths only — never an absolute URL, never back to login. */
       function safeRedirect(value: string): string {

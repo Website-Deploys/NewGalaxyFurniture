@@ -1,13 +1,13 @@
-# Security headers for everything Cloudflare serves from the asset store.
+# Security headers for everything Netlify serves from the static asset store.
 #
-# Prerendered HTML and hashed assets never reach the Worker, so `src/middleware.ts` cannot set
-# these for them — this file is the other half of the same policy. The values are NOT authored
-# here: `src/lib/security/headers.ts` is the single definition, and
-# `tests/unit/security.headers.test.ts` parses this file and fails if any value differs from it.
-# Edit the module, then mirror the change here.
+# Prerendered HTML and hashed assets are served directly as static assets and never reach the SSR
+# Netlify Function, so `src/middleware.ts` cannot set these for them — this file is the other half
+# of the same policy. The values are NOT authored here: `src/lib/security/headers.ts` is the single
+# definition, and `tests/unit/security.headers.test.ts` parses this file and fails if any value
+# differs from it. Edit the module, then mirror the change here.
 #
-# `@astrojs/cloudflare` appends its own immutable `Cache-Control` block for `/_astro/*` to the
-# copy of this file in `dist/client/`.
+# The `@astrojs/netlify` adapter copies this file into the publish directory (`dist/`) and appends
+# its own immutable `Cache-Control` block for `/_astro/*`.
 #
 # Design: Deployment. Requirements: 25.9, 25.10.
 
