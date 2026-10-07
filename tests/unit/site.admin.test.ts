@@ -105,30 +105,36 @@ describe('settings patches', () => {
 
 describe('the content checklist', () => {
   it('drops a key once its value is supplied, and keeps untracked keys', () => {
+    // This test exercises the checklist mechanism, so it anchors on a field that is still genuinely
+    // unsupplied in the shipped settings. The address and city have since been filled in
+    // `data/site/settings.json`, so `site.location.geo` — precise coordinates, still null — is the
+    // tracked location key that remains on the checklist and is the honest "before" anchor here.
     const before = recomputePlaceholders(SETTINGS, SETTINGS.placeholders);
-    expect(before).toContain('site.location.city');
+    expect(before).toContain('site.location.geo');
     // Page-level keys have no settings field, so this pass must not shorten the operator's list
     // by pretending they are done.
     expect(before).toContain('page.about.body');
 
+    // Supplying the coordinates (and leaving the rest as-is) must drop `site.location.geo`…
     const patched = applySettingsPatch(SETTINGS, {
       location: {
-        addressLines: ['Line one'],
-        city: 'Bengaluru',
-        state: 'Karnataka',
-        postalCode: '560001',
-        mapUrl: null,
-        geo: null,
+        addressLines: SETTINGS.location.addressLines,
+        city: SETTINGS.location.city,
+        state: SETTINGS.location.state,
+        postalCode: SETTINGS.location.postalCode,
+        mapUrl: SETTINGS.location.mapUrl,
+        geo: { lat: 12.9611, lng: 77.7497 },
       },
     });
     const validated = validateSettings(patched);
     expect(validated.ok).toBe(true);
     if (!validated.ok) return;
 
+    expect(validated.settings.placeholders).not.toContain('site.location.geo');
+    // The already-supplied fields stay resolved, never re-added by this pass.
     expect(validated.settings.placeholders).not.toContain('site.location.city');
     expect(validated.settings.placeholders).not.toContain('site.location.addressLines');
-    // Still unsupplied, so still listed.
-    expect(validated.settings.placeholders).toContain('site.location.mapUrl');
+    // Untracked, page-level keys the operator has not written are preserved verbatim.
     expect(validated.settings.placeholders).toContain('page.about.body');
   });
 

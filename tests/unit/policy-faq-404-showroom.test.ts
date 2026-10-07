@@ -70,9 +70,16 @@ describe('workshop — the glued inline-link bug is fixed', () => {
   it('renders "on the contact page" with a real space before the contact link', () => {
     // The bug: `published on the` ended a line and `<a href="/contact">` began the next, so Astro
     // collapsed the newline and rendered "published on thecontact page". The fix keeps the word and
+    //
+    // The second assertion tolerates Prettier wrapping the opening tag's attributes onto their own
+    // lines (`<a\n  href="/contact">`): what matters is the markup relationship — the text "on the "
+    // is immediately followed by an anchor to /contact whose link text is "contact page" — not that
+    // the tag happens to sit on one source line. The first assertion is the real guard: it still
+    // fails if a newline ever lands *between* "on the" and the `<a`, which is the only break that
+    // Astro would collapse into the glued "on thecontact page" the user would actually see.
     // the opening tag on one line (or inserts an explicit space), so the space survives.
-    expect(WORKSHOP).not.toMatch(/on the\s*\n\s*<a href="\/contact">/);
-    expect(WORKSHOP).toMatch(/on the <a href="\/contact"[\s\S]*?>contact page/);
+    expect(WORKSHOP).not.toMatch(/on the\s*\n\s*<a[\s\n]+href="\/contact">/);
+    expect(WORKSHOP).toMatch(/on the <a[\s\S]*?href="\/contact"[\s\S]*?>contact page/);
   });
 
   it('leaves no prose word glued directly against an inline anchor anywhere in the page', () => {

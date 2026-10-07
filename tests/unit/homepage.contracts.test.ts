@@ -354,17 +354,38 @@ describe('placeholder discipline (Requirements 7.10, 8.4, 8.8)', () => {
     expect(settings.placeholders).not.toContain('site.logo.src');
   });
 
-  it('states no address, opening hours, or map link, because none is supplied', () => {
-    expect(settings.location.addressLines).toEqual([]);
-    expect(settings.location.city).toBe('');
-    expect(settings.location.mapUrl).toBeNull();
-    expect(settings.location.geo).toBeNull();
+  /**
+   * This used to assert the opposite — empty address lines, empty city, null map link — "because
+   * none is supplied". The operator has since supplied the real showroom location in
+   * `data/site/settings.json`, so that assertion was pinning the *unseeded* baseline and no longer
+   * describes the shipped content.
+   *
+   * The invariant Requirement 8.8 actually guarantees is a two-way one: a field that IS supplied
+   * must be off the checklist, and a field that is NOT supplied must stay on it. This test now
+   * asserts both halves against whatever the content currently holds, rather than freezing one
+   * side of it. It deliberately avoids hard-coding the literal address string, so an operator
+   * editing their own address never breaks this contract — it checks the *shape* (supplied vs not)
+   * and the checklist consequence, which is what the requirement is about.
+   */
+  it('keeps supplied location off the checklist and unsupplied location on it', () => {
+    // Supplied: a non-empty address, a city, and a map link are present…
+    expect(settings.location.addressLines.length).toBeGreaterThan(0);
+    expect(settings.location.city.trim()).not.toBe('');
+    expect(settings.location.mapUrl).not.toBeNull();
+    // …so their checklist keys are resolved and no longer listed (Requirement 8.8).
     for (const key of [
       'site.location.addressLines',
       'site.location.city',
       'site.location.mapUrl',
-      'site.location.openingHours',
     ]) {
+      expect(settings.placeholders, key).not.toContain(key);
+    }
+
+    // Still unsupplied: precise geo coordinates and opening hours are not published, so they stay
+    // on the checklist — the honest empty-state discipline is unchanged for the fields that remain
+    // genuinely empty.
+    expect(settings.location.geo).toBeNull();
+    for (const key of ['site.location.geo', 'site.location.openingHours']) {
       expect(settings.placeholders, key).toContain(key);
     }
   });
