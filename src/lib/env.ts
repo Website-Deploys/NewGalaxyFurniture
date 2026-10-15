@@ -28,6 +28,7 @@ import { createBlobKeyValueStore } from '@/lib/runtime/blob-kv';
 import { createBlobObjectBucket } from '@/lib/runtime/blob-bucket';
 import { createNeonDatabase } from '@/lib/runtime/neon';
 import type { KeyValueStore, ObjectBucket, SqlDatabase } from '@/lib/runtime/types';
+import { normalise as normaliseSiteUrl } from '@/lib/seo/site-url';
 
 /** Logical KV namespaces, each a separate Netlify Blobs store. */
 export type BindingName = 'SESSIONS' | 'DRAFTS' | 'RATELIMIT' | 'DB' | 'MEDIA';
@@ -43,7 +44,18 @@ export type SecretName =
   /** Optional deploy-status credentials (Netlify build hook + API). */
   | 'NETLIFY_BUILD_HOOK_URL'
   | 'NETLIFY_API_TOKEN'
-  | 'NETLIFY_SITE_ID';
+  | 'NETLIFY_SITE_ID'
+  /**
+   * Cloudflare deploy-status credentials. Retained in the Netlify resolver's union — exactly as
+   * `env.cloudflare.ts` retains the `NETLIFY_*` names — so the ONE shared endpoint
+   * `src/pages/api/admin/deploy-status.ts` type-checks under whichever resolver `@/lib/env` resolves
+   * to (Netlify here, Cloudflare under the build alias). They are never set on Netlify, so
+   * `optionalConfig` simply returns `undefined` for them there; this adds no runtime behaviour.
+   */
+  | 'CF_DEPLOY_HOOK_URL'
+  | 'CF_ACCOUNT_ID'
+  | 'CF_API_TOKEN'
+  | 'CF_WORKER_NAME';
 
 /** The Blobs store name for each KV namespace. Prefixed so they never collide. */
 const KV_STORE_NAMES: Record<'SESSIONS' | 'DRAFTS' | 'RATELIMIT', string> = {
@@ -201,7 +213,9 @@ export function getPublicConfig(_context?: RuntimeCarrier): {
       .filter((part) => part !== '');
 
   return {
-    siteUrl: siteUrl.trim().replace(/\/$/, ''),
+    // One normalizer for the whole codebase (strips all trailing slashes); see
+    // `src/lib/seo/site-url.ts#normalise`.
+    siteUrl: normaliseSiteUrl(siteUrl),
     whatsappNumbers: split(readEnv('PUBLIC_WHATSAPP_NUMBERS')),
     phoneNumbers: split(readEnv('PUBLIC_PHONE_NUMBERS')),
   };

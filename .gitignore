@@ -3,6 +3,10 @@ dist/
 .astro/
 .netlify/
 
+# cloudflare / wrangler local state and ad-hoc dry-run output
+.wrangler/
+_wrangler_dryrun/
+
 # environment / secrets (never commit)
 .env
 .env.*
@@ -15,3 +19,4 @@ node_modules/
 # test artifacts
 playwright-report/
 test-results/
+.e2e/

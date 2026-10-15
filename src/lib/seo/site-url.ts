@@ -20,8 +20,23 @@
  * Requirements: 23.3, 28.2, 28.9.
  */
 
-/** Trailing slash removed, so every join produces exactly one separator. */
-function normalise(value: string): string {
+/**
+ * The single site-URL normalizer for the whole codebase.
+ *
+ * Trims surrounding whitespace and removes **every** trailing slash (`/+$`, not just one), so an
+ * origin with no trailing slash, one trailing slash, or several all normalise to the same
+ * slash-free origin and every subsequent join produces exactly one separator. Stripping all
+ * trailing slashes rather than one is deliberate: it means a canonical tag and a redirect target
+ * cannot disagree because the configured origin happened to carry a double slash. (No example URL
+ * is written here on purpose — a hostname literal anywhere under `src/` is itself a lint/test
+ * failure; see `tests/unit/seo.meta.test.ts`.)
+ *
+ * Exported because the environment resolvers (`src/lib/env.ts`, `src/lib/env.cloudflare.ts`) MUST
+ * normalise `PUBLIC_SITE_URL` the same way this render-path resolver does — there is one
+ * normalization implementation, here, and they call it. (This module imports nothing, so importing
+ * it from the env resolvers creates no cycle.)
+ */
+export function normalise(value: string): string {
   return value.trim().replace(/\/+$/, '');
 }
 

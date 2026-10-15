@@ -21,7 +21,7 @@ import type { KeyValueStore } from '@/lib/runtime/types';
 import { ERROR_CODES, errorResponse } from '../errors';
 import { createGitHubClient } from '../github/factory';
 import { findAdminUserById } from '../auth/users';
-import { getD1, getKV } from '../env';
+import { getD1, getKV } from '@/lib/env';
 import { interactiveActor, type InteractiveActor } from '../auth/actor';
 import { requireAdmin } from '../auth/guard';
 import type { GitHubContentClient } from '../github/client';

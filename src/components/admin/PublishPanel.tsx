@@ -126,7 +126,7 @@ export default function PublishPanel(props: PublishPanelProps): ReactElement {
         setPhase({
           kind: 'deployUnknown',
           message:
-            'The publish was committed. The build is taking longer than expected — check the deploy in Netlify.',
+            'The publish was committed. The build is taking longer than expected — check the deploy in your hosting dashboard.',
         });
         return;
       }

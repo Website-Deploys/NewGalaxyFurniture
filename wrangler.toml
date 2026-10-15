@@ -1,0 +1,167 @@
+# :schema node_modules/wrangler/config-schema.json
+#
+# Cloudflare Workers configuration for New Galaxy Furniture.
+#
+# Production bindings are LIVE-WIRED: the D1 database (migrated), the three KV namespaces, and the
+# R2 bucket below all reference real resource ids. The Cloudflare target is selected at build time
+# with `DEPLOY_TARGET=cloudflare` (see astro.config.mjs). What is NOT yet done, and is deliberately
+# left for an explicit decision: attaching the production custom domain (needs DNS/zone + a deploy),
+# setting the secrets listed below via `wrangler secret put`, and creating the preview-only D1/R2
+# resources. No `wrangler deploy` has been run from this configuration.
+#
+# NO SECRET VALUE APPEARS IN THIS FILE, and none ever may. Every secret is set out of band, per
+# environment, with `wrangler secret put <NAME>`:
+#
+#     wrangler secret put GITHUB_TOKEN         # fine-grained PAT, contents:write on the content repo
+#     wrangler secret put GITHUB_REPO          # "owner/repo" the write pipeline commits to
+#     wrangler secret put GITHUB_BRANCH        # branch content commits land on (e.g. main)
+#     wrangler secret put AI_PROVIDER          # provider id for the product assistant
+#     wrangler secret put AI_API_KEY           # provider key — server-side only, never public
+#     wrangler secret put AI_MODEL             # model id for the assistant
+#     wrangler secret put SESSION_SECRET       # 32+ random bytes, admin session signing
+#     wrangler secret put CF_DEPLOY_HOOK_URL   # optional: deploy hook used to start a build
+#     wrangler secret put CF_ACCOUNT_ID        # optional: read side of /api/admin/deploy-status
+#     wrangler secret put CF_API_TOKEN         # optional: Workers Scripts:Read token for the above
+#     wrangler secret put CF_WORKER_NAME       # optional: script name to poll, defaults to `name`
+#
+# The `id` / `database_id` fields below are PLACEHOLDERS. They are resource identifiers (not
+# credentials) and must be replaced with the real values printed by:
+#     wrangler kv namespace create <NAME>
+#     wrangler d1 create <DB_NAME>
+#     wrangler r2 bucket create <BUCKET_NAME>
+# No real id is invented here. A placeholder is deliberately not a valid id so a copy-paste deploy
+# fails loudly rather than binding to the wrong resource.
+#
+# NOTE ON RATE LIMITING: unlike the original Cloudflare design, the current application collapses the
+# per-minute ceilings into KV counters (`consumeBindingLimit` in src/lib/auth/rate-limit.ts), so
+# there are intentionally NO [[ratelimits]] bindings here. The RATELIMIT KV namespace covers every
+# window.
+
+name = "new-galaxy-furniture"
+# `main` points at the project's Worker entry (the fetch handler + the scheduled analytics handler).
+# Under @astrojs/cloudflare v14 the adapter injects its own entrypoint when `main` is unset; naming a
+# real source file is the supported override for adding the `scheduled` export.
+main = "./src/worker.ts"
+compatibility_date = "2026-09-02"
+# The Worker runs Node built-ins (WebCrypto helpers, Buffer in the image path).
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+preview_urls = true
+
+# Prerendered HTML, hashed assets and fonts are served from the static asset store; the Worker only
+# runs for /admin/**, /api/** and /img/**.
+#
+# `./dist/client`, not `./dist`: @astrojs/cloudflare v14 splits the build into `dist/client` (public
+# assets) and `dist/server` (the Worker bundle). Pointing this at `./dist` would place the server
+# bundle inside the uploaded asset tree. `public/.assetsignore` is a second line of defence.
+[assets]
+binding = "ASSETS"
+directory = "./dist/client"
+# Trailing slashes are normalised away at the edge (Requirement 23.15); src/middleware.ts applies the
+# same rule to Worker-served routes and to `astro dev`.
+html_handling = "drop-trailing-slash"
+
+# --- Scheduled work ---------------------------------------------------------
+# The nightly analytics snapshot: src/worker.ts exports the `scheduled` handler. 19:30 UTC is 01:00
+# IST — after the day it summarises has closed in UTC. (Requirements 3.14, 3.15, 20.11.)
+[triggers]
+crons = ["30 19 * * *"]
+
+[observability]
+enabled = true
+
+[placement]
+mode = "smart"
+
+# --- Public (non-secret) variables ------------------------------------------
+# These are printed on the site itself, so they are configuration, not secrets.
+[vars]
+PUBLIC_SITE_URL = "https://newgalaxyfurniture.com"
+PUBLIC_WHATSAPP_NUMBERS = "+919513443606,+918147083703"
+PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
+
+# --- KV ---------------------------------------------------------------------
+# SESSIONS:  opaque admin sessions at session:{id}, 12 h TTL.
+# DRAFTS:    draft product JSON at draft:{id} for instant /admin/preview.
+# RATELIMIT: fixed-window counters for every rate limit (login windows, hourly AI/lead caps,
+#            10-minute upload caps, and the per-minute admin-API / events ceilings).
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "e29ebea10b9b44429a6d3f637a7fbede"
+
+[[kv_namespaces]]
+binding = "DRAFTS"
+id = "48904df38d704a31ac4ab87284ff292e"
+
+[[kv_namespaces]]
+binding = "RATELIMIT"
+id = "e74f6a528e57458f8d940ef21ec9f68d"
+
+# --- D1 ---------------------------------------------------------------------
+# Leads, analytics events and daily rollups, admin users, login attempts.
+# Apply the SQLite migrations in ./migrations before first use (see migrations/README.md).
+[[d1_databases]]
+binding = "DB"
+database_name = "ngf-content"
+database_id = "deff371f-d6e6-4172-ba16-4b4f9f52d5fa"
+migrations_dir = "migrations"
+
+# --- R2 ---------------------------------------------------------------------
+# Image originals and generated derivatives, served through /img/**.
+#
+# The 30-day recovery window for deleted images (Requirement 15.16) is an R2 bucket lifecycle rule,
+# which wrangler.toml cannot express. Set it once per bucket:
+#     wrangler r2 bucket lifecycle add ngf-media --name expire-deleted --prefix deleted/ --expire-days 30
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "ngf-media"
+
+# ----------------------------------------------------------------------------
+# Preview environment: PR deployments. Distinct PUBLIC_SITE_URL so preview content never leaks into
+# canonical tags or gets indexed (Requirement 28.2). Preview resources are to be treated as EMPTY;
+# no production data is migrated into them.
+#
+# SELECT THIS ENVIRONMENT AT BUILD TIME, NOT AT DEPLOY TIME:
+#     CLOUDFLARE_ENV=preview npm run build && wrangler deploy
+# ----------------------------------------------------------------------------
+[env.preview]
+name = "new-galaxy-furniture-preview"
+workers_dev = true
+
+# NO CRON ON PREVIEW. `triggers` is inheritable, so this empty list is required to stop the preview
+# Worker inheriting the nightly schedule and committing a snapshot computed from preview data into
+# the production content repository.
+[env.preview.triggers]
+crons = []
+
+[env.preview.vars]
+PUBLIC_SITE_URL = "https://preview.newgalaxyfurniture.workers.dev"
+PUBLIC_WHATSAPP_NUMBERS = "+919513443606,+918147083703"
+PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
+
+[env.preview.assets]
+binding = "ASSETS"
+directory = "./dist/client"
+html_handling = "drop-trailing-slash"
+
+[[env.preview.kv_namespaces]]
+binding = "SESSIONS"
+id = "2105e4f3615646e6acf6efd113ed11c3"
+
+[[env.preview.kv_namespaces]]
+binding = "DRAFTS"
+id = "2b10852006184df7b6ac6e43f50e342e"
+
+[[env.preview.kv_namespaces]]
+binding = "RATELIMIT"
+id = "0632cf995e634a8abb4bea4d7d01be73"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "ngf-content-preview"
+database_id = "REPLACE_WITH_PREVIEW_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[[env.preview.r2_buckets]]
+binding = "MEDIA"
+bucket_name = "ngf-media-preview"

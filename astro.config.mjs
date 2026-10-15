@@ -1,41 +1,98 @@
 // @ts-check
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import netlify from '@astrojs/netlify';
+import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
+
+/**
+ * Deployment target selection.
+ *
+ * `DEPLOY_TARGET` chooses the adapter and the runtime resolver. It defaults to `netlify`, so with
+ * the variable unset this config behaves EXACTLY as the Netlify-only config did — same adapter, same
+ * `includeFiles`, and no `@/lib/env` alias — and the live Netlify deployment is unaffected.
+ *
+ *   (unset) | netlify  → @astrojs/netlify, storage via src/lib/env.ts (Neon + Netlify Blobs)
+ *   cloudflare          → @astrojs/cloudflare, storage via src/lib/env.cloudflare.ts (D1 + KV + R2)
+ *
+ * Switching back to Netlify is therefore a matter of unsetting the variable; no user work is lost
+ * and nothing in this file is Cloudflare-only unless the flag is set. Added for Stage 2 LOCAL
+ * verification of the Cloudflare target; it does not deploy anything.
+ */
+const DEPLOY_TARGET = process.env.DEPLOY_TARGET === 'cloudflare' ? 'cloudflare' : 'netlify';
+const isCloudflare = DEPLOY_TARGET === 'cloudflare';
 
 /**
  * Rendering strategy (design → Architecture → Request / Render Path):
  * `output: 'static'` is the default for every route, so marketing, catalogue and
  * product pages are prerendered at build time and ship ~zero JS. Routes that must
  * reflect per-request state (`/admin/**`, `/api/**`, `/img/**`) opt out individually with
- * `export const prerender = false;` and run as **Netlify Functions** through this adapter.
+ * `export const prerender = false;` and run as on-demand handlers — Netlify Functions on the
+ * default target, Worker routes on the Cloudflare target.
  *
  * `site` is never hard-coded: it is driven by PUBLIC_SITE_URL so attaching a
- * purchased domain (or a Netlify preview deployment) is a configuration change only.
- *
- * **Netlify, not Cloudflare.** The adapter turns every on-demand route into a Netlify Function;
- * persistent storage is Netlify Blobs (images, sessions, drafts, rate-limit counters) and Neon
- * Postgres (leads, analytics, admin users), resolved through `src/lib/env.ts`. There is no Worker,
- * no `wrangler.toml`, and no `cloudflare:workers` import anywhere in the runtime.
+ * purchased domain (or a preview deployment) is a configuration change only.
  */
+
+/**
+ * The Netlify adapter. The adapter turns every on-demand route into a Netlify Function; persistent
+ * storage is Netlify Blobs (images, sessions, drafts, rate-limit counters) and Neon Postgres (leads,
+ * analytics, admin users), resolved through `src/lib/env.ts`.
+ *
+ * `includeFiles` bundles the product/content JSON and the image WebAssembly codecs into the
+ * on-demand functions. The catalogue reads `data/**` at request time on the admin/API routes, and
+ * `/img/**` derivative generation decodes/encodes through the Photon and jSquash WASM modules;
+ * neither is auto-traced as a dependency, so both are named explicitly.
+ */
+const netlifyAdapter = netlify({
+  includeFiles: [
+    './data/**/*.json',
+    './node_modules/@jsquash/avif/codec/enc/avif_enc.wasm',
+    './node_modules/@jsquash/avif/codec/dec/avif_dec.wasm',
+    './node_modules/@cf-wasm/photon/dist/node/**/*.wasm',
+  ],
+});
+
+/**
+ * The Cloudflare adapter. On-demand routes run as Worker handlers; storage is D1 + KV + R2 resolved
+ * through `src/lib/env.cloudflare.ts`.
+ *
+ * - `imageService: 'compile'` runs sharp at build time rather than shipping an image service into
+ *   the Worker (the pipeline's own Photon/jSquash WASM handles runtime derivatives via `/img/**`).
+ * - `sessionKVBindingName: 'SESSIONS'` names the project's own KV namespace so the v14 adapter does
+ *   not auto-provision an undeclared `SESSION` binding for Astro's session store. Admin auth does
+ *   not use Astro Sessions (see `session: false` below); this only keeps the binding set closed.
+ */
+const cloudflareAdapter = cloudflare({
+  imageService: 'compile',
+  sessionKVBindingName: 'SESSIONS',
+});
+
+/**
+ * Runtime resolver alias. On the Cloudflare target, `@/lib/env` resolves to `src/lib/env.cloudflare.ts`
+ * instead of `src/lib/env.ts`. This is the single seam that switches the whole app — every consumer
+ * (routes, stores, the GitHub factory, the Worker's scheduled handler) imports `@/lib/env`, so the
+ * alias makes all of them use the Cloudflare resolver consistently and removes any mixed-resolver
+ * risk. On the Netlify target no alias is added, so `@/lib/env` resolves to `src/lib/env.ts` as
+ * before.
+ *
+ * It is placed BEFORE the `@` → `src` root alias in the array so the more specific match wins.
+ */
+const envAlias = isCloudflare
+  ? [
+      {
+        find: /^@\/lib\/env$/,
+        replacement: fileURLToPath(new URL('./src/lib/env.cloudflare.ts', import.meta.url)),
+      },
+    ]
+  : [];
+
 export default defineConfig({
   site: process.env.PUBLIC_SITE_URL ?? 'http://localhost:4321',
   output: 'static',
-  adapter: netlify({
-    /**
-     * `includeFiles` bundles the product/content JSON and the image WebAssembly codecs into the
-     * on-demand functions. The catalogue reads `data/**` at request time on the admin/API routes,
-     * and `/img/**` derivative generation decodes/encodes through the Photon and jSquash WASM
-     * modules; neither is auto-traced as a dependency, so both are named explicitly.
-     */
-    includeFiles: [
-      './data/**/*.json',
-      './node_modules/@jsquash/avif/codec/enc/avif_enc.wasm',
-      './node_modules/@jsquash/avif/codec/dec/avif_dec.wasm',
-      './node_modules/@cf-wasm/photon/dist/node/**/*.wasm',
-    ],
-  }),
+  adapter: isCloudflare ? cloudflareAdapter : netlifyAdapter,
   integrations: [
     /**
      * `experimentalDisableStreaming` is required by the Preact swap, not a preference.
@@ -53,9 +110,9 @@ export default defineConfig({
   /**
    * Astro's own session store is NOT used by admin authentication — the design specifies opaque
    * sessions with an explicit 2 h idle / 12 h absolute policy and a per-session CSRF token
-   * (`src/lib/auth/session.ts`), stored in a Netlify Blobs store (`ngf-sessions`) via the KV
-   * adapter. Astro Sessions are disabled so the adapter does not provision a second, unused session
-   * store or pull the session runtime into every function bundle.
+   * (`src/lib/auth/session.ts`), stored in a KV namespace (`SESSIONS` / Netlify Blobs `ngf-sessions`)
+   * via the KV adapter. Astro Sessions are disabled so the adapter does not provision a second,
+   * unused session store or pull the session runtime into every function/worker bundle.
    */
   session: false,
   vite: {
@@ -66,9 +123,13 @@ export default defineConfig({
      * `preact/compat` is the same component API in ~a fifth of the bytes. Types come from React and
      * the runtime is Preact; the island surface was audited to the hooks `preact/compat` supports.
      * The regexes are anchored so `preact/compat` is not rewritten into itself.
+     *
+     * The `envAlias` (Cloudflare target only) is spread in first so it matches before any broader
+     * alias; the react→preact rewrites are unchanged on both targets.
      */
     resolve: {
       alias: [
+        ...envAlias,
         { find: /^react$/, replacement: 'preact/compat' },
         { find: /^react-dom$/, replacement: 'preact/compat' },
         { find: /^react-dom\/client$/, replacement: 'preact/compat/client' },

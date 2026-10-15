@@ -32,11 +32,14 @@ import { buildCommitMessage, type CommitScope } from './commit-message';
 import { productContentPath } from './paths';
 import {
   forgetProduct,
+  listProductSummaries,
+  readProductIndex,
   rememberProduct,
   writeProductIndex,
   productSlugFor,
   summarize,
   type ProductIndex,
+  type ProductSummary,
 } from '../products/index-store';
 import { ProductSchema, type Product, type ProductStatusValue } from '@/schemas/product';
 import { shouldSkipCi, transitionAction } from '../products/transitions';
@@ -360,4 +363,129 @@ export async function rehydrateFromRepository(deps: {
 
   await writeProductIndex(deps.drafts, index);
   return { indexed: Object.keys(index).length, draftsRestored, skipped };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reading the admin list with a repository fallback                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The product summaries the admin dashboard and list render — with a self-healing read.
+ *
+ * The admin reads the KV `index:products` cache; the public site renders committed
+ * `data/products/*.json`. Those are two stores, and nothing reconciles them at deploy
+ * time. Two divergences follow, and this function closes both while keeping the documented
+ * architecture — the repository is the source of truth, KV is a rebuildable cache:
+ *
+ *  1. **Empty index.** A recreated namespace, a fresh preview, or products committed outside
+ *     this admin's own `saveProductState` left the index empty, so the admin showed "Add your
+ *     first product" while the product was live on the public site. When the index is empty we
+ *     rebuild it fully from the repository.
+ *
+ *  2. **Partial index.** A non-empty index is NOT assumed complete. A product committed to the
+ *     repository through any path other than this admin — a hand commit, a second environment,
+ *     a different operator's deploy — is public yet absent from this index. So the repository's
+ *     product slugs are listed (one cheap directory call, not a read per row) and any slug the
+ *     index does not already cover is pulled in. Slugs already represented are left untouched,
+ *     which is what protects editable drafts and newer admin edits: this only *adds* the
+ *     missing published records, it never re-reads, re-writes, or overwrites a row the index
+ *     already holds, and the index is keyed by product id so a reconciled row cannot duplicate
+ *     an existing one.
+ *
+ * **Cost.** The normal path is one KV read plus one lightweight slug listing; per-file GitHub
+ * reads happen only for slugs that are actually missing (usually none). The reconciliation is
+ * skipped entirely when it is not safe or not worth it — see the failure handling below.
+ *
+ * **Failure handling, which differs by case on purpose:**
+ *  - Index EMPTY and the repository cannot be read: the error PROPAGATES. There is nothing to
+ *    show and we must not claim "no products"; the caller renders "this environment is not
+ *    configured". A genuinely empty repository rebuilds to an empty index — a true empty state.
+ *  - Index NON-EMPTY and the reconciliation listing fails: the error is SWALLOWED and the index
+ *    we already have is returned. A transient GitHub hiccup must not blank a working list; the
+ *    worst case is one just-added product missing until the next load or a manual rehydrate.
+ */
+export async function listProductSummariesWithRepositoryFallback(deps: {
+  drafts: KeyValueStore;
+  client: GitHubContentClient;
+}): Promise<ProductSummary[]> {
+  const index = await readProductIndex(deps.drafts);
+  const existing = Object.values(index);
+
+  if (existing.length === 0) {
+    // The cache is empty. Rebuild it fully from the repository before concluding the catalogue
+    // is empty. A repository failure here propagates — see the header.
+    const slugs = await deps.client.listProductSlugs();
+    if (slugs.length === 0) return [];
+    await rehydrateFromRepository({ drafts: deps.drafts, client: deps.client, slugs });
+    return await listProductSummaries(deps.drafts);
+  }
+
+  // The cache is non-empty but not assumed complete. Reconcile only the repository slugs the
+  // index does not already cover, best-effort: a listing failure returns what we have.
+  try {
+    const repoSlugs = await deps.client.listProductSlugs();
+    const known = new Set(existing.map((summary) => summary.slug));
+    const missing = repoSlugs.filter((slug) => !known.has(slug));
+    if (missing.length === 0) return existing;
+
+    const reconciled = await reconcileMissingProducts({
+      drafts: deps.drafts,
+      client: deps.client,
+      index,
+      missingSlugs: missing,
+    });
+    return Object.values(reconciled);
+  } catch (error) {
+    // Best-effort only. The index is a working list; a transient repository error must not
+    // turn it into a false empty or an error page.
+    console.error('[drafts] reconciliation against the repository was skipped', error);
+    return existing;
+  }
+}
+
+/**
+ * Add the repository products the index is missing, without disturbing the rows it already has.
+ *
+ * Only the `missingSlugs` are read from the repository. Each parsed product is added to the
+ * index under its id, and — exactly as `rehydrateFromRepository` does for a full rebuild — a
+ * `DRAFT`/`REVIEW` product also gets its KV working copy restored so the editor and preview can
+ * read it back. A row already present for that id is NOT re-read or overwritten: reconciliation
+ * never clobbers a draft or a newer admin edit, it only fills gaps. A file that 404s or fails
+ * schema validation is skipped, never allowed to abort the others.
+ */
+async function reconcileMissingProducts(deps: {
+  drafts: KeyValueStore;
+  client: GitHubContentClient;
+  index: ProductIndex;
+  missingSlugs: readonly string[];
+}): Promise<ProductIndex> {
+  const index: ProductIndex = { ...deps.index };
+  const knownIds = new Set(Object.keys(index));
+
+  for (const slug of deps.missingSlugs) {
+    const path = productContentPath(slug);
+    if (path === null) continue;
+    let file: Awaited<ReturnType<GitHubContentClient['readJson']>>;
+    try {
+      file = await deps.client.readJson(path);
+    } catch {
+      continue;
+    }
+    if (file === null) continue;
+    const parsed = ProductSchema.safeParse(file.value);
+    if (!parsed.success) continue;
+
+    // Guard against the race where the id (not just the slug) is already present — never
+    // overwrite an existing row, which could be a newer admin edit or a draft.
+    if (knownIds.has(parsed.data.id)) continue;
+
+    index[parsed.data.id] = summarize(parsed.data);
+    knownIds.add(parsed.data.id);
+    if (parsed.data.status === 'DRAFT' || parsed.data.status === 'REVIEW') {
+      await putDraft(deps.drafts, parsed.data);
+    }
+  }
+
+  await writeProductIndex(deps.drafts, index);
+  return index;
 }

@@ -24,11 +24,11 @@ import {
   logServerError,
   toClientErrorResponse,
 } from '@/lib/errors';
-import { listProductSummaries, takenIdentifiers } from '@/lib/products/index-store';
+import { takenIdentifiers } from '@/lib/products/index-store';
 import { openAdminContext } from '@/lib/admin/context';
 import { pageOfProducts, parseProductQuery } from '@/lib/products/query';
 import { readValidatedJson } from '@/lib/auth/guard';
-import { saveProductState } from '@/lib/github/drafts';
+import { listProductSummariesWithRepositoryFallback, saveProductState } from '@/lib/github/drafts';
 
 export const prerender = false;
 
@@ -37,7 +37,10 @@ export async function GET(context: APIContext): Promise<Response> {
   if (!opened.ok) return opened.response;
 
   try {
-    const summaries = await listProductSummaries(opened.context.drafts);
+    const summaries = await listProductSummariesWithRepositoryFallback({
+      drafts: opened.context.drafts,
+      client: opened.context.client,
+    });
     const page = pageOfProducts(summaries, parseProductQuery(context.url.searchParams));
     return jsonResponse(page);
   } catch (error) {

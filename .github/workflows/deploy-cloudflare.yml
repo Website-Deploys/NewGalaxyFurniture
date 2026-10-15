@@ -1,0 +1,148 @@
+name: Deploy (Cloudflare Workers)
+
+# GitHub-connected deployment to Cloudflare Workers.
+#
+# This complements ci.yml (the quality gates) and does NOT replace it: a deploy here assumes the
+# code already passed CI on the same ref. Deployment is MANUAL ONLY: pushing commits or opening a
+# pull request never runs this workflow. An operator must explicitly dispatch it and select an
+# environment. Two paths, deliberately separated:
+#
+#   preview      -> deploy to the PREVIEW environment (wrangler `[env.preview]`), a throwaway
+#                    deployment on *.workers.dev with its own D1/KV/R2 and its own PUBLIC_SITE_URL,
+#                    so preview content can never leak into production or be indexed.
+#   production   -> deploy to PRODUCTION, but only after the `production` GitHub Environment's
+#                    required-reviewer gate is satisfied. The job cannot start the deploy step until
+#                    a reviewer approves it in the GitHub UI.
+#
+# NOTHING in this file contains a secret value. Credentials come from GitHub repository/environment
+# secrets, referenced by name only:
+#   CLOUDFLARE_API_TOKEN   - repo secret. Scope: Account > Workers Scripts: Edit (+ D1, KV, R2 Edit
+#                            if you let the deploy run migrations). Never the Global API Key.
+#   CLOUDFLARE_ACCOUNT_ID  - repo secret (an id, not a credential, but kept out of the file anyway).
+#
+# Worker runtime secrets (SESSION_SECRET, GITHUB_TOKEN, GITHUB_REPO, GITHUB_BRANCH, AI_PROVIDER,
+# AI_API_KEY, AI_MODEL, and the optional CF_* set) are NOT set from here. They are set out of band
+# with `wrangler secret put <NAME>` per environment, so a workflow edit can never change or print a
+# live secret. See wrangler.toml's header for the exact list.
+#
+# PREREQUISITES before the preview path can succeed:
+#   - `[env.preview].d1_databases.database_id` in wrangler.toml must be a real id (it is a
+#     placeholder today), and the preview D1 + the `ngf-media-preview` R2 bucket must exist. The
+#     preview job's "Check preview prerequisites" step fails the run with a clear message while the
+#     placeholder is present, so a preview deploy cannot silently bind to a non-existent database.
+# PREREQUISITES before the production path can serve traffic:
+#   - a route/custom domain must be attached to the Worker (wrangler.toml has none by design, so a
+#     deploy uploads the script without serving it on a hostname until that is added).
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: preview
+        type: choice
+        options: [preview, production]
+
+# One in-flight manual deploy per ref; additional dispatches wait their turn.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Lets wrangler-action record a GitHub Deployment for visibility. No write to code.
+  deployments: write
+
+env:
+  # Selects the Cloudflare adapter and the @/lib/env.cloudflare resolver at build time.
+  DEPLOY_TARGET: cloudflare
+  # Pin the action's wrangler to the version this repo develops against.
+  WRANGLER_VERSION: '4.128.0'
+
+jobs:
+  # --- Preview: explicit manual dispatch only ------------------------------
+  preview:
+    name: Preview deploy
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: preview
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fail loudly, before any build or deploy, if the preview resources have not been configured.
+      # The preview D1 database id ships as a placeholder; deploying with it would bind to nothing
+      # and fail with an opaque runtime error, so this turns that into a clear, actionable message.
+      - name: Check preview prerequisites
+        run: |
+          if grep -q "REPLACE_WITH_PREVIEW_D1_DATABASE_ID" wrangler.toml; then
+            echo "::error::Preview D1 database id is still a placeholder in wrangler.toml."
+            echo "::error::Create the preview D1 (wrangler d1 create ngf-content-preview) and the"
+            echo "::error::ngf-media-preview R2 bucket, then replace the placeholder in [env.preview]."
+            exit 1
+          fi
+
+      - name: Build (Cloudflare target, preview vars)
+        run: npm run build
+        env:
+          CLOUDFLARE_ENV: preview
+          PUBLIC_SITE_URL: https://preview.newgalaxyfurniture.workers.dev
+
+      - name: Deploy to preview
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
+          environment: preview
+          command: deploy --env preview
+
+  # --- Production: explicit manual dispatch, behind the approval gate ------
+  production:
+    name: Production deploy
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The approval gate. Configure the `production` Environment in
+    # Settings > Environments with required reviewers; the deploy step below cannot run until a
+    # reviewer approves this job. The URL is informational.
+    environment:
+      name: production
+      url: https://newgalaxyfurniture.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Cloudflare target, production vars)
+        run: npm run build
+        env:
+          PUBLIC_SITE_URL: https://newgalaxyfurniture.com
+
+      - name: Deploy to production
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
+          command: deploy

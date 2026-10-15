@@ -15,8 +15,8 @@
  */
 
 import { GitHubContentClient } from './client';
-import { optionalConfig, requireSecret } from '../env';
-import type { RuntimeCarrier } from '../env';
+import { optionalConfig, requireSecret } from '@/lib/env';
+import type { RuntimeCarrier } from '@/lib/env';
 
 /** Throws `CONFIG_UNAVAILABLE` when the pipeline is not configured for this environment. */
 export function createGitHubClient(context: RuntimeCarrier): GitHubContentClient {

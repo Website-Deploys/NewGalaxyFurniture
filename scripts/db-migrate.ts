@@ -20,11 +20,44 @@ import { neon } from '@netlify/neon';
 
 const SCHEMA_PATH = fileURLToPath(new URL('../db/schema.sql', import.meta.url));
 
-/** Split SQL into executable statements: strip line comments, split on `;`, drop blanks. */
+/**
+ * Remove a `--` line comment from a single line, to end of line.
+ *
+ * Only a `--` that is OUTSIDE a single-quoted string begins a comment, so a literal that
+ * legitimately contains `--` (or a `;`) is never damaged. A `''` escaped-quote inside a string
+ * toggles the quote state twice and therefore nets out correctly.
+ */
+function stripLineComment(line: string): string {
+  let inSingle = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === "'") {
+      inSingle = !inSingle;
+      continue;
+    }
+    if (!inSingle && ch === '-' && line[i + 1] === '-') {
+      return line.slice(0, i);
+    }
+  }
+  return line;
+}
+
+/**
+ * Split SQL into executable statements: strip comments, split on `;`, drop blanks.
+ *
+ * Comments are stripped FIRST, then the text is split on `;`. The previous version removed only
+ * whole-line comments (lines beginning with `--`), which left *inline trailing* comments attached
+ * to a column line, e.g. `key TEXT PRIMARY KEY, -- 'email…'`. The Neon HTTP driver then received a
+ * statement whose remainder was commented out, so `CREATE TABLE …(` arrived unterminated and
+ * Postgres answered `syntax error at end of input`. `stripLineComment` is quote-aware, so inline
+ * trailing comments are removed while quoted literals are preserved byte for byte. `db/schema.sql`
+ * uses only `--` line comments and simple single-quoted literals; C-style block comments are not
+ * used and are intentionally out of scope.
+ */
 function statements(sql: string): string[] {
   return sql
     .split('\n')
-    .filter((line) => !line.trimStart().startsWith('--'))
+    .map(stripLineComment)
     .join('\n')
     .split(';')
     .map((statement) => statement.trim())

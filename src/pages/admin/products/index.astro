@@ -10,9 +10,11 @@
 import AdminLayout from '@/layouts/AdminLayout.astro';
 import ProductTable from '@/components/admin/ProductTable';
 import { can } from '@/lib/auth/permissions';
+import { createGitHubClient } from '@/lib/github/factory';
 import { getKV } from '@/lib/env';
 import { getPublishedCategories } from '@/lib/content/catalogue';
-import { listProductSummaries, type ProductSummary } from '@/lib/products/index-store';
+import { listProductSummariesWithRepositoryFallback } from '@/lib/github/drafts';
+import { type ProductSummary } from '@/lib/products/index-store';
 
 export const prerender = false;
 
@@ -23,10 +25,15 @@ const canWrite = can(role, 'product.write');
 let summaries: ProductSummary[] = [];
 let unavailable: string | null = null;
 try {
-  summaries = await listProductSummaries(getKV(Astro, 'DRAFTS'));
+  // KV index first, repository rebuild as a fallback when it is empty, so the list reflects
+  // the committed/public catalogue even in an environment whose cache was never populated.
+  summaries = await listProductSummariesWithRepositoryFallback({
+    drafts: getKV(Astro, 'DRAFTS'),
+    client: createGitHubClient(Astro),
+  });
 } catch (error) {
-  // A missing binding is a deployment fault. Saying so beats rendering an empty table that
-  // reads as "you have no products".
+  // A missing binding or an unreadable repository is a deployment fault. Saying so beats
+  // rendering an empty table that reads as "you have no products".
   console.error('[admin/products] could not read the product index', error);
   unavailable =
     'The product list could not be read in this environment. It is a configuration problem, not an empty catalogue.';

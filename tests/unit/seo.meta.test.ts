@@ -299,10 +299,12 @@ const SRC = fileURLToPath(new URL('../../src', import.meta.url));
  * Hosts that are not site configuration, and why each is allowed.
  *
  * `schema.org` and `www.w3.org` are vocabulary URIs — identifiers whose meaning *is* the string, so
- * making them configurable would make the structured data mean something else. The four API hosts
- * are upstream endpoints that receive a credential (`GITHUB_TOKEN`, `CF_API_TOKEN`, `AI_API_KEY`),
- * and a host read from configuration would turn a settings edit into a way to send a secret
- * somewhere else. `localhost` and `127.0.0.1` are development only. The eslint rule
+ * making them configurable would make the structured data mean something else. The API hosts are
+ * upstream endpoints that receive a credential (`GITHUB_TOKEN`, `CF_API_TOKEN`, `NETLIFY_API_TOKEN`,
+ * `AI_API_KEY`), and a host read from configuration would turn a settings edit into a way to send a
+ * secret somewhere else. `api.cloudflare.com` and `api.netlify.com` are the deploy-status reader's
+ * two targets — one per deployment platform, each fixed in source so neither token can be
+ * redirected. `localhost` and `127.0.0.1` are development only. The eslint rule
  * `no-restricted-syntax` carries the identical list; this test is the second lock, because a lint
  * rule can be disabled inline.
  */
@@ -313,6 +315,7 @@ const ALLOWED_HOSTS = [
   'www.w3.org',
   'api.github.com',
   'api.netlify.com',
+  'api.cloudflare.com',
   'api.openai.com',
   'api.anthropic.com',
   'api.whatsapp.com',
@@ -350,13 +353,26 @@ describe('the domain appears only in PUBLIC_SITE_URL', () => {
     expect(offenders, offenders.join('\n')).toEqual([]);
   });
 
-  it('reads the site URL variable in exactly two resolvers', () => {
+  it('reads the site URL variable only in the known resolvers', () => {
     /*
      * *Reads*, not mentions: several files name `PUBLIC_SITE_URL` in a comment to say where their
      * origin comes from, which is documentation rather than a second resolution path. What matters
-     * is how many places actually pull the value out of the environment, because each one is a place
+     * is which places actually pull the value out of the environment, because each one is a place
      * that could normalise it differently — a trailing slash in one and not the other is how a
      * canonical tag ends up disagreeing with a redirect target.
+     *
+     * There are three such files, and that is the complete, closed set:
+     *   - `lib/env.ts`            — the Netlify resolver's public config.
+     *   - `lib/env.cloudflare.ts` — the Cloudflare resolver's public config.
+     *   - `lib/seo/site-url.ts`   — the render path, and the home of the one shared normalizer.
+     *
+     * `lib/env.ts` and `lib/env.cloudflare.ts` are MUTUALLY EXCLUSIVE build targets: `astro.config.mjs`
+     * aliases `@/lib/env` to exactly one of them per `DEPLOY_TARGET`, so only one is ever active in a
+     * build. They are both listed here because this test scans the filesystem statically, and the
+     * guarantee it protects — no divergent normalization — is enforced by the separate assertion
+     * below that the normalizer is implemented in exactly one place and the readers all call it.
+     *
+     * This asserts the EXACT set, so a fourth reader (an unexpected new resolution path) still fails.
      */
     const readers = filesUnder(SRC)
       .filter((file) => {
@@ -366,17 +382,50 @@ describe('the domain appears only in PUBLIC_SITE_URL', () => {
           /import\.meta\.env(?: as [^)]*\))?\.PUBLIC_SITE_URL/.test(text) ||
           /\bbuildTime\.PUBLIC_SITE_URL\b/.test(text) ||
           /PUBLIC_SITE_URL\?:/.test(text) ||
-          // The Netlify env resolver reads it by name: readEnv('PUBLIC_SITE_URL').
+          // The env resolvers read it by name: readEnv('PUBLIC_SITE_URL').
           /readEnv\(\s*['"]PUBLIC_SITE_URL['"]\s*\)/.test(text)
         );
       })
       // Normalise to forward slashes: `relative()` yields the OS separator, and this
-      // assertion names the two resolvers by their POSIX paths so it reads the same on
-      // any platform.
+      // assertion names the resolvers by their POSIX paths so it reads the same on any platform.
       .map((file) => relative(SRC, file).split(sep).join('/'))
       .sort();
 
-    // `lib/env.ts` for the Worker's public config and `lib/seo/site-url.ts` for rendering.
-    expect(readers).toEqual(['lib/env.ts', 'lib/seo/site-url.ts']);
+    expect(readers).toEqual([
+      'lib/env.cloudflare.ts',
+      'lib/env.ts',
+      'lib/seo/site-url.ts',
+    ]);
+  });
+
+  it('normalises the site URL through the one shared helper in both env resolvers', () => {
+    /*
+     * The real guarantee behind "no divergent normalization": the SITE URL is normalised in exactly
+     * one implementation — `lib/seo/site-url.ts#normalise` — and both env resolvers reach it by
+     * importing that helper, not by carrying their own trailing-slash strip.
+     *
+     * (The `/\/+$/` trailing-slash pattern also appears in path/redirect helpers such as
+     * `seo/meta.ts`, `seo/redirects.ts` and `auth/routes.ts`; those normalise *pathnames*, a
+     * different concern, so this test is scoped to the two env resolvers rather than scanning for the
+     * regex everywhere.)
+     *
+     * For each env resolver: it must import `normalise` from the site-url module AND it must not
+     * apply its own trailing-slash replace to the resolved site URL. If a future edit re-inlined the
+     * strip, the second check fails — the divergence the reader count alone cannot see.
+     */
+    const read = (rel: string): string =>
+      readFileSync(fileURLToPath(new URL(`../../src/${rel}`, import.meta.url)), 'utf8');
+
+    for (const resolver of ['lib/env.ts', 'lib/env.cloudflare.ts']) {
+      const text = read(resolver);
+      // Imports the one shared normalizer from the site-url module.
+      expect(text, `${resolver} must import normalise from lib/seo/site-url`).toMatch(
+        /import\s*\{[^}]*\bnormalise\b[^}]*\}\s*from\s*['"]@\/lib\/seo\/site-url['"]/,
+      );
+      // Does not carry its own trailing-slash strip for the site URL.
+      expect(text, `${resolver} must not inline a trailing-slash strip`).not.toMatch(
+        /siteUrl[^\n]*\.replace\(\s*\/\\?\/\+?\$\//,
+      );
+    }
   });
 });

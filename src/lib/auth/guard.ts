@@ -29,7 +29,7 @@ import type { KeyValueStore } from '@/lib/runtime/types';
 import type { z } from 'zod';
 
 import { ERROR_CODES, errorResponse } from '../errors';
-import { getKV, getPublicConfig } from '../env';
+import { getKV, getPublicConfig } from '@/lib/env';
 import { can, type Permission } from './permissions';
 import {
   clearedSessionCookieValue,
@@ -267,9 +267,18 @@ export async function readValidatedJson<T>(
   return { ok: false, response: errorResponse(ERROR_CODES.VALIDATION_FAILED, { fields }) };
 }
 
-/** The client address, from Netlify's forwarding headers. `unknown` keeps keys well-formed. */
+/**
+ * The client address, from the platform's forwarding headers. `unknown` keeps keys well-formed.
+ *
+ * `cf-connecting-ip` is checked first because this project runs on Cloudflare Workers, where that is
+ * the authoritative client IP; without it every anonymous request would key the login and lead rate
+ * limits under the single bucket `'unknown'`, collapsing per-IP protection. `x-nf-client-connection-ip`
+ * is retained for the legacy Netlify path, and `x-forwarded-for` / `x-real-ip` cover `astro dev` and
+ * proxies. Used only to key anonymous rate limits, never stored beyond the session `ip` field.
+ */
 export function clientAddress(request: Request): string {
   return (
+    request.headers.get('cf-connecting-ip') ??
     request.headers.get('x-nf-client-connection-ip') ??
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     request.headers.get('x-real-ip') ??

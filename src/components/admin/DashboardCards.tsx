@@ -33,7 +33,9 @@ export interface RecentChange {
 }
 
 export interface DashboardCardsProps {
-  counts: CatalogueCounts;
+  /** Null means the product figures could not be read, rather than an empty catalogue. */
+  counts: CatalogueCounts | null;
+  countsUnavailable?: string | null;
   /**
    * New leads, or null when the lead store could not be read. Null renders as "not available
    * yet", never as 0.
@@ -55,9 +57,39 @@ interface Metric {
 export default function DashboardCards(props: DashboardCardsProps): ReactElement {
   const { counts } = props;
 
-  if (counts.total === 0) {
-    return (
-      <div className="flex flex-col gap-6">
+  const metrics: Metric[] =
+    counts === null
+      ? []
+      : [
+          { label: 'Published', value: counts.published, href: '/admin/products?status=PUBLISHED' },
+          { label: 'Drafts', value: counts.draft, href: '/admin/products?status=DRAFT' },
+          { label: 'Awaiting review', value: counts.review, href: '/admin/products?status=REVIEW' },
+          {
+            label: 'Out of stock',
+            value: counts.outOfStock,
+            href: '/admin/products?status=OUT_OF_STOCK',
+            note: 'Still visible to customers, with enquiry buttons in place of ordering.',
+          },
+          {
+            label: 'Unpublished',
+            value: counts.unpublished,
+            href: '/admin/products?status=UNPUBLISHED',
+            note: 'Removed from the site, kept in the catalogue.',
+          },
+        ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {counts === null ? (
+        <section aria-labelledby="catalogue-heading">
+          <h2 id="catalogue-heading" className="font-display text-h3 text-espresso">
+            Catalogue
+          </h2>
+          <p className="mt-2 border border-espresso bg-white px-4 py-3 text-body">
+            {props.countsUnavailable ?? 'Product figures could not be read in this environment.'}
+          </p>
+        </section>
+      ) : counts.total === 0 ? (
         <EmptyState
           heading="No products yet"
           message="Nothing has been created, so there is nothing to count. Product and enquiry figures appear here as soon as there are records behind them — no example numbers are shown in the meantime."
@@ -71,62 +103,33 @@ export default function DashboardCards(props: DashboardCardsProps): ReactElement
             </a>
           )}
         </EmptyState>
-        <LeadsCard newLeads={props.newLeads} />
-        <RecentActivity
-          recent={props.recent}
-          {...(props.recentUnavailable === undefined
-            ? {}
-            : { unavailable: props.recentUnavailable })}
-        />
-      </div>
-    );
-  }
-
-  const metrics: Metric[] = [
-    { label: 'Published', value: counts.published, href: '/admin/products?status=PUBLISHED' },
-    { label: 'Drafts', value: counts.draft, href: '/admin/products?status=DRAFT' },
-    { label: 'Awaiting review', value: counts.review, href: '/admin/products?status=REVIEW' },
-    {
-      label: 'Out of stock',
-      value: counts.outOfStock,
-      href: '/admin/products?status=OUT_OF_STOCK',
-      note: 'Still visible to customers, with enquiry buttons in place of ordering.',
-    },
-    {
-      label: 'Unpublished',
-      value: counts.unpublished,
-      href: '/admin/products?status=UNPUBLISHED',
-      note: 'Removed from the site, kept in the catalogue.',
-    },
-  ];
-
-  return (
-    <div className="flex flex-col gap-6">
-      <section aria-labelledby="catalogue-heading">
-        <h2 id="catalogue-heading" className="font-display text-h3 text-espresso">
-          Catalogue
-        </h2>
-        <p className="mt-1 text-small text-walnut">
-          {counts.total} product{counts.total === 1 ? '' : 's'} in total. Every figure is a count of
-          stored products.
-        </p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {metrics.map((metric) => (
-            <li key={metric.label} className="border border-taupe bg-white p-4">
-              <p className="text-small tracking-[0.12em] text-walnut uppercase">{metric.label}</p>
-              <p className="font-display text-h2 text-espresso">{metric.value}</p>
-              {metric.note !== undefined && (
-                <p className="mt-1 text-small text-walnut">{metric.note}</p>
-              )}
-              {metric.href !== undefined && metric.value > 0 && (
-                <a href={metric.href} className="mt-2 inline-block text-small underline">
-                  View
-                </a>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+      ) : (
+        <section aria-labelledby="catalogue-heading">
+          <h2 id="catalogue-heading" className="font-display text-h3 text-espresso">
+            Catalogue
+          </h2>
+          <p className="mt-1 text-small text-walnut">
+            {counts.total} product{counts.total === 1 ? '' : 's'} in total. Every figure is a count
+            of stored products.
+          </p>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {metrics.map((metric) => (
+              <li key={metric.label} className="border border-taupe bg-white p-4">
+                <p className="text-small tracking-[0.12em] text-walnut uppercase">{metric.label}</p>
+                <p className="font-display text-h2 text-espresso">{metric.value}</p>
+                {metric.note !== undefined && (
+                  <p className="mt-1 text-small text-walnut">{metric.note}</p>
+                )}
+                {metric.href !== undefined && metric.value > 0 && (
+                  <a href={metric.href} className="mt-2 inline-block text-small underline">
+                    View
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <LeadsCard newLeads={props.newLeads} />
       <RecentActivity

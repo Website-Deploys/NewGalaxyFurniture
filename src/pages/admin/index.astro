@@ -22,7 +22,8 @@ import { catalogueCounts } from '@/lib/products/query';
 import { countLeadsByStatus } from '@/lib/leads/store';
 import { createGitHubClient } from '@/lib/github/factory';
 import { getD1, getKV } from '@/lib/env';
-import { listProductSummaries, type ProductSummary } from '@/lib/products/index-store';
+import { listProductSummariesWithRepositoryFallback } from '@/lib/github/drafts';
+import { type ProductSummary } from '@/lib/products/index-store';
 
 export const prerender = false;
 
@@ -31,7 +32,14 @@ const role = Astro.locals.adminSession?.role ?? 'viewer';
 let summaries: ProductSummary[] = [];
 let countsUnavailable: string | null = null;
 try {
-  summaries = await listProductSummaries(getKV(Astro, 'DRAFTS'));
+  // Read the KV index, falling back to a repository rebuild when it is empty, so a product
+  // that is live on the public site is never reported here as "no products yet" just because
+  // this environment's cache was never populated. A failure to read either store propagates
+  // and is shown as a configuration problem below — never as a false empty state.
+  summaries = await listProductSummariesWithRepositoryFallback({
+    drafts: getKV(Astro, 'DRAFTS'),
+    client: createGitHubClient(Astro),
+  });
 } catch (error) {
   console.error('[admin] could not read the product index', error);
   countsUnavailable =
@@ -59,18 +67,13 @@ try {
 ---
 
 <AdminLayout title="Dashboard">
-  {
-    countsUnavailable !== null ? (
-      <p class="border border-espresso bg-white px-4 py-3 text-body">{countsUnavailable}</p>
-    ) : (
-      <DashboardCards
-        client:load
-        counts={catalogueCounts(summaries)}
-        newLeads={newLeads}
-        recent={recent}
-        recentUnavailable={recentUnavailable}
-        canWrite={can(role, 'product.write')}
-      />
-    )
-  }
+  <DashboardCards
+    client:load
+    counts={countsUnavailable === null ? catalogueCounts(summaries) : null}
+    countsUnavailable={countsUnavailable}
+    newLeads={newLeads}
+    recent={recent}
+    recentUnavailable={recentUnavailable}
+    canWrite={can(role, 'product.write')}
+  />
 </AdminLayout>
