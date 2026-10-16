@@ -2,7 +2,7 @@
  * The motion budget, enforced against the built output.
  *
  * Runs as `postbuild`, so `npm run build` fails when any of Requirement 21.15's three limits is
- * exceeded. It reads `dist/` rather than `src/` deliberately: the budget is about what a browser
+ * exceeded. It reads the target's public build output rather than `src/`: the budget is about what a browser
  * receives, and a component's source template contains Astro expressions and comments that never
  * reach a page. Measuring the source would report a number nobody downloads.
  *
@@ -41,8 +41,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { buildOutputDirectory } from './build-output-directory';
+
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DIST = join(ROOT, 'dist');
+const DIST = buildOutputDirectory();
 
 /** Requirement 21.15's three numbers. */
 const MAX_MARKUP_BYTES = 18 * 1024;

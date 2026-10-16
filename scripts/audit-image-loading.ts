@@ -44,8 +44,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { buildOutputDirectory } from './build-output-directory';
+
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist');
+const DEFAULT_DIR = buildOutputDirectory();
 
 /** Mirrors `EAGER_CARDS` in `src/lib/images/staging.ts` â€” the design's "first 6 cards". */
 export const MAX_EAGER_IMAGES = 6;

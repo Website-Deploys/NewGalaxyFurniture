@@ -34,8 +34,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { buildOutputDirectory } from './build-output-directory';
+
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist');
+const DEFAULT_DIR = buildOutputDirectory();
 
 /** The ceiling, as a fraction. */
 export const MAX_DENSITY = 0.02;

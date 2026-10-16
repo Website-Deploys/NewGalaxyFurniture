@@ -37,7 +37,7 @@
 # there are intentionally NO [[ratelimits]] bindings here. The RATELIMIT KV namespace covers every
 # window.
 
-name = "new-galaxy-furniture"
+name = "newgalaxyfurniture"
 # `main` points at the project's Worker entry (the fetch handler + the scheduled analytics handler).
 # Under @astrojs/cloudflare v14 the adapter injects its own entrypoint when `main` is unset; naming a
 # real source file is the supported override for adding the `scheduled` export.
@@ -77,6 +77,7 @@ mode = "smart"
 # These are printed on the site itself, so they are configuration, not secrets.
 [vars]
 PUBLIC_SITE_URL = "https://newgalaxyfurniture.com"
+CF_WORKER_NAME = "newgalaxyfurniture"
 PUBLIC_WHATSAPP_NUMBERS = "+919513443606,+918147083703"
 PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
 

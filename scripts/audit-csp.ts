@@ -44,9 +44,10 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { FRAMEWORK_INLINE_SCRIPTS } from '../src/lib/security/inline-script-hashes';
+import { buildOutputDirectory } from './build-output-directory';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const DEFAULT_DIR = join(ROOT, 'dist');
+const DEFAULT_DIR = buildOutputDirectory();
 
 /** Script types that are data, not code. CSP does not apply to these. */
 const DATA_SCRIPT_TYPES = [
