@@ -120,7 +120,7 @@ jobs:
     # reviewer approves this job. The URL is informational.
     environment:
       name: production
-      url: https://newgalaxyfurniture.com
+      url: https://newgalaxyfurniture.in
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,7 +137,7 @@ jobs:
       - name: Build (Cloudflare target, production vars)
         run: npm run build
         env:
-          PUBLIC_SITE_URL: https://newgalaxyfurniture.com
+          PUBLIC_SITE_URL: https://newgalaxyfurniture.in
 
       - name: Deploy to production
         uses: cloudflare/wrangler-action@v4

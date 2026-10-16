@@ -65,7 +65,7 @@ html_handling = "drop-trailing-slash"
 # The nightly analytics snapshot: src/worker.ts exports the `scheduled` handler. 19:30 UTC is 01:00
 # IST — after the day it summarises has closed in UTC. (Requirements 3.14, 3.15, 20.11.)
 [triggers]
-crons = ["30 19 * * *"]
+crons = []
 
 [observability]
 enabled = true
@@ -76,7 +76,7 @@ mode = "smart"
 # --- Public (non-secret) variables ------------------------------------------
 # These are printed on the site itself, so they are configuration, not secrets.
 [vars]
-PUBLIC_SITE_URL = "https://newgalaxyfurniture.com"
+PUBLIC_SITE_URL = "https://newgalaxyfurniture.in"
 CF_WORKER_NAME = "newgalaxyfurniture"
 PUBLIC_WHATSAPP_NUMBERS = "+919513443606,+918147083703"
 PUBLIC_PHONE_NUMBERS = "+919513443606,+918147083703"
