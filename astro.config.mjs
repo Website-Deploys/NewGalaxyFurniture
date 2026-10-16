@@ -6,6 +6,9 @@ import react from '@astrojs/react';
 import netlify from '@astrojs/netlify';
 import cloudflare from '@astrojs/cloudflare';
 import tailwindcss from '@tailwindcss/vite';
+import { unstable_readConfig } from 'wrangler';
+
+import { cloudflareBuildEnvironment } from './scripts/cloudflare-build-environment.mjs';
 
 /**
  * Deployment target selection.
@@ -23,6 +26,19 @@ import tailwindcss from '@tailwindcss/vite';
  */
 const DEPLOY_TARGET = process.env.DEPLOY_TARGET === 'cloudflare' ? 'cloudflare' : 'netlify';
 const isCloudflare = DEPLOY_TARGET === 'cloudflare';
+const isProductionCloudflare =
+  isCloudflare && !process.env.CLOUDFLARE_ENV && !process.env.NGF_PRODUCTS_DIR;
+/** @type {Record<string, unknown>} */
+const productionPublicConfig = {};
+if (isProductionCloudflare) {
+  /** @type {unknown} */
+  const wranglerConfig = unstable_readConfig({ config: 'wrangler.toml' }, { hideWarnings: true });
+  if (typeof wranglerConfig === 'object' && wranglerConfig !== null && 'vars' in wranglerConfig) {
+    Object.assign(productionPublicConfig, wranglerConfig.vars);
+  }
+  if (process.env.PUBLIC_SITE_URL)
+    productionPublicConfig.PUBLIC_SITE_URL = process.env.PUBLIC_SITE_URL;
+}
 
 /**
  * Rendering strategy (design → Architecture → Request / Render Path):
@@ -116,7 +132,10 @@ export default defineConfig({
    */
   session: false,
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      ...(isProductionCloudflare ? [cloudflareBuildEnvironment(productionPublicConfig)] : []),
+    ],
     /**
      * React on the type level, Preact at runtime — the design's public JS budgets (45 kB homepage,
      * 20 kB content page) are unsatisfiable with `react-dom`'s 50 kB client runtime, and

@@ -198,18 +198,25 @@ export function getR2(_context?: RuntimeCarrier): ObjectBucket {
 /* Configuration                                                              */
 /* -------------------------------------------------------------------------- */
 
-/** Read a string-valued variable/secret from the Worker env, else the build-time env. */
+/** Secrets come only from runtime bindings; only public settings have build fallbacks. */
 function readEnv(name: string): string | undefined {
   let runtime: string | undefined;
   try {
     const value = workerEnv()[name];
     if (typeof value === 'string' && value !== '') runtime = value;
   } catch {
-    // No Worker env (prerender/build) — fall through to the build-time values below.
+    // Prerendering may fall back to the explicit public settings below.
   }
   if (runtime !== undefined) return runtime;
-  const build = (import.meta.env as Record<string, string | undefined>)[name];
-  return build !== undefined && build !== '' ? build : undefined;
+  // A dynamic import.meta.env lookup bundles the entire build environment,
+  // including private .env values. Static public reads keep that boundary closed.
+  const publicBuildConfig: Record<string, unknown> = {
+    PUBLIC_SITE_URL: import.meta.env.PUBLIC_SITE_URL,
+    PUBLIC_WHATSAPP_NUMBERS: import.meta.env.PUBLIC_WHATSAPP_NUMBERS,
+    PUBLIC_PHONE_NUMBERS: import.meta.env.PUBLIC_PHONE_NUMBERS,
+  };
+  const build = publicBuildConfig[name];
+  return typeof build === 'string' && build !== '' ? build : undefined;
 }
 
 /**
